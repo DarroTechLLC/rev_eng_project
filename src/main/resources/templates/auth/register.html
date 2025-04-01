@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org/">
+<th:block th:replace="~{fragments :: head}"></th:block>
+
+<body>
+<nav class="navbar navbar-default">
+    <div class="container-fluid">
+        <div class="navbar-header">
+            <a class="navbar-brand" href="/login">Back To Login</a>
+        </div>
+    </div>
+</nav>
+<h1 style="text-align:center;">"Darro Tech's" EZ Planner Application</h1>
+<div style="text-align:center">
+    <form method="post">
+        <div class="form-group">
+            <label>Username
+                <input class="form-control" th:field="${registerFormDTO.username}"/>
+            </label>
+            <p style="color:red;" class="error" th:errors="${registerFormDTO.username}"></p>
+        </div>
+        <div class="form-group">
+            <label>Password
+                <input class="form-control" th:field="${registerFormDTO.password}" type="password"/>
+            </label>
+            <p style="color:red;" class="error" th:errors="${registerFormDTO.password}"></p>
+        </div>
+        <div class="form-group">
+            <label>Verify Password
+                <input class="form-control" th:field="${registerFormDTO.verifyPassword}" type="password"/>
+            </label>
+            <p style="color:red;" class="error" th:errors="${registerFormDTO.verifyPassword}"></p>
+        </div>
+
+        <input type="submit" class="btn btn-primary btn-round" value="Register"/>
+    </form>
+</div>
+</body>
+</html>

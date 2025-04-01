@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org/">
+<th:block th:replace="~{fragments/head :: head}"></th:block>
+
+<body>
+<!--<nav th:replace="fragments :: page-header"></nav>-->
+<br>
+<br>
+ <h1 style="text-align:center;">"Test App"</h1>
+
+<div style="text-align:center;">
+    <form method="post">
+        <div class="form-group">
+            <label th:for="username">Username
+                <input class="form-control" th:field="${loginFormDTO.username}">
+            </label>
+            <p style="color:red;" class="error" th:errors="${loginFormDTO.username}"></p>
+        </div>
+        <div class="form-group">
+            <label>Password
+                <input class="form-control" th:field="${loginFormDTO.password}" type="password">
+            </label>
+            <p style="color:red;" class="error" th:errors="${loginFormDTO.password}"></p>
+        </div>
+
+        <input type="submit" class="btn btn-primary btn-round" value="Log In" />
+        <br>
+        <br>
+       </form>
+</div>
+<footer class="container-fluid text-center">
+    <p><a th:href="@{''}">Test<sup>1</sup></a></p>
+</footer>
+
+
+</body>
+</html>
