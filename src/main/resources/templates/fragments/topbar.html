@@ -1,10 +1,199 @@
 <!DOCTYPE html>
-<html lang="en">
+<html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <title>Title</title>
+    <style>
+        .initials-circle {
+            width: 2rem;
+            height: 2rem;
+            background-color: #4e73df;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.875rem;
+        }
+        
+        /* Hide admin menu items by default until JavaScript loads */
+        .admin-only, .super-admin-only {
+            display: none;
+        }
+    </style>
 </head>
 <body>
+    <!-- Topbar Fragment -->
+    <nav th:fragment="topbar" class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow">
+        <!-- Sidebar Toggle (Topbar) -->
+        <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3">
+            <i class="fa fa-bars"></i>
+        </button>
 
+        <!-- Topbar Search -->
+        <form class="d-none d-sm-inline-block form-inline mr-auto ml-md-3 my-2 my-md-0 mw-100 navbar-search">
+            <div class="input-group">
+                <input type="text" class="form-control bg-light border-0 small" placeholder="Search for..."
+                    aria-label="Search" aria-describedby="basic-addon2">
+                <div class="input-group-append">
+                    <button class="btn btn-primary" type="button">
+                        <i class="fas fa-search fa-sm"></i>
+                    </button>
+                </div>
+            </div>
+        </form>
+
+        <!-- Topbar Navbar -->
+        <ul class="navbar-nav ml-auto">
+            <!-- Nav Item - Search Dropdown (Visible Only XS) -->
+            <li class="nav-item dropdown no-arrow d-sm-none">
+                <a class="nav-link dropdown-toggle" href="#" id="searchDropdown" role="button"
+                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <i class="fas fa-search fa-fw"></i>
+                </a>
+                <!-- Dropdown - Messages -->
+                <div class="dropdown-menu dropdown-menu-right p-3 shadow animated--grow-in"
+                    aria-labelledby="searchDropdown">
+                    <form class="form-inline mr-auto w-100 navbar-search">
+                        <div class="input-group">
+                            <input type="text" class="form-control bg-light border-0 small"
+                                placeholder="Search for..." aria-label="Search"
+                                aria-describedby="basic-addon2">
+                            <div class="input-group-append">
+                                <button class="btn btn-primary" type="button">
+                                    <i class="fas fa-search fa-sm"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </li>
+
+            <!-- Nav Item - Alerts -->
+            <li class="nav-item dropdown no-arrow mx-1">
+                <a class="nav-link dropdown-toggle" href="#" id="alertsDropdown" role="button"
+                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <i class="fas fa-bell fa-fw"></i>
+                    <!-- Counter - Alerts -->
+                    <span class="badge badge-danger badge-counter">3+</span>
+                </a>
+                <!-- Dropdown - Alerts -->
+                <div class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in"
+                    aria-labelledby="alertsDropdown">
+                    <h6 class="dropdown-header">
+                        Alerts Center
+                    </h6>
+                    <a class="dropdown-item d-flex align-items-center" href="#">
+                        <div class="mr-3">
+                            <div class="icon-circle bg-primary">
+                                <i class="fas fa-file-alt text-white"></i>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="small text-gray-500">December 12, 2019</div>
+                            <span class="font-weight-bold">A new monthly report is ready to download!</span>
+                        </div>
+                    </a>
+                    <a class="dropdown-item text-center small text-gray-500" href="#">Show All Alerts</a>
+                </div>
+            </li>
+
+            <!-- Nav Item - User Information -->
+            <li class="nav-item dropdown no-arrow">
+                <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
+                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <span th:if="${user != null}" th:text="${wholeName}" class="mr-2 d-none d-lg-inline text-gray-600 small">Username</span>
+                    <div class="initials-circle rounded-circle" th:if="${user != null}">
+                        <span th:text="${user.firstName != null and user.lastName != null} ? ${#strings.substring(user.firstName, 0, 1) + #strings.substring(user.lastName, 0, 1)} : 'UN'">UN</span>
+                    </div>
+                </a>
+                <!-- Dropdown - User Information -->
+                <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in"
+                    aria-labelledby="userDropdown">
+                    <!-- DEBUG INFO -->
+                    <div class="small text-muted px-3 py-2">
+                        isAdmin: <span th:text="${isAdmin}">true</span> (<span th:text="${isAdmin != null ? isAdmin.getClass().getName() : 'null'}">type</span>) | 
+                        isSuperAdmin: <span th:text="${isSuperAdmin}">true</span> (<span th:text="${isSuperAdmin != null ? isSuperAdmin.getClass().getName() : 'null'}">type</span>)
+                    </div>
+                    
+                    <!-- Admin menu items -->
+                    <a class="dropdown-item admin-only" th:href="@{/admin/users}">
+                        <i class="fas fa-users fa-sm fa-fw mr-2 text-gray-400"></i>
+                        Manage Users
+                    </a>
+                    <a class="dropdown-item admin-only" th:href="@{/admin/companies}">
+                        <i class="fas fa-building fa-sm fa-fw mr-2 text-gray-400"></i>
+                        Companies
+                    </a>
+                    <a class="dropdown-item admin-only" th:href="@{/admin/farms}">
+                        <i class="fas fa-tractor fa-sm fa-fw mr-2 text-gray-400"></i>
+                        Farms
+                    </a>
+
+                    <!-- Super Admin menu items -->
+                    <a class="dropdown-item super-admin-only" th:href="@{/admin/alerts}">
+                        <i class="fas fa-bell fa-sm fa-fw mr-2 text-gray-400"></i>
+                        Website Alerts
+                    </a>
+                    <!-- Available to all users -->
+                    <a class="dropdown-item" th:href="@{/account/change-password}">
+                        <i class="fas fa-key fa-sm fa-fw mr-2 text-gray-400"></i>
+                        Change Password
+                    </a>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" href="#" data-toggle="modal" data-target="#logoutModal">
+                        <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i>
+                        Logout
+                    </a>
+                </div>
+            </li>
+        </ul>
+        
+        <!-- Script to handle dynamic role-based visibility -->
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                // Hide all admin menu items by default
+                document.querySelectorAll('.admin-only').forEach(function(el) {
+                    el.style.display = 'none';
+                });
+                document.querySelectorAll('.super-admin-only').forEach(function(el) {
+                    el.style.display = 'none';
+                });
+                
+                // Fetch user role information
+                fetch('/debug/roles-api')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            console.log('User roles:', data);
+                            
+                            // Show admin menu items if user is an admin
+                            if (data.isAdmin === true) {
+                                document.querySelectorAll('.admin-only').forEach(function(el) {
+                                    el.style.display = 'block';
+                                });
+                            }
+                            
+                            // Show super admin menu items if user is a super admin
+                            if (data.isSuperAdmin === true) {
+                                document.querySelectorAll('.super-admin-only').forEach(function(el) {
+                                    el.style.display = 'block';
+                                });
+                            }
+                            
+                            // Update debug info
+                            document.querySelector('.small.text-muted.px-3.py-2').innerHTML = 
+                                'isAdmin: ' + data.isAdmin + ' (from API) | ' +
+                                'isSuperAdmin: ' + data.isSuperAdmin + ' (from API)';
+                        } else {
+                            console.log('Not logged in or error fetching roles');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching role information:', error);
+                    });
+            });
+        </script>
+    </nav>
 </body>
 </html>

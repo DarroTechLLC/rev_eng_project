@@ -8,6 +8,7 @@ import java.time.Instant;
 @Table(name = "user_roles")
 public class UserRole {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
     private Integer id;
 

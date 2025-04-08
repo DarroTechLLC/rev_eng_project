@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Website Alerts Management</title>
+</head>
+<body>
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Website Alerts Management</h1>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+            <h6 class="m-0 font-weight-bold text-primary">Current Alerts</h6>
+            <button class="btn btn-primary btn-sm">
+                <i class="fas fa-plus"></i> Add New Alert
+            </button>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-info">
+                <p>This is a placeholder for the Website Alerts Management page. In the full application, this would display a list of alerts and provide options to create, edit, and delete alerts that appear on the website.</p>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Message</th>
+                            <th>Type</th>
+                            <th>Start Date</th>
+                            <th>End Date</th>
+                            <th>Active</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>1</td>
+                            <td>Welcome to the new dashboard system!</td>
+                            <td>Info</td>
+                            <td>2023-01-01</td>
+                            <td>2023-12-31</td>
+                            <td>Yes</td>
+                            <td>
+                                <button class="btn btn-primary btn-sm">Edit</button>
+                                <button class="btn btn-danger btn-sm">Delete</button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>2</td>
+                            <td>System maintenance scheduled for this weekend.</td>
+                            <td>Warning</td>
+                            <td>2023-04-01</td>
+                            <td>2023-04-03</td>
+                            <td>No</td>
+                            <td>
+                                <button class="btn btn-primary btn-sm">Edit</button>
+                                <button class="btn btn-danger btn-sm">Delete</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</body>
+</html> 
