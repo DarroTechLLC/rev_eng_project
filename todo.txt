@@ -1,2 +1,3 @@
--implement fragments
--implement back button for error page
+-complete navigation routing at least
+-implement back button for error page, use page from template
+-match login abstract, not definite

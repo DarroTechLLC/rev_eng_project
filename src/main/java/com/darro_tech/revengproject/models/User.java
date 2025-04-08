@@ -9,15 +9,16 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.proxy.HibernateProxy;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.Objects;
+import java.util.UUID;
 import java.util.logging.Logger;
 
 @Getter
@@ -48,10 +49,6 @@ public class User {
     @Column(name = "password", nullable = false, length = 50)
     private String pwHash;
 
-
-    private static final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
-
-
     @NotNull
     @Column(name = "timestamp", nullable = false)
     private Instant timestamp;
@@ -68,16 +65,33 @@ public class User {
     @Column(name = "reset_pass_expires")
     private Instant resetPassExpires;
 
+    private static final Logger logger = Logger.getLogger(User.class.getName());
+    private static final SecureRandom RANDOM = new SecureRandom();
+
+    private String generateSalt() {
+        byte[] salt = new byte[3];
+        RANDOM.nextBytes(salt);
+        StringBuilder sb = new StringBuilder();
+        for (byte b : salt) {
+            sb.append(String.format("%02x", b));
+        }
+        return sb.substring(0, 6);
+    }
+
     public User(String username, String password) {
+        this.id = UUID.randomUUID().toString();
         this.username = username;
-        this.pwHash = encoder.encode(password);
+        String salt = generateSalt();
+        this.pwHash = salt + sha1(salt + password);
+        this.timestamp = Instant.now();
+        this.resetPswd = 0;
     }
 
     public User() {
-
+        this.id = UUID.randomUUID().toString();
+        this.timestamp = Instant.now();
+        this.resetPswd = 0;
     }
-
-    private static final Logger logger = Logger.getLogger(User.class.getName());
 
     public boolean isMatchingPassword(String password) {
         if (pwHash == null || pwHash.length() < 6) {
@@ -112,6 +126,7 @@ public class User {
             throw new RuntimeException(e);
         }
     }
+
     @Override
     public final boolean equals(Object o) {
         if (this == o) return true;
@@ -126,5 +141,8 @@ public class User {
     @Override
     public final int hashCode() {
         return this instanceof HibernateProxy ? ((HibernateProxy) this).getHibernateLazyInitializer().getPersistentClass().hashCode() : getClass().hashCode();
+    }
+
+    public void setPassword(String password) {
     }
 }
