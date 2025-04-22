@@ -1,17 +1,33 @@
 <!-- Page Heading -->
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800">User Management Index</h1>
-    <a href="/register" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#registerModal">
+    <h1 class="h3 mb-0 text-gray-800">User Management</h1>
+    <a href="#" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#registerModal">
         <i class="fas fa-user-plus fa-sm text-white-50"></i> Create New User
     </a>
+</div>
+
+<!-- Error Message Alert -->
+<div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+    <strong>Error!</strong> <span th:text="${errorMessage}">An error occurred.</span>
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+    </button>
 </div>
 
 <!-- Content Row -->
 <div class="row">
     <div class="col-12">
         <div class="card shadow mb-4">
-            <div class="card-header py-3">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
                 <h6 class="m-0 font-weight-bold text-primary">Users List</h6>
+                <div class="input-group w-50">
+                    <input type="text" id="searchInput" class="form-control bg-light border-0 small" placeholder="Search users...">
+                    <div class="input-group-append">
+                        <button class="btn btn-primary" type="button">
+                            <i class="fas fa-search fa-sm"></i>
+                        </button>
+                    </div>
+                </div>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
@@ -19,15 +35,53 @@
                         <thead>
                             <tr>
                                 <th>Username</th>
-                                <th>First Name</th>
-                                <th>Last Name</th>
-                                <th>Status</th>
-                                <th>Last Login</th>
+                                <th>First</th>
+                                <th>Last</th>
+                                <th>Email</th>
+                                <th>Roles</th>
+                                <th>Companies</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <!-- Users will be populated here -->
+                            <tr th:each="user : ${users}">
+                                <td>
+                                    <a th:href="@{'/admin/users/' + ${user.id}}" th:text="${user.username ?: '[PENDING]'}" class="font-weight-bold text-primary"></a>
+                                </td>
+                                <td th:text="${user.firstName}"></td>
+                                <td th:text="${user.lastName}"></td>
+                                <td th:text="${user.email}"></td>
+                                <td>
+                                    <span th:each="role : ${user.roles}" 
+                                          class="badge badge-light text-dark mr-1 mb-1 p-2"
+                                          style="border-radius: 15px; border: 1px solid #ccc; font-size: 0.75rem;"
+                                          th:text="${role.name}">
+                                    </span>
+                                </td>
+                                <td>
+                                    <span th:each="company : ${user.companies}" 
+                                          class="badge badge-light text-dark mr-1 mb-1 p-2"
+                                          style="border-radius: 15px; border: 1px solid #ccc; font-size: 0.75rem;"
+                                          th:text="${company.name}">
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <a th:href="@{'/admin/users/' + ${user.id}}" class="btn btn-sm btn-info">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button class="btn btn-sm btn-danger" 
+                                            data-toggle="modal" 
+                                            data-target="#deleteModal"
+                                            th:data-id="${user.id}"
+                                            th:data-name="${user.username}">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <!-- Show message when no users found -->
+                            <tr th:if="${users == null || users.isEmpty()}">
+                                <td colspan="7" class="text-center">No users found</td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -109,4 +163,29 @@
             </div>
         </div>
     </div>
-</div> 
+</div>
+
+<!-- Add JavaScript for search functionality -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log("🔍 User management page loaded - Initializing search functionality");
+        const searchInput = document.getElementById('searchInput');
+        
+        searchInput.addEventListener('keyup', function() {
+            const searchText = this.value.toLowerCase();
+            console.log("🔎 Searching for: " + searchText);
+            
+            const rows = document.querySelectorAll('#usersTable tbody tr');
+            let matchCount = 0;
+            
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                const isMatch = text.includes(searchText);
+                row.style.display = isMatch ? '' : 'none';
+                if (isMatch) matchCount++;
+            });
+            
+            console.log("✅ Found " + matchCount + " matching users");
+        });
+    });
+</script> 
