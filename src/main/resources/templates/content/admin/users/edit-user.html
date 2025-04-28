@@ -21,7 +21,7 @@
                 <button id="confirmCloseBtn" class="btn-sm btn-danger">Confirm Close</button>
             </div>
             
-            <form id="editUserForm" th:action="@{/admin/users/update}" method="post" th:object="${user}">
+            <form id="editUserForm" th:action="@{/admin/users/update}" method="post" th:object="${editUser}">
                 <input type="hidden" th:field="*{id}">
                 
                 <div class="row-panel">
