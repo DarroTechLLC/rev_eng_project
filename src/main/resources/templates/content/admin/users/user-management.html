@@ -14,6 +14,14 @@
     </button>
 </div>
 
+<!-- Success Message Alert -->
+<div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+    <strong>Success!</strong> <span th:text="${successMessage}">Operation completed successfully.</span>
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+    </button>
+</div>
+
 <!-- Content Row -->
 <div class="row">
     <div class="col-12">
@@ -46,7 +54,7 @@
                         <tbody>
                             <tr th:each="user : ${users}">
                                 <td>
-                                    <a th:href="@{'/admin/users/' + ${user.id}}" th:text="${user.username ?: '[PENDING]'}" class="font-weight-bold text-primary"></a>
+                                    <a th:href="@{'/admin/users/' + ${user.id}}" th:text="${user.username ?: '[PENDING]'}" class="username-link"></a>
                                 </td>
                                 <td th:text="${user.firstName}"></td>
                                 <td th:text="${user.lastName}"></td>
@@ -66,9 +74,6 @@
                                     </span>
                                 </td>
                                 <td class="text-center">
-                                    <a th:href="@{'/admin/users/' + ${user.id}}" class="btn btn-sm btn-info">
-                                        <i class="fas fa-edit"></i>
-                                    </a>
                                     <button class="btn btn-sm btn-danger" 
                                             data-toggle="modal" 
                                             data-target="#deleteModal"
@@ -164,6 +169,16 @@
         </div>
     </div>
 </div>
+
+<!-- Add CSS for username links -->
+<style>
+    .username-link {
+        text-decoration: underline;
+        cursor: pointer;
+        color: #008b8b;
+        font-weight: bold;
+    }
+</style>
 
 <!-- Add JavaScript for search functionality -->
 <script>

@@ -1,0 +1,318 @@
+<!-- Page Heading -->
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Edit User</h1>
+</div>
+
+<!-- Error Message Alert -->
+<div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+    <strong>Error!</strong> <span th:text="${errorMessage}">An error occurred.</span>
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+    </button>
+</div>
+
+<div class="card shadow mb-4">
+    <div class="card-body">
+        <div class="edit-user-container">
+            <h3 class="form-title">Edit User:</h3>
+            
+            <div id="confirmCloseWrapper" style="display: none;" class="confirm-close-wrapper">
+                You have pending edits
+                <button id="confirmCloseBtn" class="btn-sm btn-danger">Confirm Close</button>
+            </div>
+            
+            <form id="editUserForm" th:action="@{/admin/users/update}" method="post" th:object="${user}">
+                <input type="hidden" th:field="*{id}">
+                
+                <div class="row-panel">
+                    <div class="column-panel">
+                        <!-- Left column: Basic info -->
+                        <div class="form-group float-row">
+                            <div class="floating-input">
+                                <input id="username" th:field="*{username}" class="form-control">
+                                <label for="username">Username</label>
+                                <small>Leave blank for user to create</small>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group float-row">
+                            <div class="floating-input">
+                                <input id="firstName" th:field="*{firstName}" class="form-control" required>
+                                <label for="firstName">First Name</label>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group float-row">
+                            <div class="floating-input">
+                                <input id="lastName" th:field="*{lastName}" class="form-control" required>
+                                <label for="lastName">Last Name</label>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group float-row">
+                            <div class="floating-input">
+                                <input id="email" th:field="*{email}" class="form-control">
+                                <label for="email">Email</label>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group float-row">
+                            <div class="floating-input">
+                                <input id="phone" th:field="*{phone}" class="form-control">
+                                <label for="phone">SMS</label>
+                                <small>Not required</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="column-panel">
+                        <!-- Right column: Roles, Companies, Password -->
+                        <div class="form-group float-row">
+                            <div class="floating-multiselect">
+                                <select id="roleIds" th:field="*{roleIds}" multiple class="form-control">
+                                    <option th:each="role : ${roles}" 
+                                            th:value="${role.id}" 
+                                            th:text="${role.name}">Role</option>
+                                </select>
+                                <label for="roleIds">Roles</label>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group float-row">
+                            <div class="floating-multiselect">
+                                <select id="companyIds" th:field="*{companyIds}" multiple class="form-control">
+                                    <option th:each="company : ${companies}" 
+                                            th:value="${company.id}" 
+                                            th:text="${company.name}">Company</option>
+                                </select>
+                                <label for="companyIds">Companies</label>
+                            </div>
+                        </div>
+                        
+                        <!-- Password section -->
+                        <div class="password-section">
+                            <div class="form-group">
+                                <h4>Password Options</h4>
+                                <div class="radio-group">
+                                    <input type="radio" id="passlink" name="passOption" value="passlink" checked>
+                                    <label for="passlink">Send Password Reset Link</label>
+                                </div>
+                                <div class="radio-group">
+                                    <input type="radio" id="manual" name="passOption" value="manual">
+                                    <label for="manual">Set Manual Password</label>
+                                </div>
+                            </div>
+                            
+                            <div id="manualPasswordFields" style="display: none;">
+                                <div class="form-group float-row">
+                                    <div class="floating-input">
+                                        <input id="password" name="password" type="password" class="form-control">
+                                        <label for="password">New Password</label>
+                                    </div>
+                                </div>
+                                <div class="form-group float-row">
+                                    <div class="floating-input">
+                                        <input id="confirmPassword" name="confirmPassword" type="password" class="form-control">
+                                        <label for="confirmPassword">Confirm Password</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-footer">
+                    <div class="button-row">
+                        <div class="pending-status-wrapper">
+                            <div id="editFormStatus" style="display: none;"><b>Pending:</b> Edit User Details</div>
+                            <div id="passFormStatus" style="display: none;"><b>Pending:</b> Set Manual Password</div>
+                        </div>
+                        
+                        <div style="flex: 1;"></div>
+                        
+                        <button type="submit" class="btn btn-primary">Save</button>
+                        <a th:href="@{/admin/users}" class="btn btn-secondary">Cancel</a>
+                        <span class="btn-sep"></span>
+                        <button type="button" id="deleteBtn" class="btn btn-danger">Delete</button>
+                    </div>
+                    
+                    <div id="confirmDelete" class="confirm-delete-wrapper" style="display: none;">
+                        Permanently delete this user?
+                        <form th:action="@{/admin/users/delete}" method="post" style="display: inline;">
+                            <input type="hidden" name="id" th:value="*{id}">
+                            <button type="submit" class="btn-sm btn-danger">Confirm</button>
+                        </form>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Add CSS for the edit user page -->
+<style>
+    .edit-user-container {
+        position: relative;
+        padding: 20px;
+    }
+    
+    .form-title {
+        font-size: 1.2em;
+        color: #369;
+        position: absolute;
+        top: 8px;
+        font-weight: bold;
+    }
+    
+    .row-panel {
+        display: flex;
+        flex-direction: row;
+        margin-top: 30px;
+    }
+    
+    .column-panel {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        padding: 8px;
+    }
+    
+    .float-row {
+        margin-bottom: 15px;
+    }
+    
+    .floating-input, .floating-multiselect {
+        position: relative;
+    }
+    
+    .floating-input input, .floating-multiselect select {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+    }
+    
+    .floating-input label, .floating-multiselect label {
+        position: absolute;
+        top: -7px;
+        left: 10px;
+        background: white;
+        padding: 0 5px;
+        font-size: 12px;
+        color: #666;
+    }
+    
+    .password-section {
+        margin-top: 20px;
+        border: 1px solid #eee;
+        padding: 15px;
+        border-radius: 4px;
+    }
+    
+    .radio-group {
+        margin-bottom: 10px;
+    }
+    
+    .form-footer {
+        margin-top: 20px;
+        border-top: 1px solid #eee;
+        padding-top: 15px;
+    }
+    
+    .button-row {
+        display: flex;
+        align-items: center;
+    }
+    
+    .btn-sep {
+        display: inline-block;
+        width: 1px;
+        height: 24px;
+        background: #ddd;
+        margin: 0 10px;
+    }
+    
+    .confirm-close-wrapper {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        background-color: #fff;
+        padding: 2px;
+        color: #f00;
+        font-size: .75em;
+    }
+    
+    .confirm-delete-wrapper {
+        text-align: right;
+        padding-top: 16px;
+        color: #f00;
+        font-size: .75em;
+    }
+    
+    .pending-status-wrapper {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+    
+    .pending-status-wrapper > div {
+        font-size: .75em;
+        color: red;
+    }
+</style>
+
+<!-- Add JavaScript for form functionality -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Form elements
+        const form = document.getElementById('editUserForm');
+        const editFormStatus = document.getElementById('editFormStatus');
+        const passFormStatus = document.getElementById('passFormStatus');
+        const confirmDeleteDiv = document.getElementById('confirmDelete');
+        const deleteBtn = document.getElementById('deleteBtn');
+        const passOptions = document.querySelectorAll('input[name="passOption"]');
+        const manualPasswordFields = document.getElementById('manualPasswordFields');
+        
+        // Track form changes
+        let formDirty = false;
+        let passFormDirty = false;
+        
+        // Initialize username field focus
+        const usernameField = document.getElementById('username');
+        if (usernameField) {
+            setTimeout(() => {
+                usernameField.select();
+            }, 10);
+        }
+        
+        // Form change tracking
+        form.addEventListener('change', function(e) {
+            if (e.target.name === 'password' || e.target.name === 'confirmPassword' || e.target.name === 'passOption') {
+                passFormDirty = true;
+                passFormStatus.style.display = 'block';
+            } else {
+                formDirty = true;
+                editFormStatus.style.display = 'block';
+            }
+        });
+        
+        // Password option toggle
+        passOptions.forEach(option => {
+            option.addEventListener('change', function() {
+                if (this.value === 'manual') {
+                    manualPasswordFields.style.display = 'block';
+                } else {
+                    manualPasswordFields.style.display = 'none';
+                }
+                passFormDirty = true;
+                passFormStatus.style.display = 'block';
+            });
+        });
+        
+        // Delete confirmation
+        deleteBtn.addEventListener('click', function() {
+            confirmDeleteDiv.style.display = 'block';
+        });
+    });
+</script> 

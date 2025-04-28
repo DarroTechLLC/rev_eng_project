@@ -2,51 +2,17 @@ package com.darro_tech.revengproject.models.dto;
 
 import java.util.List;
 
-public class UserManagementDTO {
+public class UserUpdateDTO {
     private String id;
     private String username;
     private String firstName;
     private String lastName;
     private String email;
     private String phone;
-    private List<RoleDTO> roles;
-    private List<CompanyDTO> companies;
-    
-    public static class RoleDTO {
-        private String id;
-        private String name;
-        
-        public RoleDTO(String id, String name) {
-            this.id = id;
-            this.name = name;
-        }
-        
-        public String getId() {
-            return id;
-        }
-        
-        public String getName() {
-            return name;
-        }
-    }
-    
-    public static class CompanyDTO {
-        private String id;
-        private String name;
-        
-        public CompanyDTO(String id, String name) {
-            this.id = id;
-            this.name = name;
-        }
-        
-        public String getId() {
-            return id;
-        }
-        
-        public String getName() {
-            return name;
-        }
-    }
+    private List<String> roleIds;
+    private List<String> companyIds;
+    private String passOption;
+    private String password;
     
     // Getters and setters
     public String getId() {
@@ -97,19 +63,35 @@ public class UserManagementDTO {
         this.phone = phone;
     }
     
-    public List<RoleDTO> getRoles() {
-        return roles;
+    public List<String> getRoleIds() {
+        return roleIds;
     }
     
-    public void setRoles(List<RoleDTO> roles) {
-        this.roles = roles;
+    public void setRoleIds(List<String> roleIds) {
+        this.roleIds = roleIds;
     }
     
-    public List<CompanyDTO> getCompanies() {
-        return companies;
+    public List<String> getCompanyIds() {
+        return companyIds;
     }
     
-    public void setCompanies(List<CompanyDTO> companies) {
-        this.companies = companies;
+    public void setCompanyIds(List<String> companyIds) {
+        this.companyIds = companyIds;
+    }
+    
+    public String getPassOption() {
+        return passOption;
+    }
+    
+    public void setPassOption(String passOption) {
+        this.passOption = passOption;
+    }
+    
+    public String getPassword() {
+        return password;
+    }
+    
+    public void setPassword(String password) {
+        this.password = password;
     }
 } 

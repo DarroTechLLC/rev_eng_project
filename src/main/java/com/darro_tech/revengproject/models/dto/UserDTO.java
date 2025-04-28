@@ -2,7 +2,7 @@ package com.darro_tech.revengproject.models.dto;
 
 import java.util.List;
 
-public class UserManagementDTO {
+public class UserDTO {
     private String id;
     private String username;
     private String firstName;
