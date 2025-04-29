@@ -1,0 +1,76 @@
+<!-- Page Heading -->
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Create New Company</h1>
+    <a href="/admin/companies" class="d-none d-sm-inline-block btn btn-sm btn-secondary shadow-sm">
+        <i class="fas fa-arrow-left fa-sm text-white-50"></i> Back to Companies
+    </a>
+</div>
+
+<!-- Content Row -->
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Company Details</h6>
+            </div>
+            <div class="card-body">
+                <form method="post" action="/admin/companies/create" id="companyForm">
+                    <div class="form-group">
+                        <label for="name">Company Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="name" name="name" required>
+                        <small class="form-text text-muted">Internal name, used for system identification.</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="displayName">Display Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="displayName" name="displayName" required>
+                        <small class="form-text text-muted">Name displayed to users.</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="logoUrl">Logo URL</label>
+                        <input type="url" class="form-control" id="logoUrl" name="logoUrl">
+                        <small class="form-text text-muted">URL to company logo image (optional).</small>
+                    </div>
+                    
+                    <div class="text-right mt-4">
+                        <a href="/admin/companies" class="btn btn-secondary mr-2">Cancel</a>
+                        <button type="submit" class="btn btn-primary">Create Company</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Form validation
+        const form = document.getElementById('companyForm');
+        form.addEventListener('submit', function(event) {
+            let isValid = true;
+            
+            // Simple validation - ensure required fields have values
+            const name = document.getElementById('name').value.trim();
+            const displayName = document.getElementById('displayName').value.trim();
+            
+            if (!name) {
+                isValid = false;
+                document.getElementById('name').classList.add('is-invalid');
+            } else {
+                document.getElementById('name').classList.remove('is-invalid');
+            }
+            
+            if (!displayName) {
+                isValid = false;
+                document.getElementById('displayName').classList.add('is-invalid');
+            } else {
+                document.getElementById('displayName').classList.remove('is-invalid');
+            }
+            
+            if (!isValid) {
+                event.preventDefault();
+            }
+        });
+    });
+</script> 
