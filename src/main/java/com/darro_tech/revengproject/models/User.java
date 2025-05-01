@@ -1,17 +1,5 @@
 package com.darro_tech.revengproject.models;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-
-import lombok.Getter;
-import lombok.Setter;
-import org.hibernate.annotations.ColumnDefault;
-import org.hibernate.proxy.HibernateProxy;
-
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Size;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -21,11 +9,25 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.logging.Logger;
 
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
+
+import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.proxy.HibernateProxy;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.Setter;
+
 @Getter
 @Setter
 @Entity
 @Table(name = "users")
 public class User {
+
     @Id
     @Size(max = 36)
     @Column(name = "id", nullable = false, length = 36)
@@ -129,11 +131,17 @@ public class User {
 
     @Override
     public final boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null) {
+            return false;
+        }
         Class<?> oEffectiveClass = o instanceof HibernateProxy ? ((HibernateProxy) o).getHibernateLazyInitializer().getPersistentClass() : o.getClass();
         Class<?> thisEffectiveClass = this instanceof HibernateProxy ? ((HibernateProxy) this).getHibernateLazyInitializer().getPersistentClass() : this.getClass();
-        if (thisEffectiveClass != oEffectiveClass) return false;
+        if (thisEffectiveClass != oEffectiveClass) {
+            return false;
+        }
         User user = (User) o;
         return getId() != null && Objects.equals(getId(), user.getId());
     }
@@ -144,5 +152,79 @@ public class User {
     }
 
     public void setPassword(String password) {
+        String salt = generateSalt();
+        this.pwHash = salt + sha1(salt + password);
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getFirstName() {
+        return firstName;
+    }
+
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
+    }
+
+    public String getLastName() {
+        return lastName;
+    }
+
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
+    }
+
+    public Instant getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(Instant timestamp) {
+        this.timestamp = timestamp;
+    }
+
+    public String getPwHash() {
+        return pwHash;
+    }
+
+    public void setPwHash(String pwHash) {
+        this.pwHash = pwHash;
+    }
+
+    public Byte getResetPswd() {
+        return resetPswd;
+    }
+
+    public void setResetPswd(Byte resetPswd) {
+        this.resetPswd = resetPswd;
+    }
+
+    public String getResetPassKey() {
+        return resetPassKey;
+    }
+
+    public void setResetPassKey(String resetPassKey) {
+        this.resetPassKey = resetPassKey;
+    }
+
+    public Instant getResetPassExpires() {
+        return resetPassExpires;
+    }
+
+    public void setResetPassExpires(Instant resetPassExpires) {
+        this.resetPassExpires = resetPassExpires;
     }
 }

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="fragments/head :: head"></head>
+<body id="page-top">
+
+    <!-- Page Wrapper -->
+    <div id="wrapper">
+
+        <!-- Sidebar -->
+        <div th:replace="fragments/sidebar :: sidebar"></div>
+        <!-- End of Sidebar -->
+
+        <!-- Content Wrapper -->
+        <div id="content-wrapper" class="d-flex flex-column">
+
+            <!-- Main Content -->
+            <div id="content">
+
+                <!-- Topbar -->
+                <div th:replace="fragments/topbar :: topbar"></div>
+                <!-- End of Topbar -->
+
+                <!-- Begin Page Content -->
+                <div class="container-fluid">
+
+                    <!-- Page Heading -->
+                    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+                        <h1 class="h3 mb-0 text-gray-800">Create New Farm</h1>
+                        <a th:href="@{/admin/farms(companyId=${selectedCompany != null ? selectedCompany.id : ''})}" class="d-none d-sm-inline-block btn btn-sm btn-secondary shadow-sm">
+                            <i class="fas fa-arrow-left fa-sm text-white-50"></i> Back to Farms
+                        </a>
+                    </div>
+
+                    <!-- Selected Company Info -->
+                    <div class="row" th:if="${selectedCompany != null}">
+                        <div class="col-xl-12 col-md-12 mb-4">
+                            <div class="card border-left-primary shadow h-100 py-2">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                                Selected Company</div>
+                                            <div class="h5 mb-0 font-weight-bold text-gray-800" th:text="${selectedCompany.name}">Company Name</div>
+                                        </div>
+                                        <div class="col-auto" th:if="${selectedCompany.logoUrl != null}">
+                                            <img th:src="${selectedCompany.logoUrl}" alt="Company Logo" style="max-height: 50px;">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Success/Error Messages -->
+                    <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+                        <span th:text="${successMessage}"></span>
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+
+                    <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <span th:text="${errorMessage}"></span>
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+
+                    <!-- Farm Form -->
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">Farm Details</h6>
+                        </div>
+                        <div class="card-body">
+                            <form th:action="@{/admin/farms/create}" method="post" th:object="${farm}">
+                                <input type="hidden" name="companyId" th:value="${selectedCompany != null ? selectedCompany.id : ''}">
+                                
+                                <div class="form-group">
+                                    <label for="name">Farm Name <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="name" name="name" required th:field="*{name}">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="description">Description</label>
+                                    <textarea class="form-control" id="description" name="description" rows="3" th:field="*{description}"></textarea>
+                                </div>
+                                
+                                <div class="form-group" th:if="${selectedCompany == null}">
+                                    <label for="companyId">Company <span class="text-danger">*</span></label>
+                                    <select class="form-control" id="companyId" name="companyId" required>
+                                        <option value="">-- Select Company --</option>
+                                        <option th:each="company : ${companies}" 
+                                                th:value="${company.id}" 
+                                                th:text="${company.name}">
+                                            Company Name
+                                        </option>
+                                    </select>
+                                </div>
+                                
+                                <button type="submit" class="btn btn-primary">Create Farm</button>
+                                <a th:href="@{/admin/farms(companyId=${selectedCompany != null ? selectedCompany.id : ''})}" class="btn btn-secondary">Cancel</a>
+                            </form>
+                        </div>
+                    </div>
+
+                </div>
+                <!-- /.container-fluid -->
+
+            </div>
+            <!-- End of Main Content -->
+
+            <!-- Footer -->
+            <footer th:replace="fragments/footer :: footer"></footer>
+            <!-- End of Footer -->
+
+        </div>
+        <!-- End of Content Wrapper -->
+
+    </div>
+    <!-- End of Page Wrapper -->
+
+    <!-- Scroll to Top Button-->
+    <a class="scroll-to-top rounded" href="#page-top">
+        <i class="fas fa-angle-up"></i>
+    </a>
+
+    <!-- Logout Modal-->
+    <div th:replace="fragments/logout-modal :: logoutModal"></div>
+
+    <!-- Bootstrap core JavaScript-->
+    <div th:replace="fragments/scripts :: scripts"></div>
+
+</body>
+</html> 

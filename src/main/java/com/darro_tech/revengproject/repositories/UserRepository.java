@@ -1,17 +1,22 @@
 package com.darro_tech.revengproject.repositories;
 
-import com.darro_tech.revengproject.models.User;
-import org.springframework.data.repository.CrudRepository;
-
 import java.util.List;
+import java.util.Optional;
+
+import org.springframework.data.repository.CrudRepository;
+import org.springframework.stereotype.Repository;
+
+import com.darro_tech.revengproject.models.User;
 
 /**
- * Created by Chris Bay
+ * Repository for User entities
  */
+@Repository
 public interface UserRepository extends CrudRepository<User, String> {
+
     List<User> findAll();
+
     User findByUsername(String username);
-    //User findById(String id);
 
-
+    Optional<User> findById(String id);
 }

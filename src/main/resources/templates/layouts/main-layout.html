@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <th:block th:replace="~{fragments/head :: head}"></th:block>
+<th:block th:replace="~{fragments/sidebar :: company-selector-styles}"></th:block>
 
 <body id="page-top">
     <!-- Page Wrapper -->
@@ -43,5 +44,8 @@
 
     <!-- Logout Modal-->
     <th:block th:replace="~{fragments/logout-modal :: logout-modal}"></th:block>
+    
+    <!-- Company Selector Script -->
+    <th:block th:replace="~{fragments/sidebar :: company-selector-script}"></th:block>
 </body>
 </html> 
