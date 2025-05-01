@@ -1,92 +1,116 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" 
+      th:replace="~{layouts/main-layout :: html(content=~{::content})}">
 <head>
     <meta charset="UTF-8">
     <title>Edit Farm</title>
-    <style>
-        .company-selector-container {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 20px;
-        }
-        .company-logo {
-            height: 45px;
-            margin-right: 10px;
-        }
-        .form-container {
-            background-color: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-        }
-    </style>
 </head>
 <body>
-    <!-- Company Selector Header -->
-    <div class="company-selector-container">
-        <div class="d-flex align-items-center">
-            <img th:if="${selectedCompany != null && selectedCompany.logoUrl != null}" 
-                 th:src="${selectedCompany.logoUrl}" 
-                 class="company-logo" 
-                 alt="Company Logo">
-            <h1 class="h3 mb-0 text-gray-800">Edit Farm</h1>
-        </div>
-        <div>
-            <a th:href="@{/admin/farms}" class="btn btn-secondary">
-                <i class="fas fa-arrow-left"></i> Back to Farms
-            </a>
-        </div>
-    </div>
+    <div th:fragment="content">
+        <style>
+            .page-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 20px;
+            }
+            .page-header-left {
+                display: flex;
+                align-items: center;
+            }
+            .current-company-logo {
+                height: 35px;
+                margin-right: 15px;
+            }
+            .form-container {
+                background-color: white;
+                padding: 20px;
+                border-radius: 8px;
+                box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            }
+        </style>
 
-    <!-- Edit Farm Form -->
-    <div class="form-container">
-        <form th:if="${farm != null}" th:action="@{/admin/farms/edit/{id}(id=${farm.id})}" method="post" th:object="${farm}">
-            <input type="hidden" name="companyId" th:value="${selectedCompany != null ? selectedCompany.id : ''}">
-            
-            <div class="form-group">
-                <label for="name">Farm Name*</label>
-                <input type="text" class="form-control" id="name" name="name" required 
-                       th:field="*{name}" placeholder="Enter farm name">
+        <!-- Page Header -->
+        <div class="page-header">
+            <div class="page-header-left">
+                <img th:if="${selectedCompany != null && selectedCompany.logoUrl != null}" 
+                     th:src="${selectedCompany.logoUrl}" 
+                     th:alt="${selectedCompany.name}"
+                     class="current-company-logo" 
+                     id="currentCompanyLogo" />
+                <h1 class="h3 mb-0 text-gray-800">Edit Farm</h1>
             </div>
-            
-            <div class="form-group">
-                <label for="displayName">Display Name</label>
-                <input type="text" class="form-control" id="displayName" name="displayName"
-                       th:field="*{displayName}" placeholder="Enter display name">
+            <div>
+                <a th:href="@{/admin/farms}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Farms
+                </a>
             </div>
-            
-            <div class="form-group">
-                <label for="farmType">Farm Type</label>
-                <select class="form-control" id="farmType" name="farmType" th:field="*{farmType}">
-                    <option value="">Select farm type</option>
-                    <option value="Dairy">Dairy</option>
-                    <option value="Swine">Swine</option>
-                    <option value="Poultry">Poultry</option>
-                    <option value="Beef">Beef</option>
-                    <option value="Other">Other</option>
-                </select>
-            </div>
-            
-            <div class="form-group">
-                <label for="tempSourceId">Temp Source ID</label>
-                <input type="text" class="form-control" id="tempSourceId" name="tempSourceId"
-                       th:field="*{tempSourceId}" placeholder="Enter temp source ID">
-            </div>
-            
-            <div class="form-check mb-3">
-                <input type="checkbox" class="form-check-input" id="isTempSource" name="isTempSource" 
-                       th:field="*{isTempSource}">
-                <label class="form-check-label" for="isTempSource">Is Temp Source</label>
-            </div>
-            
-            <button type="submit" class="btn btn-primary">Update Farm</button>
-            <a th:href="@{/admin/farms}" class="btn btn-secondary">Cancel</a>
-        </form>
-        
-        <div th:unless="${farm != null}" class="alert alert-danger">
-            Farm not found. <a th:href="@{/admin/farms}">Return to farms list</a>
         </div>
+
+        <!-- Edit Farm Form -->
+        <div class="form-container">
+            <form th:if="${farm != null}" th:action="@{/admin/farms/edit/{id}(id=${farm.id})}" method="post" th:object="${farm}">
+                <input type="hidden" name="companyId" th:value="${selectedCompany != null ? selectedCompany.id : ''}">
+                
+                <div class="form-group">
+                    <label for="name">Farm Name*</label>
+                    <input type="text" class="form-control" id="name" name="name" required 
+                           th:field="*{name}" placeholder="Enter farm name">
+                </div>
+                
+                <div class="form-group">
+                    <label for="displayName">Display Name</label>
+                    <input type="text" class="form-control" id="displayName" name="displayName"
+                           th:field="*{displayName}" placeholder="Enter display name">
+                </div>
+                
+                <div class="form-group">
+                    <label for="farmType">Farm Type</label>
+                    <select class="form-control" id="farmType" name="farmType" th:field="*{farmType}">
+                        <option value="">Select farm type</option>
+                        <option value="Dairy">Dairy</option>
+                        <option value="Swine">Swine</option>
+                        <option value="Poultry">Poultry</option>
+                        <option value="Beef">Beef</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="tempSourceId">Temp Source ID</label>
+                    <input type="text" class="form-control" id="tempSourceId" name="tempSourceId"
+                           th:field="*{tempSourceId}" placeholder="Enter temp source ID">
+                </div>
+                
+                <div class="form-check mb-3">
+                    <input type="checkbox" class="form-check-input" id="isTempSource" name="isTempSource" 
+                           th:field="*{isTempSource}">
+                    <label class="form-check-label" for="isTempSource">Is Temp Source</label>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">Update Farm</button>
+                <a th:href="@{/admin/farms}" class="btn btn-secondary">Cancel</a>
+            </form>
+            
+            <div th:unless="${farm != null}" class="alert alert-danger">
+                Farm not found. <a th:href="@{/admin/farms}">Return to farms list</a>
+            </div>
+        </div>
+
+        <script>
+            // Log logo loading
+            document.addEventListener('DOMContentLoaded', function() {
+                const currentCompanyLogo = document.getElementById('currentCompanyLogo');
+                if (currentCompanyLogo) {
+                    currentCompanyLogo.onload = function() {
+                        console.log('Current company logo loaded successfully in Edit Farm page');
+                    };
+                    currentCompanyLogo.onerror = function() {
+                        console.error('Failed to load current company logo in Edit Farm page');
+                    };
+                }
+            });
+        </script>
     </div>
 </body>
 </html> 

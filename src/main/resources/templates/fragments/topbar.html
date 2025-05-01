@@ -30,6 +30,11 @@
             <i class="fa fa-bars"></i>
         </button>
 
+        <!-- Company Selector in Topbar -->
+        <div class="d-flex align-items-center mr-3">
+            <div th:replace="fragments/company-selector :: company-selector"></div>
+        </div>
+
         <!-- Topbar Search -->
         <form class="d-none d-sm-inline-block form-inline mr-auto ml-md-3 my-2 my-md-0 mw-100 navbar-search">
             <div class="input-group">
@@ -102,20 +107,16 @@
             <li class="nav-item dropdown no-arrow">
                 <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
                     data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                    <span th:if="${user != null}" th:text="${wholeName}" class="mr-2 d-none d-lg-inline text-gray-600 small">Username</span>
-                    <div class="initials-circle rounded-circle" th:if="${user != null}">
-                        <span th:text="${user.firstName != null and user.lastName != null} ? ${#strings.substring(user.firstName, 0, 1) + #strings.substring(user.lastName, 0, 1)} : 'UN'">UN</span>
+                    <span class="mr-2 d-none d-lg-inline text-gray-600 small" th:text="${wholeName}">Username</span>
+                    <div class="initials-circle rounded-circle">
+                        <span th:if="${user != null && user.firstName != null && user.lastName != null}" 
+                              th:text="${#strings.substring(user.firstName, 0, 1) + #strings.substring(user.lastName, 0, 1)}">UN</span>
+                        <span th:unless="${user != null && user.firstName != null && user.lastName != null}">UN</span>
                     </div>
                 </a>
                 <!-- Dropdown - User Information -->
                 <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in"
                     aria-labelledby="userDropdown">
-                    <!-- DEBUG INFO -->
-                    <div class="small text-muted px-3 py-2">
-                        isAdmin: <span th:text="${isAdmin}">true</span> (<span th:text="${isAdmin != null ? isAdmin.getClass().getName() : 'null'}">type</span>) | 
-                        isSuperAdmin: <span th:text="${isSuperAdmin}">true</span> (<span th:text="${isSuperAdmin != null ? isSuperAdmin.getClass().getName() : 'null'}">type</span>)
-                    </div>
-                    
                     <!-- Admin menu items -->
                     <a class="dropdown-item admin-only" th:href="@{/admin/users}">
                         <i class="fas fa-users fa-sm fa-fw mr-2 text-gray-400"></i>
@@ -180,11 +181,6 @@
                                     el.style.display = 'block';
                                 });
                             }
-                            
-                            // Update debug info
-                            document.querySelector('.small.text-muted.px-3.py-2').innerHTML = 
-                                'isAdmin: ' + data.isAdmin + ' (from API) | ' +
-                                'isSuperAdmin: ' + data.isSuperAdmin + ' (from API)';
                         } else {
                             console.log('Not logged in or error fetching roles');
                         }

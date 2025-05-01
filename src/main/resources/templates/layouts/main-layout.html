@@ -1,13 +1,28 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<th:block th:replace="~{fragments/head :: head}"></th:block>
-<th:block th:replace="~{fragments/sidebar :: company-selector-styles}"></th:block>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Application</title>
+    
+    <!-- jQuery first, then Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/sb-admin-2.min.css}">
+    <link rel="stylesheet" th:href="@{https://fonts.googleapis.com/css?family=Nunito:200,300,400,700,900}">
+    
+    <!-- Company Selector Styles -->
+    <link rel="stylesheet" th:href="@{/css/company-selector.css}">
+</head>
 
 <body id="page-top">
     <!-- Page Wrapper -->
     <div id="wrapper">
         <!-- Sidebar -->
-        <th:block th:replace="~{fragments/sidebar :: sidebar}"></th:block>
+        <div th:replace="fragments/sidebar :: sidebar"></div>
         <!-- End of Sidebar -->
 
         <!-- Content Wrapper -->
@@ -15,22 +30,22 @@
             <!-- Main Content -->
             <div id="content">
                 <!-- Topbar -->
-                <th:block th:replace="~{fragments/topbar :: topbar}"></th:block>
+                <div th:replace="fragments/topbar :: topbar"></div>
                 <!-- End of Topbar -->
 
                 <!-- Begin Page Content -->
                 <div class="container-fluid">
                     <!-- Main content will be inserted here -->
-                    <th:block th:replace="${content}">
+                    <div th:replace="${content}">
                         Content goes here
-                    </th:block>
+                    </div>
                 </div>
                 <!-- /.container-fluid -->
             </div>
             <!-- End of Main Content -->
 
             <!-- Footer -->
-            <th:block th:replace="~{fragments/footer :: footer}"></th:block>
+            <div th:replace="fragments/footer :: footer"></div>
             <!-- End of Footer -->
         </div>
         <!-- End of Content Wrapper -->
@@ -43,9 +58,33 @@
     </a>
 
     <!-- Logout Modal-->
-    <th:block th:replace="~{fragments/logout-modal :: logout-modal}"></th:block>
+    <div th:replace="fragments/logout-modal :: logout-modal"></div>
     
     <!-- Company Selector Script -->
-    <th:block th:replace="~{fragments/sidebar :: company-selector-script}"></th:block>
+    <div th:replace="fragments/company-selector :: company-selector-script"></div>
+    
+    <!-- Core custom scripts -->
+    <script>
+        // Initialize Bootstrap components when DOM is ready
+        $(document).ready(function() {
+            // Initialize tooltips
+            $('[data-toggle="tooltip"]').tooltip();
+            
+            // Initialize popovers
+            $('[data-toggle="popover"]').popover();
+            
+            // Initialize dropdowns
+            $('.dropdown-toggle').dropdown();
+            
+            // Toggle the side navigation
+            $("#sidebarToggle, #sidebarToggleTop").on('click', function(e) {
+                $("body").toggleClass("sidebar-toggled");
+                $(".sidebar").toggleClass("toggled");
+                if ($(".sidebar").hasClass("toggled")) {
+                    $('.sidebar .collapse').collapse('hide');
+                }
+            });
+        });
+    </script>
 </body>
 </html> 

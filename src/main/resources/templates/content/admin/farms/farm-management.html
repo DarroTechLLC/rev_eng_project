@@ -1,67 +1,18 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title>Farms Management</title>
-    <style>
-        .table-nav {
-            display: flex;
-            margin: 2px 0 16px 8px;
-        }
-        .table-nav > * {
-            margin-right: 8px;
-        }
-        .search-input {
-            border: solid 1px #445566;
-            border-radius: 4px;
-            padding: 4px;
-            flex: 1;
-        }
-        .create-button {
-            display: inline-table;
-            background-color: darkcyan;
-            color: white;
-            padding: 8px 17px;
-            border-radius: 6px;
-            text-decoration: none;
-        }
-        .create-button:hover {
-            background-color: #006666;
-            color: white;
-            text-decoration: none;
-        }
-        .company-selector-container {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 20px;
-        }
-        .company-logo {
-            height: 45px;
-            margin-right: 10px;
-        }
-        .return-dashboard {
-            margin-left: 15px;
-        }
-        .farm-link {
-            text-decoration: underline;
-            cursor: pointer;
-            color: #008b8b;
-        }
-    </style>
-</head>
 <body>
-    <!-- Company Selector Header -->
-    <div class="company-selector-container">
-        <div class="d-flex align-items-center">
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="page-header-left">
             <img th:if="${selectedCompany != null && selectedCompany.logoUrl != null}" 
                  th:src="${selectedCompany.logoUrl}" 
-                 class="company-logo" 
-                 alt="Company Logo">
-        <h1 class="h3 mb-0 text-gray-800">Farms Management</h1>
-    </div>
+                 th:alt="${selectedCompany.name}"
+                 class="current-company-logo" 
+                 id="currentCompanyLogo" />
+            <h1 class="h3 mb-0 text-gray-800">Farms Management</h1>
+        </div>
         <div>
-            <a th:href="@{/}" class="btn btn-secondary return-dashboard">
+            <a th:href="@{/}" class="btn btn-secondary">
                 <i class="fas fa-arrow-left"></i> Return to Dashboard
             </a>
         </div>
@@ -166,6 +117,54 @@
         An error occurred!
     </div>
 
+    <style>
+        .table-nav {
+            display: flex;
+            margin: 2px 0 16px 8px;
+        }
+        .table-nav > * {
+            margin-right: 8px;
+        }
+        .search-input {
+            border: solid 1px #445566;
+            border-radius: 4px;
+            padding: 4px;
+            flex: 1;
+        }
+        .create-button {
+            display: inline-table;
+            background-color: darkcyan;
+            color: white;
+            padding: 8px 17px;
+            border-radius: 6px;
+            text-decoration: none;
+        }
+        .create-button:hover {
+            background-color: #006666;
+            color: white;
+            text-decoration: none;
+        }
+        .page-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .page-header-left {
+            display: flex;
+            align-items: center;
+        }
+        .current-company-logo {
+            height: 35px;
+            margin-right: 15px;
+        }
+        .farm-link {
+            text-decoration: underline;
+            cursor: pointer;
+            color: #008b8b;
+        }
+    </style>
+
     <script>
         // Simple client-side search functionality
         document.addEventListener('DOMContentLoaded', function() {
@@ -192,6 +191,17 @@
                         row.style.display = found ? '' : 'none';
                     }
                 });
+            }
+            
+            // Log logo loading
+            const currentCompanyLogo = document.getElementById('currentCompanyLogo');
+            if (currentCompanyLogo) {
+                currentCompanyLogo.onload = function() {
+                    console.log('Current company logo loaded successfully in Farm Management page');
+                };
+                currentCompanyLogo.onerror = function() {
+                    console.error('Failed to load current company logo in Farm Management page');
+                };
             }
         });
     </script>

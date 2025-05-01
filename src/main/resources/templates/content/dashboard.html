@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+    <!-- Page Heading -->
+    <h1 class="h3 mb-4 text-gray-800">Dashboard</h1>
+    
+    <div class="alert alert-info" role="alert">
+        <p>Welcome to the role-based permission debugging page. This dashboard is currently under development.</p>
+        <hr>
+        <p class="mb-0">Debug Options:</p>
+        <a href="/debug/admin-test" class="btn btn-primary btn-sm mt-2">Check Admin Status</a>
+        <a href="/debug/force-admin" class="btn btn-warning btn-sm mt-2">Force Admin View</a>
+    </div>
+
+    <!-- Date Information -->
+    <div class="text-gray-600 small mt-3" th:if="${date != null}">
+        <span th:text="${date}">Today's Date</span>
+    </div>
+</body>
+</html> 
