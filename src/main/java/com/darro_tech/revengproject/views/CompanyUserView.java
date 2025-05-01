@@ -14,51 +14,51 @@ import jakarta.persistence.Id;
 public class CompanyUserView {
     @Id
     @Column(name = "user_id", nullable = false)
-    private Integer userId;
+    private String userId;
 
     @Column(name = "company_id", nullable = false)
-    private Integer companyId;
+    private String companyId;
 
     @Column(name = "username", nullable = false)
-    private Integer username;
+    private String username;
 
-    @Column(name = "firstName", nullable = false)
-    private Integer firstName;
+    @Column(name = "first_name", nullable = false)
+    private String firstName;
 
-    @Column(name = "lastName", nullable = false)
-    private Integer lastName;
+    @Column(name = "last_name", nullable = false)
+    private String lastName;
 
     @Column(name = "company_name", nullable = false)
-    private Integer companyName;
+    private String companyName;
 
     @Column(name = "display_name", nullable = false)
-    private Integer displayName;
+    private String displayName;
 
-    public Integer getUserId() {
+    public String getUserId() {
         return userId;
     }
 
-    public Integer getCompanyId() {
+    public String getCompanyId() {
         return companyId;
     }
 
-    public Integer getUsername() {
+    public String getUsername() {
         return username;
     }
 
-    public Integer getFirstName() {
+    public String getFirstName() {
         return firstName;
     }
 
-    public Integer getLastName() {
+    public String getLastName() {
         return lastName;
     }
 
-    public Integer getCompanyName() {
+    public String getCompanyName() {
         return companyName;
     }
 
-    public Integer getDisplayName() {
+    public String getDisplayName() {
         return displayName;
     }
 

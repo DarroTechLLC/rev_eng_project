@@ -14,37 +14,37 @@ import jakarta.persistence.Id;
 public class UserCompanyView {
     @Id
     @Column(name = "user_id", nullable = false)
-    private Integer userId;
+    private String userId;
 
     @Column(name = "company_id", nullable = false)
-    private Integer companyId;
+    private String companyId;
 
     @Column(name = "company_name", nullable = false)
-    private Integer companyName;
+    private String companyName;
 
     @Column(name = "display_name", nullable = false)
-    private Integer displayName;
+    private String displayName;
 
-    @Column(name = "logo_url", nullable = false)
-    private Integer logoUrl;
+    @Column(name = "logo_url")
+    private String logoUrl;
 
-    public Integer getUserId() {
+    public String getUserId() {
         return userId;
     }
 
-    public Integer getCompanyId() {
+    public String getCompanyId() {
         return companyId;
     }
 
-    public Integer getCompanyName() {
+    public String getCompanyName() {
         return companyName;
     }
 
-    public Integer getDisplayName() {
+    public String getDisplayName() {
         return displayName;
     }
 
-    public Integer getLogoUrl() {
+    public String getLogoUrl() {
         return logoUrl;
     }
 
