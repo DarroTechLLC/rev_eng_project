@@ -22,7 +22,7 @@ import com.darro_tech.revengproject.controllers.BaseController;
 import com.darro_tech.revengproject.models.Company;
 import com.darro_tech.revengproject.services.CompanyService;
 
-@Controller
+@Controller("adminCompanyController")
 @RequestMapping("/admin/companies")
 public class CompanyController extends BaseController {
 

@@ -4,9 +4,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.logging.Logger;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -15,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.darro_tech.revengproject.models.Company;
 import com.darro_tech.revengproject.models.User;
+import com.darro_tech.revengproject.models.dto.CompanyDTO;
 import com.darro_tech.revengproject.services.CompanyService;
 import com.darro_tech.revengproject.services.UserService;
 
@@ -23,6 +27,7 @@ import jakarta.servlet.http.HttpSession;
 @RestController
 @RequestMapping("/api/companies")
 public class CompanySelectorController {
+    private static final Logger logger = Logger.getLogger(CompanySelectorController.class.getName());
 
     @Autowired
     private CompanyService companyService;
@@ -34,22 +39,33 @@ public class CompanySelectorController {
      * Get all companies available for the current user
      */
     @GetMapping
-    public ResponseEntity<Map<String, Object>> getUserCompanies(HttpSession session) {
-        User user = (User) session.getAttribute("user");
-        if (user == null) {
-            return ResponseEntity.status(401).body(Map.of("error", "Not authenticated"));
+    public ResponseEntity<List<CompanyDTO>> getUserCompanies() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String userId = auth.getName();
+        boolean isSuperAdmin = auth.getAuthorities().stream()
+            .anyMatch(a -> a.getAuthority().equals("ROLE_SUPER_ADMIN"));
+
+        logger.info("Fetching companies for user: " + userId);
+        List<CompanyDTO> companies = companyService.getUserCompanies(userId, isSuperAdmin);
+        return ResponseEntity.ok(companies);
+    }
+
+    /**
+     * Check if user has access to a specific company
+     */
+    @GetMapping("/{companyId}/access")
+    public ResponseEntity<Boolean> checkCompanyAccess(@PathVariable String companyId) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String userId = auth.getName();
+        boolean isSuperAdmin = auth.getAuthorities().stream()
+            .anyMatch(a -> a.getAuthority().equals("ROLE_SUPER_ADMIN"));
+
+        if (isSuperAdmin) {
+            return ResponseEntity.ok(true);
         }
 
-        List<Company> userCompanies = userService.getUserCompanies(user.getId());
-
-        // Get the selected company from session
-        String selectedCompanyId = (String) session.getAttribute("selectedCompanyId");
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("companies", userCompanies);
-        response.put("selectedCompanyId", selectedCompanyId);
-
-        return ResponseEntity.ok(response);
+        boolean hasAccess = companyService.userHasCompanyAccess(userId, companyId);
+        return ResponseEntity.ok(hasAccess);
     }
 
     /**

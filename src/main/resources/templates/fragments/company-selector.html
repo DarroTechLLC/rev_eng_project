@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+    <div th:fragment="company-selector" class="company-selector">
+        <!-- Company Dropdown -->
+        <div class="dropdown">
+            <!-- Current Selection Display -->
+            <div id="currentCompanyDisplay" class="d-flex align-items-center">
+                <!-- Will be populated by JavaScript -->
+            </div>
+            
+            <!-- Dropdown Content -->
+            <div class="dropdown-content" id="companyList">
+                <div class="text-center p-2">Loading companies...</div>
+            </div>
+            
+            <!-- Dropdown Mask -->
+            <div class="dropdown-mask"></div>
+            
+            <!-- Toggle Button -->
+            <div class="toggle-wrapper">
+                <div class="toggle-button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <img src="/svg/down-arrow.svg" alt="Open"/>
+                </div>
+            </div>
+        </div>
+
+        <!-- Include CSS -->
+        <link rel="stylesheet" th:href="@{/css/company-selector.css}"/>
+        
+        <!-- Include JavaScript -->
+        <script th:replace="fragments/sidebar :: company-selector-script"></script>
+    </div>
+</body>
+</html> 

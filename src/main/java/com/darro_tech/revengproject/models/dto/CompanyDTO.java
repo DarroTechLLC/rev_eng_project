@@ -5,36 +5,33 @@ package com.darro_tech.revengproject.models.dto;
  */
 public class CompanyDTO {
 
-    private String id;
-    private String name;
+    private String companyId;
+    private String companyName;
     private String displayName;
     private String logoUrl;
 
-    public CompanyDTO() {
-    }
-
-    public CompanyDTO(String id, String name, String displayName, String logoUrl) {
-        this.id = id;
-        this.name = name;
+    public CompanyDTO(String companyId, String companyName, String displayName, String logoUrl) {
+        this.companyId = companyId;
+        this.companyName = companyName;
         this.displayName = displayName;
         this.logoUrl = logoUrl;
     }
 
     // Getters and setters
-    public String getId() {
-        return id;
+    public String getCompanyId() {
+        return companyId;
     }
 
-    public void setId(String id) {
-        this.id = id;
+    public void setCompanyId(String companyId) {
+        this.companyId = companyId;
     }
 
-    public String getName() {
-        return name;
+    public String getCompanyName() {
+        return companyName;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setCompanyName(String companyName) {
+        this.companyName = companyName;
     }
 
     public String getDisplayName() {
