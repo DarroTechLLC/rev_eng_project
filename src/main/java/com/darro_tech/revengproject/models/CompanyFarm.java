@@ -15,7 +15,7 @@ public class CompanyFarm {
     @JoinColumn(name = "company_id", nullable = false)
     private Company company;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(name = "farm_id", nullable = false)
     private Farm farm;
 

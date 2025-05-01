@@ -3,40 +3,141 @@
 <head>
     <meta charset="UTF-8">
     <title>Farms Management</title>
+    <style>
+        .table-nav {
+            display: flex;
+            margin: 2px 0 16px 8px;
+        }
+        .table-nav > * {
+            margin-right: 8px;
+        }
+        .search-input {
+            border: solid 1px #445566;
+            border-radius: 4px;
+            padding: 4px;
+            flex: 1;
+        }
+        .create-button {
+            display: inline-table;
+            background-color: darkcyan;
+            color: white;
+            padding: 8px 17px;
+            border-radius: 6px;
+            text-decoration: none;
+        }
+        .create-button:hover {
+            background-color: #006666;
+            color: white;
+            text-decoration: none;
+        }
+        .company-selector-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .company-logo {
+            height: 45px;
+            margin-right: 10px;
+        }
+        .return-dashboard {
+            margin-left: 15px;
+        }
+        .farm-link {
+            text-decoration: underline;
+            cursor: pointer;
+            color: #008b8b;
+        }
+    </style>
 </head>
 <body>
-    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <!-- Company Selector Header -->
+    <div class="company-selector-container">
+        <div class="d-flex align-items-center">
+            <img th:if="${selectedCompany != null && selectedCompany.logoUrl != null}" 
+                 th:src="${selectedCompany.logoUrl}" 
+                 class="company-logo" 
+                 alt="Company Logo">
         <h1 class="h3 mb-0 text-gray-800">Farms Management</h1>
     </div>
-
-    <div class="card shadow mb-4">
-        <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-primary">Farms List</h6>
+        <div>
+            <a th:href="@{/}" class="btn btn-secondary return-dashboard">
+                <i class="fas fa-arrow-left"></i> Return to Dashboard
+            </a>
         </div>
+    </div>
+
+    <!-- Table Navigation -->
+    <div class="table-nav">
+        <input type="text" id="farmSearchInput" class="search-input" placeholder="Search farms...">
+        <a th:if="${selectedCompany != null}" th:href="@{/admin/farms/create}" class="create-button">
+            Create Farm
+        </a>
+    </div>
+
+    <!-- Farms Table -->
+    <div class="card shadow mb-4" th:if="${selectedCompany != null}">
         <div class="card-body">
-            <div class="alert alert-info">
-                <p>This is a placeholder for the Farms Management page. In the full application, this would display a list of farms and provide options to create, edit, and delete farms.</p>
+            <div class="alert alert-info" th:if="${farms == null || farms.isEmpty()}">
+                <p>No farms found for this company. Click the "Create Farm" button above to add a new farm.</p>
             </div>
-            <div class="table-responsive">
-                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+            <div class="table-responsive" th:if="${farms != null && !farms.isEmpty()}">
+                <table class="table table-bordered" id="farmsTable" width="100%" cellspacing="0">
                     <thead>
                         <tr>
-                            <th>ID</th>
                             <th>Farm Name</th>
-                            <th>Company</th>
-                            <th>Location</th>
+                            <th>Display Name</th>
+                            <th>Farm Type</th>
+                            <th>Temp Source</th>
+                            <th>Is Source</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr>
-                            <td>1</td>
-                            <td>Example Farm</td>
-                            <td>Example Company</td>
-                            <td>Example Location</td>
+                        <tr th:each="farm : ${farms}">
                             <td>
-                                <button class="btn btn-primary btn-sm">Edit</button>
-                                <button class="btn btn-danger btn-sm">Delete</button>
+                                <a th:href="@{/admin/farms/edit/{id}(id=${farm.id})}" th:text="${farm.name}" class="farm-link">
+                                    Example Farm
+                                </a>
+                            </td>
+                            <td th:text="${farm.displayName}">Example Display Name</td>
+                            <td th:text="${farm.farmType != null ? farm.farmType : '(None Selected)'}">Standard</td>
+                            <td th:text="${farm.tempSourceId != null ? farm.tempSourceId : ''}">Source</td>
+                            <td th:text="${farm.isTempSource ? 'YES' : ''}">No</td>
+                            <td>
+                                <a th:href="@{/admin/farms/edit/{id}(id=${farm.id})}" class="btn btn-primary btn-sm">
+                                    <i class="fas fa-edit"></i> Edit
+                                </a>
+                                <button type="button" class="btn btn-danger btn-sm" 
+                                        data-toggle="modal" 
+                                        th:data-target="'#deleteFarmModal' + ${farm.id}">
+                                    <i class="fas fa-trash"></i> Delete
+                                </button>
+                                
+                                <!-- Delete Farm Modal -->
+                                <div class="modal fade" th:id="'deleteFarmModal' + ${farm.id}" tabindex="-1" role="dialog" aria-hidden="true">
+                                    <div class="modal-dialog" role="document">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title">Confirm Delete</h5>
+                                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                    <span aria-hidden="true">&times;</span>
+                                                </button>
+                                            </div>
+                                            <div class="modal-body">
+                                                Are you sure you want to delete the farm <strong th:text="${farm.name}"></strong>?
+                                                This action cannot be undone.
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                                                <form th:action="@{/admin/farms/delete/{id}(id=${farm.id})}" method="POST">
+                                                    <input type="hidden" name="companyId" th:value="${selectedCompany.id}">
+                                                    <button type="submit" class="btn btn-danger">Delete</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </td>
                         </tr>
                     </tbody>
@@ -44,5 +145,55 @@
             </div>
         </div>
     </div>
+
+    <!-- No Company Selected Message -->
+    <div class="card shadow mb-4" th:if="${selectedCompany == null}">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">No Company Selected</h6>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-info">
+                <p>Please select a company from the dropdown in the sidebar to view and manage farms.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success/Error Messages -->
+    <div class="alert alert-success" th:if="${message != null}" th:text="${message}">
+        Operation successful!
+    </div>
+    <div class="alert alert-danger" th:if="${error != null}" th:text="${error}">
+        An error occurred!
+    </div>
+
+    <script>
+        // Simple client-side search functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('farmSearchInput');
+            const table = document.getElementById('farmsTable');
+            
+            if (searchInput && table) {
+                searchInput.addEventListener('keyup', function() {
+                    const searchText = searchInput.value.toLowerCase();
+                    const rows = table.getElementsByTagName('tr');
+                    
+                    for (let i = 1; i < rows.length; i++) { // Skip header row
+                        const row = rows[i];
+                        const cells = row.getElementsByTagName('td');
+                        let found = false;
+                        
+                        for (let j = 0; j < 3; j++) { // Search in first 3 columns
+                            if (cells[j].textContent.toLowerCase().indexOf(searchText) > -1) {
+                                found = true;
+                                break;
+                            }
+                        }
+                        
+                        row.style.display = found ? '' : 'none';
+                    }
+                });
+            }
+        });
+    </script>
 </body>
 </html> 
