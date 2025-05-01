@@ -27,17 +27,17 @@ public class ForceAdminController extends BaseController {
             // Explicitly add these attributes before any other processing
             model.addAttribute("isAdmin", Boolean.TRUE);
             model.addAttribute("isSuperAdmin", Boolean.TRUE);
-            
+
             // Add additional debug info
             model.addAttribute("forceAdminApplied", "YES - Admin privileges have been force-applied");
-            
+
             // Basic attributes
             model.addAttribute("title", "Force Admin Test");
-            
-            // Return the custom debug page
-            return "admin/force-admin";
+
+            // Return the custom debug page using view method
+            return view("admin/force-admin", model);
         }
-        
+
         return "redirect:/login";
     }
-} 
+}

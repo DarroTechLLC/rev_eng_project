@@ -20,7 +20,8 @@ import com.darro_tech.revengproject.services.UserRoleService;
 import jakarta.servlet.http.HttpSession;
 
 @Controller
-public class HomeController {
+public class HomeController extends BaseController {
+
     @Autowired
     UserRepository userRepository;
 
@@ -39,7 +40,7 @@ public class HomeController {
         // Pass the entire user object to the view
         User user = authenticationController.getUserFromSession(session);
         model.addAttribute("user", user);
-        
+
         // Use BaseController's pattern for getting the whole name
         String wholeName = "User";
         if (user != null) {
@@ -47,7 +48,7 @@ public class HomeController {
                 String firstName = getFieldValueSafely(user, "firstName", "");
                 String lastName = getFieldValueSafely(user, "lastName", "");
                 String username = getFieldValueSafely(user, "username", "User");
-                
+
                 wholeName = (firstName + " " + lastName).trim();
                 if (wholeName.isEmpty()) {
                     wholeName = username;
@@ -60,9 +61,9 @@ public class HomeController {
         model.addAttribute("wholeName", wholeName);
 
         model.addAttribute("date", "Today is: " + dateFormat.format(today));
-        return "/pages/dashboard";  // This should match your HTML file name in templates directory
+        return view("dashboard", model);  // Use view method from BaseController
     }
-    
+
     private String getFieldValueSafely(Object obj, String fieldName, String defaultValue) {
         try {
             java.lang.reflect.Field field = obj.getClass().getDeclaredField(fieldName);
@@ -81,17 +82,17 @@ public class HomeController {
         if (user == null) {
             return "Not logged in";
         }
-        
+
         List<Role> roles = userRoleService.getUserRoles(user);
         boolean isAdmin = userRoleService.isAdmin(user);
         boolean isSuperAdmin = userRoleService.isSuperAdmin(user);
-        
+
         StringBuilder sb = new StringBuilder();
         sb.append("User: ").append(getFieldValueSafely(user, "username", "unknown")).append("\n");
         sb.append("Roles: ").append(roles.stream().map(Role::getName).collect(Collectors.joining(", "))).append("\n");
         sb.append("isAdmin: ").append(isAdmin).append("\n");
         sb.append("isSuperAdmin: ").append(isSuperAdmin).append("\n");
-        
+
         return sb.toString();
     }
 }

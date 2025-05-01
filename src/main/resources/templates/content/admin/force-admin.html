@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+    <h1>Force Admin Debug Page</h1>
+    
+    <div class="alert alert-info">
+        <strong>Force Admin Status:</strong> <span th:text="${forceAdminApplied}">Not applied</span>
+    </div>
+    
+    <div class="debug-section">
+        <h3>Model Attributes</h3>
+        <ul>
+            <li><strong>isAdmin:</strong> <span th:text="${isAdmin}">null</span></li>
+            <li><strong>isSuperAdmin:</strong> <span th:text="${isSuperAdmin}">null</span></li>
+            <li><strong>title:</strong> <span th:text="${title}">null</span></li>
+        </ul>
+    </div>
+    
+    <div class="debug-section">
+        <h3>Direct Test Links</h3>
+        <div class="list-group">
+            <a href="/admin/users" class="list-group-item list-group-item-action">Manage Users</a>
+            <a href="/admin/companies" class="list-group-item list-group-item-action">Companies</a>
+            <a href="/admin/farms" class="list-group-item list-group-item-action">Farms</a>
+            <a href="/admin/alerts" class="list-group-item list-group-item-action">Website Alerts</a>
+        </div>
+    </div>
+    
+    <div class="mt-4">
+        <a href="/" class="btn btn-primary">Back to Home</a>
+    </div>
+
+    <style>
+        .debug-section {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .alert {
+            margin-bottom: 10px;
+        }
+    </style>
+</body>
+</html> 
