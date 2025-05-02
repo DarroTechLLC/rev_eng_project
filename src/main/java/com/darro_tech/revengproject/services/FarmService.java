@@ -2,7 +2,9 @@ package com.darro_tech.revengproject.services;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.UUID;
@@ -199,5 +201,87 @@ public class FarmService {
     public List<CompanyFarm> getCompanyFarmsForFarm(String farmId) {
         System.out.println("FarmService: Getting company associations for farm: " + farmId);
         return companyFarmRepository.findByFarmId(farmId);
+    }
+
+    /**
+     * Search for farms by name for a specific company
+     *
+     * @param query Search term
+     * @param companyId Company ID
+     * @return List of farms that match the search criteria
+     */
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> searchFarmsByNameForCompany(String query, String companyId) {
+        System.out.println("FarmService: Searching farms for company ID: " + companyId + ", query: " + query);
+
+        List<Map<String, Object>> results = new ArrayList<>();
+
+        // Get farms for the company
+        List<Farm> companyFarms = getFarmsByCompanyId(companyId);
+
+        // If no query is provided, return all farms for the company
+        if (query == null || query.trim().isEmpty()) {
+            for (Farm farm : companyFarms) {
+                Map<String, Object> farmData = new HashMap<>();
+                farmData.put("id", farm.getId());
+                farmData.put("name", farm.getName());
+                farmData.put("displayName", farm.getDisplayName());
+                results.add(farmData);
+            }
+            return results;
+        }
+
+        // Filter farms by query
+        String lowerQuery = query.toLowerCase();
+        for (Farm farm : companyFarms) {
+            if (farm.getName().toLowerCase().contains(lowerQuery)
+                    || (farm.getDisplayName() != null && farm.getDisplayName().toLowerCase().contains(lowerQuery))) {
+
+                Map<String, Object> farmData = new HashMap<>();
+                farmData.put("id", farm.getId());
+                farmData.put("name", farm.getName());
+                farmData.put("displayName", farm.getDisplayName());
+                results.add(farmData);
+            }
+        }
+
+        return results;
+    }
+
+    /**
+     * Search for farms by name for a specific company
+     */
+    @Transactional(readOnly = true)
+    public List<Farm> searchFarmsByName(String query, String companyId) {
+        System.out.println("FarmService: Searching farms with query '" + query + "' for company: " + companyId);
+
+        // First get CompanyFarm links for this company
+        List<CompanyFarm> companyFarms = companyFarmRepository.findByCompanyId(companyId);
+
+        if (companyFarms.isEmpty()) {
+            System.out.println("FarmService: No farms found for company ID: " + companyId);
+            return new ArrayList<>();
+        }
+
+        // Then filter farms by name containing the query (case insensitive)
+        List<Farm> matchingFarms = new ArrayList<>();
+        String queryLower = query.toLowerCase();
+
+        for (CompanyFarm cf : companyFarms) {
+            Farm farm = cf.getFarm();
+            if (farm != null) {
+                if (farm.getName() != null && farm.getName().toLowerCase().contains(queryLower)) {
+                    matchingFarms.add(farm);
+                    continue;
+                }
+
+                if (farm.getDisplayName() != null && farm.getDisplayName().toLowerCase().contains(queryLower)) {
+                    matchingFarms.add(farm);
+                }
+            }
+        }
+
+        System.out.println("FarmService: Found " + matchingFarms.size() + " farms matching query");
+        return matchingFarms;
     }
 }

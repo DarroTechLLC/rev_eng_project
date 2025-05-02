@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+    <!-- Page Heading -->
+    <h1 class="h3 mb-4 text-gray-800">Select Company</h1>
+    
+    <!-- Error message if any -->
+    <div class="alert alert-danger" th:if="${error}" role="alert" th:text="${error}">
+        Error message
+    </div>
+    
+    <!-- Company Selection Form -->
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Available Companies</h6>
+                </div>
+                <div class="card-body">
+                    <p>Please select a company to view its dashboard:</p>
+                    
+                    <div class="row" th:if="${companies != null && !companies.isEmpty()}">
+                        <!-- Loop through companies and display them as cards -->
+                        <div class="col-md-6 mb-4" th:each="company : ${companies}">
+                            <div class="card company-card shadow-sm h-100">
+                                <div class="card-body">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <!-- Company Logo -->
+                                        <div class="company-logo mr-3">
+                                            <img th:if="${company.logoUrl}" th:src="${company.logoUrl}" alt="Company Logo" 
+                                                 class="img-thumbnail" style="max-height: 50px; max-width: 100px;">
+                                            <div th:unless="${company.logoUrl}" class="no-logo">
+                                                <i class="fas fa-building fa-2x text-gray-400"></i>
+                                            </div>
+                                        </div>
+                                        <!-- Company Name -->
+                                        <h5 class="card-title mb-0" th:text="${company.displayName ?: company.companyName}">
+                                            Company Name
+                                        </h5>
+                                    </div>
+                                    
+                                    <!-- Select Button -->
+                                    <form th:action="@{/select-company}" method="post">
+                                        <input type="hidden" name="companyId" th:value="${company.companyId}">
+                                        <button type="submit" class="btn btn-primary btn-sm">
+                                            <i class="fas fa-check-circle mr-1"></i> Select
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- No companies message -->
+                    <div class="alert alert-info" th:if="${companies == null || companies.isEmpty()}">
+                        No companies are available for your account. Please contact an administrator.
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Help Card -->
+        <div class="col-lg-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Information</h6>
+                </div>
+                <div class="card-body">
+                    <p>You need to select a company before you can access the dashboard.</p>
+                    <p>Your current company selection will be stored for future visits.</p>
+                    <p>You can change companies at any time using the company selector in the top navigation bar.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Custom styles for company cards -->
+    <style>
+        .company-card {
+            transition: all 0.3s ease;
+            border-radius: 8px;
+        }
+        .company-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+        }
+        .no-logo {
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #f8f9fc;
+            border-radius: 4px;
+        }
+    </style>
+</body>
+</html> 

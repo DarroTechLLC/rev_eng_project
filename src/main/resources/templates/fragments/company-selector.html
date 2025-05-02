@@ -2,21 +2,18 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <body>
     <!-- Company Selector Component -->
-    <div th:fragment="company-selector" class="company-selector">
+    <div th:fragment="company-selector" class="company-selector dropdown">
         <!-- Company Dropdown -->
-        <div class="dropdown">
+        <div id="companyDropdown" class="dropdown">
             <!-- Current Selection Display -->
-            <div id="currentCompanyDisplay" class="d-flex align-items-center">
+            <div id="currentCompanyDisplay" class="d-flex align-items-center dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                 <!-- Will be populated by JavaScript -->
             </div>
             
             <!-- Dropdown Content -->
-            <div class="dropdown-content" id="companyList">
+            <div class="dropdown-content dropdown-menu" id="companyList" aria-labelledby="companyDropdown">
                 <div class="text-center p-2">Loading companies...</div>
             </div>
-            
-            <!-- Dropdown Mask -->
-            <div class="dropdown-mask"></div>
             
             <!-- Toggle Button -->
             <div class="toggle-wrapper">
@@ -29,117 +26,316 @@
     
     <!-- Script Fragment -->
     <th:block th:fragment="company-selector-script">
+        <style>
+            /* Company Selector Styles */
+            .company-selector {
+                position: relative;
+                margin-right: 20px;
+            }
+            .dropdown {
+                position: relative;
+                display: inline-block;
+            }
+            .dropdown-content {
+                position: absolute;
+                background-color: #f9f9f9;
+                min-width: 200px;
+                box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+                z-index: 1000;
+                max-height: 300px;
+                overflow-y: auto;
+                border-radius: 4px;
+            }
+            .dropdown-item {
+                padding: 10px 15px;
+                text-decoration: none;
+                display: block;
+                color: #333;
+                cursor: pointer;
+                transition: background-color 0.2s;
+            }
+            .dropdown-item:hover {
+                background-color: #f1f1f1;
+            }
+            .dropdown-item.active {
+                background-color: #e9ecef;
+                font-weight: bold;
+            }
+            .toggle-button {
+                cursor: pointer;
+                padding: 5px;
+                background-color: #f8f9fa;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: background-color 0.2s;
+            }
+            .toggle-button:hover {
+                background-color: #e9ecef;
+            }
+            .toggle-button img {
+                width: 16px;
+                height: 16px;
+            }
+            .company-logo {
+                max-height: 30px;
+                max-width: 60px;
+                margin-right: 10px;
+            }
+            .company-name {
+                font-size: 14px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                max-width: 200px;
+            }
+            #currentCompanyDisplay {
+                padding: 5px 10px;
+                border-radius: 4px;
+                background-color: #f8f9fa;
+                border: 1px solid #ddd;
+                min-width: 150px;
+                cursor: pointer;
+            }
+            .toggle-wrapper {
+                display: flex;
+                align-items: center;
+                margin-left: 10px;
+            }
+            /* Refresh Button Styles */
+            .refresh-button {
+                cursor: pointer;
+                padding: 5px;
+                background-color: #f8f9fa;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: all 0.2s;
+                margin-left: 5px;
+                color: #6c757d;
+            }
+            .refresh-button:hover {
+                background-color: #e9ecef;
+                color: #0d6efd;
+                transform: rotate(180deg);
+            }
+            .refresh-button i {
+                font-size: 14px;
+            }
+        </style>
         <script>
             document.addEventListener('DOMContentLoaded', function() {
                 // Function to load companies
                 function loadCompanies() {
-                    fetch('/api/companies-all')
-                        .then(response => response.json())
+                    console.log('Loading companies...');
+                    
+                    // Show loading state
+                    const companyList = document.getElementById('companyList');
+                    const currentDisplay = document.getElementById('currentCompanyDisplay');
+                    
+                    companyList.innerHTML = '<div class="text-center p-2">Loading companies...</div>';
+                    if (currentDisplay.innerHTML.trim() === '') {
+                        currentDisplay.innerHTML = '<div class="d-flex align-items-center"><div class="spinner-border spinner-border-sm text-primary mr-2" role="status"></div><span>Loading...</span></div>';
+                    }
+                    
+                    fetch('/api/companies')
+                        .then(response => {
+                            console.log('Companies API response status:', response.status);
+                            if (!response.ok) {
+                                return response.json().then(data => {
+                                    console.error('API error response:', data);
+                                    throw new Error(data.message || `Error ${response.status}: Could not load companies`);
+                                });
+                            }
+                            return response.json();
+                        })
                         .then(data => {
-                            const companyList = document.getElementById('companyList');
-                            const currentDisplay = document.getElementById('currentCompanyDisplay');
+                            console.log('Companies loaded successfully:', data);
                             
                             // Clear loading messages
                             companyList.innerHTML = '';
                             currentDisplay.innerHTML = '';
                             
-                            if (data.companies && data.companies.length > 0) {
+                            if (data.success && data.companies && data.companies.length > 0) {
                                 // Find selected company
-                                const selectedCompany = data.companies.find(c => c.id === data.selectedCompanyId) || data.companies[0];
+                                const selectedCompany = data.companies.find(c => c.companyId === data.selectedCompanyId) || data.companies[0];
+                                console.log('Selected company:', selectedCompany);
                                 
                                 // Update current selection display
-                                if (selectedCompany.logoUrl) {
-                                    const logo = document.createElement('img');
-                                    logo.src = selectedCompany.logoUrl;
-                                    logo.alt = selectedCompany.name;
-                                    logo.className = 'company-logo';
-                                    currentDisplay.appendChild(logo);
-                                }
-                                
-                                const nameSpan = document.createElement('span');
-                                nameSpan.textContent = selectedCompany.name;
-                                nameSpan.className = 'company-name';
-                                currentDisplay.appendChild(nameSpan);
+                                displayCompanyLogo(currentDisplay, selectedCompany);
                                 
                                 // Create dropdown items
                                 data.companies.forEach(company => {
-                                    const item = document.createElement('a');
-                                    item.className = 'dropdown-item d-flex align-items-center';
-                                    item.href = '#';
+                                    const item = document.createElement('div');
+                                    item.className = 'dropdown-item logo-wrapper d-flex align-items-center';
                                     
                                     // Highlight selected company
-                                    if (data.selectedCompanyId === company.id) {
+                                    if (data.selectedCompanyId === company.companyId) {
                                         item.classList.add('active');
                                     }
                                     
                                     // Create logo/company name display
-                                    if (company.logoUrl) {
-                                        const logo = document.createElement('img');
-                                        logo.src = company.logoUrl;
-                                        logo.alt = company.name;
-                                        logo.className = 'company-logo';
-                                        item.appendChild(logo);
-                                    }
-                                    
-                                    const nameSpan = document.createElement('span');
-                                    nameSpan.textContent = company.name;
-                                    nameSpan.className = 'company-name';
-                                    item.appendChild(nameSpan);
+                                    displayCompanyLogo(item, company);
                                     
                                     // Add click handler
                                     item.addEventListener('click', function(e) {
                                         e.preventDefault();
-                                        selectCompany(company.id);
+                                        e.stopPropagation();
+                                        selectCompany(company.companyId, company.companyName);
                                     });
                                     
                                     companyList.appendChild(item);
                                 });
                             } else {
+                                console.warn('No companies found in API response:', data);
                                 companyList.innerHTML = '<div class="text-center p-2">No companies available</div>';
                                 currentDisplay.innerHTML = '<span class="company-name">No companies available</span>';
                             }
                         })
                         .catch(error => {
                             console.error('Error loading companies:', error);
-                            document.getElementById('companyList').innerHTML = '<div class="text-danger p-2">Failed to load companies</div>';
-                            document.getElementById('currentCompanyDisplay').innerHTML = '<span class="company-name text-danger">Error loading companies</span>';
+                            companyList.innerHTML = '<div class="text-danger p-2">Failed to load companies</div>';
+                            currentDisplay.innerHTML = '<span class="company-name text-danger">Error loading companies</span>';
+                            
+                            // Show detailed error message in console
+                            console.error('Failed to load companies: ' + error.message);
                         });
                 }
                 
+                // Helper function to display company logo or name
+                function displayCompanyLogo(container, company) {
+                    container.innerHTML = '';
+                    
+                    if (company.logoUrl) {
+                        const logo = document.createElement('img');
+                        logo.src = company.logoUrl;
+                        logo.alt = company.companyName;
+                        logo.className = 'company-logo';
+                        container.appendChild(logo);
+                    }
+                    
+                    const nameSpan = document.createElement('span');
+                    nameSpan.textContent = company.companyName;
+                    nameSpan.className = 'company-name';
+                    container.appendChild(nameSpan);
+                }
+                
+                // Function to format company name for URL
+                function formatCompanyKey(companyName) {
+                    return companyName.toLowerCase()
+                        .replace(/[^a-z0-9]+/g, '-')
+                        .replace(/^-|-$/g, '');
+                }
+                
+                // Function to build URL with company key
+                function buildUrlWithCompanyKey(companyId, companyName) {
+                    // Create a clean URL format using dashboard as the base path
+                    return `/dashboard/${formatCompanyKey(companyName)}?id=${companyId}`;
+                }
+                
                 // Function to select company
-                function selectCompany(companyId) {
-                    fetch('/api/set-company/' + companyId, {
+                function selectCompany(companyId, companyName) {
+                    // Close dropdown first
+                    document.querySelector('.dropdown-content').classList.remove('show');
+                    
+                    // Show loading state
+                    const currentDisplay = document.getElementById('currentCompanyDisplay');
+                    const originalContent = currentDisplay.innerHTML;
+                    currentDisplay.innerHTML = '<div class="d-flex align-items-center"><div class="spinner-border spinner-border-sm text-primary mr-2" role="status"></div><span>Switching...</span></div>';
+                    
+                    console.log('Selecting company:', companyId, companyName);
+                    
+                    // Get CSRF token from meta tag
+                    const csrfToken = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
+                    const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content');
+                    
+                    // Prepare headers
+                    const headers = {
+                        'Content-Type': 'application/json'
+                    };
+                    
+                    // Add CSRF token if available
+                    if (csrfToken && csrfHeader) {
+                        headers[csrfHeader] = csrfToken;
+                    }
+                    
+                    fetch('/api/companies-all/select/' + companyId, {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        }
+                        headers: headers,
+                        credentials: 'same-origin'
                     })
-                    .then(response => response.json())
+                    .then(response => {
+                        console.log('Company selection response status:', response.status);
+                        if (!response.ok) {
+                            return response.json().then(data => {
+                                console.error('API error response:', data);
+                                throw new Error(data.message || `Error ${response.status}: Failed to switch company`);
+                            });
+                        }
+                        return response.json();
+                    })
                     .then(data => {
+                        console.log('Company selection response:', data);
                         if (data.success) {
-                            window.location.reload();
+                            // Build URL with company key
+                            const newUrl = buildUrlWithCompanyKey(companyId, companyName);
+                            
+                            // Dispatch custom event for other components
+                            const companySelectedEvent = new CustomEvent('companySelected', {
+                                detail: {
+                                    companyId: companyId,
+                                    companyName: companyName,
+                                    logoUrl: data.logoUrl || ''
+                                },
+                                bubbles: true
+                            });
+                            document.dispatchEvent(companySelectedEvent);
+                            console.log('Dispatched companySelected event');
+                            
+                            // Debug the company selection
+                            console.log('Company selected successfully:', data);
+                            
+                            // Redirect to new URL
+                            window.location.href = newUrl;
                         } else {
-                            alert('Failed to switch company: ' + (data.message || 'Unknown error'));
+                            // Restore original display
+                            currentDisplay.innerHTML = originalContent;
+                            console.error('Failed to switch company:', data.message);
                         }
                     })
                     .catch(error => {
+                        // Restore original display
+                        currentDisplay.innerHTML = originalContent;
                         console.error('Error switching company:', error);
-                        alert('Failed to switch company due to a network error');
                     });
+                }
+                
+                // Add a refresh button to the company selector
+                function addRefreshButton() {
+                    const toggleWrapper = document.querySelector('.toggle-wrapper');
+                    if (!toggleWrapper) return;
+                    
+                    const refreshBtn = document.createElement('div');
+                    refreshBtn.className = 'refresh-button ml-2';
+                    refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i>';
+                    refreshBtn.title = 'Refresh companies';
+                    
+                    refreshBtn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        loadCompanies();
+                    });
+                    
+                    toggleWrapper.appendChild(refreshBtn);
                 }
                 
                 // Initialize company selector
                 loadCompanies();
                 
-                // Add click handler for dropdown toggle
-                document.querySelector('.toggle-button').addEventListener('click', function() {
-                    document.querySelector('.dropdown-content').classList.toggle('show');
-                });
-                
-                // Close dropdown when clicking outside
-                document.querySelector('.dropdown-mask').addEventListener('click', function() {
-                    document.querySelector('.dropdown-content').classList.remove('show');
-                });
+                // Add refresh button
+                addRefreshButton();
             });
         </script>
     </th:block>

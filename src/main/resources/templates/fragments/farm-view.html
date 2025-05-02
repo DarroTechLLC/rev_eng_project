@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+    <!-- Farm View Component -->
+    <div th:fragment="farm-view" class="farm-view">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-primary">Farm Management</h6>
+                <button id="refreshFarmsBtn" class="btn btn-sm btn-primary">
+                    <i class="fas fa-sync-alt mr-1"></i> Refresh
+                </button>
+            </div>
+            <div class="card-body">
+                <!-- Loading indicator -->
+                <div id="farmsLoading" class="text-center py-3">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="sr-only">Loading...</span>
+                    </div>
+                    <p class="mt-2">Loading farms...</p>
+                </div>
+                
+                <!-- Error message -->
+                <div id="farmsError" class="alert alert-danger d-none">
+                    Error loading farms. Please try again.
+                </div>
+                
+                <!-- No company selected message -->
+                <div id="noCompanySelected" class="alert alert-info d-none">
+                    Please select a company from the dropdown at the top of the page.
+                </div>
+                
+                <!-- Empty farms message -->
+                <div id="emptyFarms" class="alert alert-info d-none">
+                    No farms found for this company. 
+                </div>
+                
+                <!-- Farm table -->
+                <div id="farmsTableContainer" class="d-none">
+                    <div class="mb-3">
+                        <input type="text" id="farmSearchInput" class="form-control" placeholder="Search farms...">
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-bordered" id="farmsTable" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>Farm Name</th>
+                                    <th>Display Name</th>
+                                    <th>Farm Type</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="farmsTableBody">
+                                <!-- Farm rows will be dynamically added here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Farm View Script -->
+    <th:block th:fragment="farm-view-script">
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                // DOM elements
+                const farmsLoading = document.getElementById('farmsLoading');
+                const farmsError = document.getElementById('farmsError');
+                const noCompanySelected = document.getElementById('noCompanySelected');
+                const emptyFarms = document.getElementById('emptyFarms');
+                const farmsTableContainer = document.getElementById('farmsTableContainer');
+                const farmsTableBody = document.getElementById('farmsTableBody');
+                const refreshFarmsBtn = document.getElementById('refreshFarmsBtn');
+                const farmSearchInput = document.getElementById('farmSearchInput');
+                
+                // Current state
+                let selectedCompanyId = null;
+                let farms = [];
+                
+                // Function to load farms for the selected company
+                function loadFarms() {
+                    console.log('Loading farms for selected company...');
+                    
+                    // Show loading state
+                    farmsLoading.classList.remove('d-none');
+                    farmsError.classList.add('d-none');
+                    noCompanySelected.classList.add('d-none');
+                    emptyFarms.classList.add('d-none');
+                    farmsTableContainer.classList.add('d-none');
+                    
+                    // Fetch farms from API
+                    fetch('/api/farms')
+                        .then(response => {
+                            console.log('Farm API response status:', response.status);
+                            if (!response.ok) {
+                                return response.json().then(data => {
+                                    console.error('API error response:', data);
+                                    throw new Error(data.message || `Error ${response.status}: Could not load farms`);
+                                });
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            console.log('Farms loaded successfully:', data);
+                            
+                            // Hide loading indicator
+                            farmsLoading.classList.add('d-none');
+                            
+                            // Check for success
+                            if (data.success) {
+                                // Update state
+                                selectedCompanyId = data.companyId;
+                                farms = data.farms || [];
+                                
+                                // Check if there are farms
+                                if (farms.length > 0) {
+                                    // Show table and populate it
+                                    farmsTableContainer.classList.remove('d-none');
+                                    populateFarmsTable(farms);
+                                } else {
+                                    // Show empty message
+                                    emptyFarms.classList.remove('d-none');
+                                }
+                            } else {
+                                // Check if no company selected
+                                if (data.message === 'No company selected') {
+                                    noCompanySelected.classList.remove('d-none');
+                                } else {
+                                    // Show error message
+                                    farmsError.textContent = data.message || 'Error loading farms';
+                                    farmsError.classList.remove('d-none');
+                                }
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error loading farms:', error);
+                            
+                            // Hide loading indicator and show error
+                            farmsLoading.classList.add('d-none');
+                            farmsError.textContent = error.message || 'Error loading farms';
+                            farmsError.classList.remove('d-none');
+                        });
+                }
+                
+                // Function to populate the farms table
+                function populateFarmsTable(farmsData) {
+                    console.log('Populating farms table with', farmsData.length, 'farms');
+                    
+                    // Clear table body
+                    farmsTableBody.innerHTML = '';
+                    
+                    // Add rows for each farm
+                    farmsData.forEach(farm => {
+                        const row = document.createElement('tr');
+                        
+                        // Create name cell
+                        const nameCell = document.createElement('td');
+                        const nameLink = document.createElement('a');
+                        nameLink.href = `/admin/farms/edit/${farm.id}`;
+                        nameLink.textContent = farm.name || 'Unnamed Farm';
+                        nameLink.classList.add('farm-link');
+                        nameCell.appendChild(nameLink);
+                        
+                        // Create display name cell
+                        const displayNameCell = document.createElement('td');
+                        displayNameCell.textContent = farm.displayName || '';
+                        
+                        // Create farm type cell
+                        const typeCell = document.createElement('td');
+                        typeCell.textContent = farm.farmType || 'N/A';
+                        
+                        // Create actions cell
+                        const actionsCell = document.createElement('td');
+                        
+                        // Edit button
+                        const editButton = document.createElement('a');
+                        editButton.href = `/admin/farms/edit/${farm.id}`;
+                        editButton.className = 'btn btn-primary btn-sm mr-1';
+                        editButton.innerHTML = '<i class="fas fa-edit"></i> Edit';
+                        
+                        // View button
+                        const viewButton = document.createElement('a');
+                        viewButton.href = `/admin/farms/${farm.id}`;
+                        viewButton.className = 'btn btn-info btn-sm';
+                        viewButton.innerHTML = '<i class="fas fa-eye"></i> View';
+                        
+                        actionsCell.appendChild(editButton);
+                        actionsCell.appendChild(viewButton);
+                        
+                        // Add cells to row
+                        row.appendChild(nameCell);
+                        row.appendChild(displayNameCell);
+                        row.appendChild(typeCell);
+                        row.appendChild(actionsCell);
+                        
+                        // Add row to table
+                        farmsTableBody.appendChild(row);
+                    });
+                }
+                
+                // Function to filter farms by search query
+                function filterFarms(query) {
+                    console.log('Filtering farms with query:', query);
+                    
+                    if (!query || query.trim() === '') {
+                        // If empty query, show all farms
+                        populateFarmsTable(farms);
+                        return;
+                    }
+                    
+                    // Convert query to lowercase for case-insensitive search
+                    const lowercaseQuery = query.toLowerCase();
+                    
+                    // Filter farms by name or display name
+                    const filteredFarms = farms.filter(farm => 
+                        (farm.name && farm.name.toLowerCase().includes(lowercaseQuery)) ||
+                        (farm.displayName && farm.displayName.toLowerCase().includes(lowercaseQuery))
+                    );
+                    
+                    // Update table with filtered farms
+                    populateFarmsTable(filteredFarms);
+                }
+                
+                // Event listener for company selector
+                document.addEventListener('companySelected', function(event) {
+                    const companyId = event.detail.companyId;
+                    console.log('Company selected event received:', companyId);
+                    
+                    // Load farms for the newly selected company
+                    loadFarms();
+                });
+                
+                // Event listener for refresh button
+                if (refreshFarmsBtn) {
+                    refreshFarmsBtn.addEventListener('click', function() {
+                        console.log('Refreshing farms');
+                        loadFarms();
+                    });
+                }
+                
+                // Event listener for search input
+                if (farmSearchInput) {
+                    farmSearchInput.addEventListener('input', function() {
+                        filterFarms(this.value);
+                    });
+                }
+                
+                // Initial load of farms
+                loadFarms();
+            });
+        </script>
+    </th:block>
+</body>
+</html> 

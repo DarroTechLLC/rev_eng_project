@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Application</title>
     
+    <!-- CSRF token for Ajax requests -->
+    <meta name="_csrf" th:content="${_csrf != null ? _csrf.token : ''}" />
+    <meta name="_csrf_header" th:content="${_csrf != null ? _csrf.headerName : ''}" />
+    
     <!-- jQuery first, then Bootstrap JS -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -16,6 +20,42 @@
     
     <!-- Company Selector Styles -->
     <link rel="stylesheet" th:href="@{/css/company-selector.css}">
+    
+    <!-- Custom dropdown styles -->
+    <style>
+        /* Ensure dropdowns show properly */
+        .dropdown-menu.show {
+            display: block !important;
+        }
+        
+        /* Smooth transitions for dropdowns */
+        .dropdown-menu {
+            transition: opacity 0.2s, transform 0.2s;
+            opacity: 0;
+            transform: translateY(-10px);
+            display: none;
+        }
+        
+        .dropdown-menu.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        /* Better styling for user dropdown items */
+        .dropdown-item {
+            padding: 0.5rem 1.5rem;
+            transition: background-color 0.2s;
+        }
+        
+        .dropdown-item:hover {
+            background-color: #f8f9fa;
+        }
+        
+        /* Fix for admin-only items */
+        .admin-only, .super-admin-only {
+            display: none;
+        }
+    </style>
 </head>
 
 <body id="page-top">
@@ -64,27 +104,25 @@
     <div th:replace="fragments/company-selector :: company-selector-script"></div>
     
     <!-- Core custom scripts -->
+    <script th:src="@{/js/sb-admin-2.min.js}"></script>
+    
+    <!-- Dropdown functionality -->
+    <script th:src="@{/js/dropdowns.js}"></script>
+    
+    <!-- Custom JavaScript -->
     <script>
-        // Initialize Bootstrap components when DOM is ready
-        $(document).ready(function() {
-            // Initialize tooltips
-            $('[data-toggle="tooltip"]').tooltip();
-            
-            // Initialize popovers
-            $('[data-toggle="popover"]').popover();
-            
-            // Initialize dropdowns
-            $('.dropdown-toggle').dropdown();
-            
-            // Toggle the side navigation
-            $("#sidebarToggle, #sidebarToggleTop").on('click', function(e) {
-                $("body").toggleClass("sidebar-toggled");
-                $(".sidebar").toggleClass("toggled");
-                if ($(".sidebar").hasClass("toggled")) {
-                    $('.sidebar .collapse').collapse('hide');
-                }
-            });
+        console.log('🚀 Main layout loaded');
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('📄 DOM fully loaded and parsed');
         });
     </script>
+    
+    <!-- Debug information -->
+    <div class="d-none">
+        <div id="debug-info">
+            <p>Selected Company ID: <span th:text="${session.selectedCompanyId ?: 'None'}">None</span></p>
+            <p>User ID: <span th:text="${session.user ?: 'None'}">None</span></p>
+        </div>
+    </div>
 </body>
 </html> 

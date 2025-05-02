@@ -3,6 +3,7 @@ package com.darro_tech.revengproject.controllers;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,12 +16,16 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import com.darro_tech.revengproject.models.Role;
 import com.darro_tech.revengproject.models.User;
 import com.darro_tech.revengproject.repositories.UserRepository;
+import com.darro_tech.revengproject.services.CompanySelectionService;
+import com.darro_tech.revengproject.services.CompanyService;
 import com.darro_tech.revengproject.services.UserRoleService;
 
 import jakarta.servlet.http.HttpSession;
 
 @Controller
 public class HomeController extends BaseController {
+
+    private static final Logger logger = Logger.getLogger(HomeController.class.getName());
 
     @Autowired
     UserRepository userRepository;
@@ -31,14 +36,29 @@ public class HomeController extends BaseController {
     @Autowired
     private UserRoleService userRoleService;
 
+    @Autowired
+    private CompanySelectionService companySelectionService;
+
+    @Autowired
+    private CompanyService companyService;
+
     @GetMapping("/")  // Explicitly map to root path
     @Transactional
     public String index(Model model, HttpSession session) {
+        logger.info("🏠 Loading home page");
+
         Date today = new Date();
         SimpleDateFormat dateFormat = new SimpleDateFormat("E MM-dd-yyyy");
 
         // Pass the entire user object to the view
         User user = authenticationController.getUserFromSession(session);
+
+        if (user == null) {
+            logger.warning("🔒 No authenticated user, redirecting to login");
+            return "redirect:/login";
+        }
+
+        logger.info("👤 User: " + user.getUsername() + " accessing home page");
         model.addAttribute("user", user);
 
         // Use BaseController's pattern for getting the whole name
@@ -59,6 +79,29 @@ public class HomeController extends BaseController {
             }
         }
         model.addAttribute("wholeName", wholeName);
+
+        // Check if a company is selected, and try to auto-select one if not
+        String selectedCompanyId = (String) session.getAttribute("selectedCompanyId");
+        if (selectedCompanyId == null) {
+            logger.info("🔄 No company selected, attempting to auto-select one");
+            boolean companySelected = companySelectionService.selectDefaultCompanyForUser(user, session);
+            if (companySelected) {
+                selectedCompanyId = (String) session.getAttribute("selectedCompanyId");
+                logger.info("✅ Auto-selected company on homepage access");
+            } else {
+                logger.warning("⚠️ Could not auto-select a company");
+            }
+        }
+
+        // If we have a selected company, add its details to the model
+        if (selectedCompanyId != null) {
+            companyService.getCompanyById(selectedCompanyId).ifPresent(company -> {
+                model.addAttribute("currentCompanyId", company.getId());
+                model.addAttribute("companyName", company.getName());
+                model.addAttribute("companyLogoUrl", company.getLogoUrl());
+                logger.info("🏢 Loaded home page with company: " + company.getName());
+            });
+        }
 
         model.addAttribute("date", "Today is: " + dateFormat.format(today));
         return view("dashboard", model);  // Use view method from BaseController
