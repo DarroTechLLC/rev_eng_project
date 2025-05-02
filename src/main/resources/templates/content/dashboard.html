@@ -2,19 +2,217 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <body>
     <!-- Page Heading -->
-    <h1 class="h3 mb-4 text-gray-800">Dashboard</h1>
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800" th:text="${dashboardTitle ?: 'Dashboard'}">Dashboard</h1>
+        
+        <div class="d-flex">
+            <!-- Company Info -->
+            <div class="company-info d-flex align-items-center mr-3">
+                <img th:if="${companyLogoUrl}" th:src="${companyLogoUrl}" alt="Company Logo" 
+                     class="img-thumbnail mr-2" style="max-height: 40px; max-width: 80px;">
+                <span class="font-weight-bold text-primary" th:text="${companyName}">Company Name</span>
+            </div>
+            
+            <!-- Dashboard Actions -->
+            <div class="btn-group">
+                <a href="#" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm">
+                    <i class="fas fa-download fa-sm text-white-50"></i> Generate Report
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Debug Info Card -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Company Debug Information</h6>
+        </div>
+        <div class="card-body">
+            <p>Welcome to the company dashboard. This page will display information specific to the selected company.</p>
+            
+            <hr>
+            
+            <h5>Current Company Information:</h5>
+            <ul>
+                <li><strong>Company ID:</strong> <span th:text="${currentCompanyId ?: 'Not selected'}">CompanyID</span></li>
+                <li><strong>Company Name:</strong> <span th:text="${companyName ?: 'Unknown'}">Company Name</span></li>
+                <li><strong>Last Updated:</strong> <span th:text="${lastUpdated ?: 'Unknown'}">Timestamp</span></li>
+            </ul>
+            
+            <div class="alert alert-info mt-3">
+                <p class="mb-0">Debug Options:</p>
+                <div class="btn-group mt-2">
+                    <a href="/debug/admin-test" class="btn btn-primary btn-sm" target="_blank">Check Admin Status</a>
+                    <a href="/debug/force-admin" class="btn btn-warning btn-sm" target="_blank">Force Admin View</a>
+                    <a href="/api/companies/debug/session" class="btn btn-info btn-sm" target="_blank">Debug Session</a>
+                    <a href="/api/companies/debug/user-session" class="btn btn-info btn-sm" target="_blank">Debug User Session</a>
+                </div>
+            </div>
+            
+            <!-- Session Troubleshooter -->
+            <div class="card mt-3 border-warning">
+                <div class="card-header bg-warning text-white">
+                    <h6 class="m-0 font-weight-bold">Session Troubleshooter</h6>
+                </div>
+                <div class="card-body">
+                    <p>If you're experiencing issues with company selection, try these troubleshooting steps:</p>
+                    
+                    <form id="auth-test-form" class="mb-2">
+                        <div class="input-group mb-3">
+                            <input type="text" class="form-control" id="test-username" placeholder="Enter your username">
+                            <div class="input-group-append">
+                                <button class="btn btn-outline-warning" type="submit">Fix Session</button>
+                            </div>
+                        </div>
+                    </form>
+                    
+                    <div id="auth-test-results" class="mt-3 d-none">
+                        <h6>Test Results:</h6>
+                        <pre class="bg-light p-2 rounded" style="max-height: 200px; overflow: auto;"></pre>
+                    </div>
+                    
+                    <script>
+                        document.addEventListener('DOMContentLoaded', function() {
+                            const form = document.getElementById('auth-test-form');
+                            const results = document.getElementById('auth-test-results');
+                            const resultsPre = results.querySelector('pre');
+                            
+                            form.addEventListener('submit', function(e) {
+                                e.preventDefault();
+                                
+                                const username = document.getElementById('test-username').value;
+                                const formData = new FormData();
+                                formData.append('username', username);
+                                
+                                fetch('/api/companies/debug/test-auth', {
+                                    method: 'POST',
+                                    body: formData
+                                })
+                                .then(response => response.json())
+                                .then(data => {
+                                    results.classList.remove('d-none');
+                                    resultsPre.textContent = JSON.stringify(data, null, 2);
+                                    
+                                    if (data.sessionUpdated) {
+                                        // Refresh the page after a delay
+                                        setTimeout(() => {
+                                            window.location.reload();
+                                        }, 2000);
+                                    }
+                                })
+                                .catch(error => {
+                                    results.classList.remove('d-none');
+                                    resultsPre.textContent = 'Error: ' + error.message;
+                                });
+                            });
+                        });
+                    </script>
+                </div>
+            </div>
+        </div>
+    </div>
     
-    <div class="alert alert-info" role="alert">
-        <p>Welcome to the role-based permission debugging page. This dashboard is currently under development.</p>
-        <hr>
-        <p class="mb-0">Debug Options:</p>
-        <a href="/debug/admin-test" class="btn btn-primary btn-sm mt-2">Check Admin Status</a>
-        <a href="/debug/force-admin" class="btn btn-warning btn-sm mt-2">Force Admin View</a>
+    <!-- Content Row -->
+    <div class="row">
+        <!-- Company Stats Card -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Farms
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">5</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-tractor fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Company Stats Card -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Users
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">12</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-users fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Company Stats Card -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Tasks
+                            </div>
+                            <div class="row no-gutters align-items-center">
+                                <div class="col-auto">
+                                    <div class="h5 mb-0 mr-3 font-weight-bold text-gray-800">50%</div>
+                                </div>
+                                <div class="col">
+                                    <div class="progress progress-sm mr-2">
+                                        <div class="progress-bar bg-info" role="progressbar" style="width: 50%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Company Stats Card -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Alerts
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">18</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-bell fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Farm View Section -->
+    <div class="row">
+        <div class="col-12">
+            <div th:replace="fragments/farm-view :: farm-view"></div>
+        </div>
     </div>
 
     <!-- Date Information -->
     <div class="text-gray-600 small mt-3" th:if="${date != null}">
         <span th:text="${date}">Today's Date</span>
     </div>
+
+    <!-- Include the farm-view script -->
+    <th:block th:replace="fragments/farm-view :: farm-view-script"></th:block>
 </body>
 </html> 

@@ -84,6 +84,11 @@ public class FarmController extends BaseController {
         model.addAttribute("title", "Create Farm");
         model.addAttribute("farm", new Farm());
 
+        // Get all companies for the dropdown if needed
+        List<Company> companies = companyService.getAllCompanies();
+        companies.sort(Comparator.comparing(Company::getName));
+        model.addAttribute("companies", companies);
+
         // Get the selected company from session to display in the form
         String selectedCompanyId = (String) session.getAttribute("selectedCompanyId");
         if (selectedCompanyId != null) {

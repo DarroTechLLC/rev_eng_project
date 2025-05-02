@@ -101,6 +101,43 @@ public class CompanyService {
         return companyRepository.findById(companyId);
     }
 
+    /**
+     * Get company by URL-friendly key (slug)
+     * @param key The URL-friendly version of the company name
+     * @return Optional containing Company if found
+     */
+    public Optional<Company> getCompanyByKey(String key) {
+        logger.info("Looking up company by key: " + key);
+        
+        try {
+            // First try the direct repository method
+            Optional<Company> company = companyRepository.findByNameKey(key);
+            
+            if (company.isPresent()) {
+                return company;
+            }
+            
+            // As a fallback, try to normalize the key and compare with all companies
+            List<Company> allCompanies = companyRepository.findAll();
+            return allCompanies.stream()
+                .filter(c -> normalizeCompanyName(c.getName()).equals(key))
+                .findFirst();
+        } catch (Exception e) {
+            logger.severe("Error finding company by key: " + e.getMessage());
+            return Optional.empty();
+        }
+    }
+    
+    /**
+     * Helper method to normalize a company name into a URL-friendly slug
+     */
+    public String normalizeCompanyName(String name) {
+        if (name == null) return "";
+        return name.toLowerCase()
+            .replaceAll("[^a-z0-9]+", "-")
+            .replaceAll("^-|-$", "");
+    }
+
     @Transactional
     public Company createCompany(String name, String displayName) {
         Company company = new Company();

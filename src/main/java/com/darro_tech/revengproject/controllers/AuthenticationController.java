@@ -1,20 +1,11 @@
 package com.darro_tech.revengproject.controllers;
 
-import com.darro_tech.revengproject.models.User;
-import com.darro_tech.revengproject.models.Role;
-import com.darro_tech.revengproject.models.UserRole;
-import com.darro_tech.revengproject.models.UserContactInfo;
-import com.darro_tech.revengproject.models.UserContactType;
-import com.darro_tech.revengproject.models.dto.LoginFormDTO;
-import com.darro_tech.revengproject.models.dto.RegisterFormDTO;
-import com.darro_tech.revengproject.repositories.UserRepository;
-import com.darro_tech.revengproject.repositories.RoleRepository;
-import com.darro_tech.revengproject.repositories.UserRoleRepository;
-import com.darro_tech.revengproject.repositories.UserContactInfoRepository;
-import com.darro_tech.revengproject.repositories.UserContactTypeRepository;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
+import java.time.Instant;
+import java.util.Optional;
+import java.util.logging.Logger;
+
 import javax.validation.Valid;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -23,14 +14,30 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 
-import java.time.Instant;
-import java.util.Optional;
+import com.darro_tech.revengproject.models.Role;
+import com.darro_tech.revengproject.models.User;
+import com.darro_tech.revengproject.models.UserContactInfo;
+import com.darro_tech.revengproject.models.UserContactType;
+import com.darro_tech.revengproject.models.UserRole;
+import com.darro_tech.revengproject.models.dto.LoginFormDTO;
+import com.darro_tech.revengproject.models.dto.RegisterFormDTO;
+import com.darro_tech.revengproject.repositories.RoleRepository;
+import com.darro_tech.revengproject.repositories.UserContactInfoRepository;
+import com.darro_tech.revengproject.repositories.UserContactTypeRepository;
+import com.darro_tech.revengproject.repositories.UserRepository;
+import com.darro_tech.revengproject.repositories.UserRoleRepository;
+import com.darro_tech.revengproject.services.CompanySelectionService;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 
 /**
  * Created by Chris Bay
  */
 @Controller
 public class AuthenticationController {
+
+    private static final Logger logger = Logger.getLogger(AuthenticationController.class.getName());
 
     @Autowired
     private UserRepository userRepository;
@@ -46,6 +53,9 @@ public class AuthenticationController {
 
     @Autowired
     private UserContactTypeRepository userContactTypeRepository;
+
+    @Autowired
+    private CompanySelectionService companySelectionService;
 
     private static final String userSessionKey = "user";
 
@@ -77,8 +87,8 @@ public class AuthenticationController {
 
     @PostMapping("/register")
     public String processRegistrationForm(@ModelAttribute @Valid RegisterFormDTO registerFormDTO,
-                                        Errors errors, HttpServletRequest request,
-                                        Model model) {
+            Errors errors, HttpServletRequest request,
+            Model model) {
 
         if (errors.hasErrors()) {
             model.addAttribute("roles", roleRepository.findAll());
@@ -166,6 +176,9 @@ public class AuthenticationController {
 
         setUserInSession(request.getSession(), newUser);
 
+        // Auto-select the first company for the new user
+        companySelectionService.selectDefaultCompanyForUser(newUser, request.getSession());
+
         return "redirect:/admin/users";
     }
 
@@ -177,16 +190,18 @@ public class AuthenticationController {
 
     @PostMapping("/login")
     public String processLoginForm(@ModelAttribute @Valid LoginFormDTO loginFormDTO,
-                                   Errors errors, HttpServletRequest request,
-                                   Model model) {
+            Errors errors, HttpServletRequest request,
+            Model model) {
 
         if (errors.hasErrors()) {
+            logger.warning("❌ Login failed due to validation errors");
             return "auth/login";
         }
 
         User theUser = userRepository.findByUsername(loginFormDTO.getUsername());
 
         if (theUser == null) {
+            logger.warning("❌ Login failed: User not found - " + loginFormDTO.getUsername());
             errors.rejectValue("username", "user.invalid", "The given username does not exist");
             return "auth/login";
         }
@@ -194,17 +209,35 @@ public class AuthenticationController {
         String password = loginFormDTO.getPassword();
 
         if (!theUser.isMatchingPassword(password)) {
+            logger.warning("❌ Login failed: Invalid password for user - " + loginFormDTO.getUsername());
             errors.rejectValue("password", "password.invalid", "Invalid password");
             return "auth/login";
         }
 
-        setUserInSession(request.getSession(), theUser);
+        // User authenticated successfully
+        logger.info("✅ User login successful: " + theUser.getUsername());
+
+        // Store user info in session
+        HttpSession session = request.getSession();
+        setUserInSession(session, theUser);
+
+        // Automatically select the first alphabetical company for the user
+        boolean companySelected = companySelectionService.selectDefaultCompanyForUser(theUser, session);
+
+        if (!companySelected) {
+            logger.warning("⚠️ No company was automatically selected for user: " + theUser.getUsername());
+            // Even if no company was selected, we'll redirect to the dashboard
+            // The dashboard controller will handle the case where no company is selected
+        }
 
         return "redirect:/";
     }
 
     @GetMapping("/logout")
-    public String logout(HttpServletRequest request){
+    public String logout(HttpServletRequest request) {
+        logger.info("👋 User logged out: "
+                + (getUserFromSession(request.getSession()) != null
+                ? getUserFromSession(request.getSession()).getUsername() : "unknown"));
         request.getSession().invalidate();
         return "redirect:/login";
     }
