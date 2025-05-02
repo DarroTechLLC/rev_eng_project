@@ -14,13 +14,6 @@
             <div class="dropdown-content dropdown-menu" id="companyList" aria-labelledby="companyDropdown">
                 <div class="text-center p-2">Loading companies...</div>
             </div>
-            
-            <!-- Toggle Button -->
-            <div class="toggle-wrapper">
-                <div class="toggle-button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                    <img src="/svg/down-arrow.svg" alt="Open"/>
-                </div>
-            </div>
         </div>
     </div>
     
@@ -61,68 +54,30 @@
                 background-color: #e9ecef;
                 font-weight: bold;
             }
-            .toggle-button {
-                cursor: pointer;
-                padding: 5px;
-                background-color: #f8f9fa;
-                border-radius: 50%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                transition: background-color 0.2s;
-            }
-            .toggle-button:hover {
-                background-color: #e9ecef;
-            }
-            .toggle-button img {
-                width: 16px;
-                height: 16px;
-            }
-            .company-logo {
+            .company-only-logo {
                 max-height: 30px;
                 max-width: 60px;
-                margin-right: 10px;
-            }
-            .company-name {
-                font-size: 14px;
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                max-width: 200px;
             }
             #currentCompanyDisplay {
                 padding: 5px 10px;
                 border-radius: 4px;
                 background-color: #f8f9fa;
                 border: 1px solid #ddd;
-                min-width: 150px;
+                min-width: 60px;
                 cursor: pointer;
-            }
-            .toggle-wrapper {
                 display: flex;
-                align-items: center;
-                margin-left: 10px;
-            }
-            /* Refresh Button Styles */
-            .refresh-button {
-                cursor: pointer;
-                padding: 5px;
-                background-color: #f8f9fa;
-                border-radius: 50%;
-                display: flex;
-                align-items: center;
                 justify-content: center;
-                transition: all 0.2s;
-                margin-left: 5px;
-                color: #6c757d;
+                align-items: center;
             }
-            .refresh-button:hover {
-                background-color: #e9ecef;
-                color: #0d6efd;
-                transform: rotate(180deg);
-            }
-            .refresh-button i {
-                font-size: 14px;
+            #currentCompanyDisplay::after {
+                content: "";
+                display: inline-block;
+                margin-left: 8px;
+                vertical-align: middle;
+                border-top: 0.3em solid;
+                border-right: 0.3em solid transparent;
+                border-bottom: 0;
+                border-left: 0.3em solid transparent;
             }
         </style>
         <script>
@@ -137,7 +92,7 @@
                     
                     companyList.innerHTML = '<div class="text-center p-2">Loading companies...</div>';
                     if (currentDisplay.innerHTML.trim() === '') {
-                        currentDisplay.innerHTML = '<div class="d-flex align-items-center"><div class="spinner-border spinner-border-sm text-primary mr-2" role="status"></div><span>Loading...</span></div>';
+                        currentDisplay.innerHTML = '<div class="d-flex align-items-center"><div class="spinner-border spinner-border-sm text-primary mr-2" role="status"></div></div>';
                     }
                     
                     fetch('/api/companies')
@@ -163,21 +118,21 @@
                                 const selectedCompany = data.companies.find(c => c.companyId === data.selectedCompanyId) || data.companies[0];
                                 console.log('Selected company:', selectedCompany);
                                 
-                                // Update current selection display
-                                displayCompanyLogo(currentDisplay, selectedCompany);
+                                // Update current selection display - logo only
+                                displayCompanyLogo(currentDisplay, selectedCompany, true);
                                 
                                 // Create dropdown items
                                 data.companies.forEach(company => {
                                     const item = document.createElement('div');
-                                    item.className = 'dropdown-item logo-wrapper d-flex align-items-center';
+                                    item.className = 'dropdown-item logo-wrapper d-flex align-items-center justify-content-center';
                                     
                                     // Highlight selected company
                                     if (data.selectedCompanyId === company.companyId) {
                                         item.classList.add('active');
                                     }
                                     
-                                    // Create logo/company name display
-                                    displayCompanyLogo(item, company);
+                                    // Create logo display - logo only
+                                    displayCompanyLogo(item, company, true);
                                     
                                     // Add click handler
                                     item.addEventListener('click', function(e) {
@@ -205,34 +160,32 @@
                 }
                 
                 // Helper function to display company logo or name
-                function displayCompanyLogo(container, company) {
+                function displayCompanyLogo(container, company, logoOnly = false) {
                     container.innerHTML = '';
                     
                     if (company.logoUrl) {
                         const logo = document.createElement('img');
                         logo.src = company.logoUrl;
                         logo.alt = company.companyName;
-                        logo.className = 'company-logo';
+                        logo.className = logoOnly ? 'company-only-logo' : 'company-logo';
+                        logo.title = company.companyName;
                         container.appendChild(logo);
+                    } else {
+                        // If no logo, show a placeholder or initials
+                        const placeholder = document.createElement('div');
+                        placeholder.className = 'company-logo-placeholder';
+                        placeholder.textContent = company.displayName || company.companyName.charAt(0);
+                        placeholder.title = company.companyName;
+                        container.appendChild(placeholder);
                     }
                     
-                    const nameSpan = document.createElement('span');
-                    nameSpan.textContent = company.companyName;
-                    nameSpan.className = 'company-name';
-                    container.appendChild(nameSpan);
-                }
-                
-                // Function to format company name for URL
-                function formatCompanyKey(companyName) {
-                    return companyName.toLowerCase()
-                        .replace(/[^a-z0-9]+/g, '-')
-                        .replace(/^-|-$/g, '');
-                }
-                
-                // Function to build URL with company key
-                function buildUrlWithCompanyKey(companyId, companyName) {
-                    // Create a clean URL format using dashboard as the base path
-                    return `/dashboard/${formatCompanyKey(companyName)}?id=${companyId}`;
+                    // Only add the name if not in logoOnly mode
+                    if (!logoOnly) {
+                        const nameSpan = document.createElement('span');
+                        nameSpan.textContent = company.companyName;
+                        nameSpan.className = 'company-name';
+                        container.appendChild(nameSpan);
+                    }
                 }
                 
                 // Function to select company
@@ -243,7 +196,7 @@
                     // Show loading state
                     const currentDisplay = document.getElementById('currentCompanyDisplay');
                     const originalContent = currentDisplay.innerHTML;
-                    currentDisplay.innerHTML = '<div class="d-flex align-items-center"><div class="spinner-border spinner-border-sm text-primary mr-2" role="status"></div><span>Switching...</span></div>';
+                    currentDisplay.innerHTML = '<div class="d-flex align-items-center"><div class="spinner-border spinner-border-sm text-primary mr-2" role="status"></div></div>';
                     
                     console.log('Selecting company:', companyId, companyName);
                     
@@ -279,9 +232,6 @@
                     .then(data => {
                         console.log('Company selection response:', data);
                         if (data.success) {
-                            // Build URL with company key
-                            const newUrl = buildUrlWithCompanyKey(companyId, companyName);
-                            
                             // Dispatch custom event for other components
                             const companySelectedEvent = new CustomEvent('companySelected', {
                                 detail: {
@@ -294,11 +244,8 @@
                             document.dispatchEvent(companySelectedEvent);
                             console.log('Dispatched companySelected event');
                             
-                            // Debug the company selection
-                            console.log('Company selected successfully:', data);
-                            
-                            // Redirect to new URL
-                            window.location.href = newUrl;
+                            // Simple page refresh to update all content
+                            window.location.reload();
                         } else {
                             // Restore original display
                             currentDisplay.innerHTML = originalContent;
@@ -312,30 +259,8 @@
                     });
                 }
                 
-                // Add a refresh button to the company selector
-                function addRefreshButton() {
-                    const toggleWrapper = document.querySelector('.toggle-wrapper');
-                    if (!toggleWrapper) return;
-                    
-                    const refreshBtn = document.createElement('div');
-                    refreshBtn.className = 'refresh-button ml-2';
-                    refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i>';
-                    refreshBtn.title = 'Refresh companies';
-                    
-                    refreshBtn.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        loadCompanies();
-                    });
-                    
-                    toggleWrapper.appendChild(refreshBtn);
-                }
-                
                 // Initialize company selector
                 loadCompanies();
-                
-                // Add refresh button
-                addRefreshButton();
             });
         </script>
     </th:block>
