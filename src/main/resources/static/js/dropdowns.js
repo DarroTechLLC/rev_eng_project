@@ -132,18 +132,17 @@ function initUserDropdown() {
 function initCompanySelector() {
     console.log('🏢 Initializing company selector with Bootstrap compatibility');
     
-    const toggleButton = document.querySelector('.toggle-button');
     const dropdownContent = document.querySelector('.dropdown-content');
     const currentCompanyDisplay = document.getElementById('currentCompanyDisplay');
     
-    if (!toggleButton || !dropdownContent) {
+    if (!currentCompanyDisplay || !dropdownContent) {
         console.error('❌ Company selector elements not found');
         return;
     }
     
-    // Make the company selector toggle work like a Bootstrap dropdown
-    toggleButton.setAttribute('data-toggle', 'dropdown');
-    toggleButton.classList.add('dropdown-toggle');
+    // Make the company display toggle work like a Bootstrap dropdown
+    currentCompanyDisplay.setAttribute('data-toggle', 'dropdown');
+    // It should already have the dropdown-toggle class
     
     // Mark the parent for consistent styling
     const companySelector = document.querySelector('.company-selector');
@@ -173,8 +172,7 @@ function initCompanySelector() {
         console.log(`${dropdownContent.classList.contains('show') ? '🔓' : '🔒'} Company selector ${dropdownContent.classList.contains('show') ? 'opened' : 'closed'}`);
     };
     
-    // Both toggle button and company display should trigger the dropdown
-    toggleButton.addEventListener('click', toggleCompanyDropdown);
+    // Company display should trigger the dropdown
     if (currentCompanyDisplay) {
         currentCompanyDisplay.addEventListener('click', toggleCompanyDropdown);
     }
