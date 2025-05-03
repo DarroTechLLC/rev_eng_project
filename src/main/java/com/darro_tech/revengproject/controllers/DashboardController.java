@@ -2,6 +2,7 @@ package com.darro_tech.revengproject.controllers;
 
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Optional;
 
 import org.slf4j.Logger;
@@ -71,8 +72,7 @@ public class DashboardController extends BaseController {
     }
 
     /**
-     * Company-specific dashboard with path parameter New URL format:
-     * /dashboard/{companyId}/{dashboardType}
+     * Dashboard with specific type (daily-volume, weekly-report, etc.)
      */
     @GetMapping("/dashboard/{companyId}/{dashboardType}")
     public String companyDashboardPage(
@@ -88,12 +88,11 @@ public class DashboardController extends BaseController {
                 return "redirect:/login";
             }
 
-            logger.info("🏢 Loading company dashboard: {}/{}, User: {}", companyId, dashboardType, user.getUsername());
+            logger.info("🏢 Loading dashboard page: {}/{}, User: {}",
+                    companyId, dashboardType, user.getUsername());
 
             // Find company by ID
-            logger.debug("🔍 Searching for company by ID: {}", companyId);
             Optional<Company> companyOpt = companyService.getCompanyById(companyId);
-
             if (!companyOpt.isPresent()) {
                 logger.warn("❓ Company not found with ID: {}", companyId);
                 return "redirect:/dashboard";
@@ -111,16 +110,17 @@ public class DashboardController extends BaseController {
 
             // Update the selected company in session
             session.setAttribute("selectedCompanyId", company.getId());
-            logger.info("✅ Selected company: {} (ID: {})", company.getName(), company.getId());
+            logger.info("✅ Selected company for dashboard: {} (ID: {})", company.getName(), company.getId());
 
-            // Load company-specific data for the dashboard
-            loadDashboardData(model, company.getId(), user);
-
-            // Add the specific dashboard type to the model
+            // Add project type to model
             model.addAttribute("dashboardType", dashboardType);
 
-            // Return the appropriate view based on dashboard type
-            return view("dashboard/" + dashboardType, model);
+            // Load company-specific data
+            loadDashboardData(model, company.getId(), user);
+
+            // Redirect to SEO-friendly URL format
+            String companySlug = company.getName().toLowerCase().replace(" ", "-");
+            return "redirect:/" + companySlug + "/dashboard/" + dashboardType;
         } catch (Exception e) {
             logger.error("💥 Error in companyDashboardPage: {} - {}", e.getClass().getName(), e.getMessage(), e);
             return "redirect:/dashboard";
@@ -272,38 +272,77 @@ public class DashboardController extends BaseController {
     }
 
     /**
-     * Handle old style URL routing - redirect to the new URL format
+     * Primary SEO-friendly URL format for dashboard pages
      */
     @GetMapping("/{companyName}/dashboard/{dashboardType}")
-    public String legacyCompanyDashboardByName(
+    public String seoFriendlyDashboard(
             @PathVariable String companyName,
             @PathVariable String dashboardType,
             Model model,
             HttpSession session) {
 
         try {
+            User user = authenticationController.getUserFromSession(session);
+            if (user == null) {
+                logger.warn("🔒 No authenticated user found, redirecting to login");
+                return "redirect:/login";
+            }
+
             // Decode the company name to handle spaces and special characters
             String decodedCompanyName = URLDecoder.decode(companyName, StandardCharsets.UTF_8);
-            logger.info("🔄 Redirecting legacy URL format: /{}/dashboard/{}", decodedCompanyName, dashboardType);
+
+            logger.info("🏢 Loading SEO-friendly dashboard: {}/{}, User: {}",
+                    decodedCompanyName, dashboardType, user.getUsername());
 
             // Try to find company by name
             Optional<Company> companyOpt = companyService.getCompanyByName(decodedCompanyName);
 
             if (!companyOpt.isPresent()) {
                 // Fall back to key lookup
-                companyOpt = companyService.getCompanyByKey(decodedCompanyName);
+                companyOpt = companyService.getCompanyByKey(decodedCompanyName.replace("-", " "));
+                
+                if (!companyOpt.isPresent()) {
+                    // Last attempt - try with slug conversion
+                    List<Company> allCompanies = companyService.getAllCompanies();
+                    for (Company company : allCompanies) {
+                        String companySlug = company.getName().toLowerCase().replace(" ", "-");
+                        if (companySlug.equals(decodedCompanyName.toLowerCase())) {
+                            companyOpt = Optional.of(company);
+                            break;
+                        }
+                    }
+                    
+                    if (!companyOpt.isPresent()) {
+                        logger.warn("❓ Company not found with name: {}", decodedCompanyName);
+                        return "redirect:/dashboard";
+                    }
+                }
             }
 
-            if (companyOpt.isPresent()) {
-                Company company = companyOpt.get();
-                // Redirect to new URL format
-                return "redirect:/dashboard/" + company.getId() + "/" + dashboardType;
-            } else {
-                logger.warn("❓ Company not found with name: {}", decodedCompanyName);
+            Company company = companyOpt.get();
+            logger.debug("✅ Found company: {} (ID: {})", company.getName(), company.getId());
+
+            // Check if user has access to this company
+            boolean hasAccess = companyService.userHasCompanyAccess(user.getId(), company.getId());
+            if (!hasAccess) {
+                logger.warn("🚫 User does not have access to company: {}", company.getName());
                 return "redirect:/dashboard";
             }
+
+            // Update the selected company in session
+            session.setAttribute("selectedCompanyId", company.getId());
+            logger.info("✅ Selected company for dashboard: {} (ID: {})", company.getName(), company.getId());
+
+            // Add dashboard type to model
+            model.addAttribute("dashboardType", dashboardType);
+
+            // Load company-specific data
+            loadDashboardData(model, company.getId(), user);
+
+            // Return appropriate view based on dashboard type
+            return view("dashboard/" + dashboardType, model);
         } catch (Exception e) {
-            logger.error("💥 Error redirecting legacy URL: {} - {}", e.getClass().getName(), e.getMessage(), e);
+            logger.error("💥 Error in seoFriendlyDashboard: {} - {}", e.getClass().getName(), e.getMessage(), e);
             return "redirect:/dashboard";
         }
     }

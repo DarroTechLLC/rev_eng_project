@@ -18,40 +18,40 @@
     <!-- Divider -->
     <hr class="sidebar-divider my-0">
 
-    <!-- Dashboard Section -->
+    <!-- Dashboard Section with SEO-friendly URLs -->
     <li class="nav-item">
-        <a class="nav-link" th:href="@{/dashboard/{companyKey}/daily-volume(companyKey=${selectedCompany?.id})}">
+        <a class="nav-link" th:href="@{/{companyName}/dashboard/daily-volume(companyName=${selectedCompany?.name?.toLowerCase()?.replace(' ', '-')})}">
             <i class="fas fa-fw fa-tachometer-alt"></i>
             <span>Dashboard</span>
         </a>
         <!-- Dashboard Sub-items -->
         <div class="collapse show" id="dashboardSubmenu">
             <div class="bg-white py-2 collapse-inner rounded">
-                <a class="collapse-item" th:href="@{/dashboard/{companyKey}/daily-volume(companyKey=${selectedCompany?.id})}">
+                <a class="collapse-item" th:href="@{/{companyName}/dashboard/daily-volume(companyName=${selectedCompany?.name?.toLowerCase()?.replace(' ', '-')})}">
                     <i class="fas fa-fw fa-chart-bar"></i> Daily Volume
                 </a>
-                <a class="collapse-item" th:href="@{/dashboard/{companyKey}/mtd-volume(companyKey=${selectedCompany?.id})}">
+                <a class="collapse-item" th:href="@{/{companyName}/dashboard/mtd-volume(companyName=${selectedCompany?.name?.toLowerCase()?.replace(' ', '-')})}">
                     <i class="fas fa-fw fa-calendar-week"></i> MTD Volume
                 </a>
-                <a class="collapse-item" th:href="@{/dashboard/{companyKey}/ytd-volume(companyKey=${selectedCompany?.id})}">
+                <a class="collapse-item" th:href="@{/{companyName}/dashboard/ytd-volume(companyName=${selectedCompany?.name?.toLowerCase()?.replace(' ', '-')})}">
                     <i class="fas fa-fw fa-calendar"></i> YTD Volume
                 </a>
-                <a class="collapse-item" th:href="@{/dashboard/{companyKey}/production-headcount(companyKey=${selectedCompany?.id})}">
+                <a class="collapse-item" th:href="@{/{companyName}/dashboard/production-headcount(companyName=${selectedCompany?.name?.toLowerCase()?.replace(' ', '-')})}">
                     <i class="fas fa-fw fa-users"></i> Production Headcount
                 </a>
-                <a class="collapse-item" th:href="@{/dashboard/{companyKey}/animal-headcount(companyKey=${selectedCompany?.id})}">
+                <a class="collapse-item" th:href="@{/{companyName}/dashboard/animal-headcount(companyName=${selectedCompany?.name?.toLowerCase()?.replace(' ', '-')})}">
                     <i class="fas fa-fw fa-paw"></i> Animal Headcount
                 </a>
-                <a class="collapse-item" th:href="@{/dashboard/{companyKey}/weekly-report(companyKey=${selectedCompany?.id})}">
+                <a class="collapse-item" th:href="@{/{companyName}/dashboard/weekly-report(companyName=${selectedCompany?.name?.toLowerCase()?.replace(' ', '-')})}">
                     <i class="fas fa-fw fa-file-alt"></i> Weekly Report
                 </a>
-                <a class="collapse-item" th:href="@{/dashboard/{companyKey}/daily-report(companyKey=${selectedCompany?.id})}">
+                <a class="collapse-item" th:href="@{/{companyName}/dashboard/daily-report(companyName=${selectedCompany?.name?.toLowerCase()?.replace(' ', '-')})}">
                     <i class="fas fa-fw fa-file"></i> Daily Report
                 </a>
-                <a class="collapse-item" th:href="@{/dashboard/{companyKey}/production-detail(companyKey=${selectedCompany?.id})}">
+                <a class="collapse-item" th:href="@{/{companyName}/dashboard/production-detail(companyName=${selectedCompany?.name?.toLowerCase()?.replace(' ', '-')})}">
                     <i class="fas fa-fw fa-info-circle"></i> Production Detail
                 </a>
-                <a class="collapse-item" th:href="@{/dashboard/{companyKey}/market-data(companyKey=${selectedCompany?.id})}">
+                <a class="collapse-item" th:href="@{/{companyName}/dashboard/market-data(companyName=${selectedCompany?.name?.toLowerCase()?.replace(' ', '-')})}">
                     <i class="fas fa-fw fa-chart-line"></i> Market Data
                 </a>
             </div>
@@ -61,9 +61,9 @@
     <!-- Divider -->
     <hr class="sidebar-divider">
 
-    <!-- Projects Section -->
+    <!-- Projects Section with SEO-friendly URL -->
     <li class="nav-item">
-        <a class="nav-link" th:href="@{/projects/{companyKey}(companyKey=${selectedCompany?.id})}">
+        <a class="nav-link" th:href="@{/{companyName}/projects(companyName=${selectedCompany?.name?.toLowerCase()?.replace(' ', '-')})}">
             <i class="fas fa-fw fa-project-diagram"></i>
             <span>Projects</span>
         </a>
@@ -82,17 +82,17 @@
                     </select>
                 </div>
 
-                <!-- Project Links -->
-                <a class="collapse-item" th:href="@{/projects/{companyKey}/{farmKey}/production(companyKey=${selectedCompany?.id},farmKey=${selectedFarmKey})}">
+                <!-- Project Links with SEO-friendly URLs -->
+                <a class="collapse-item" th:href="@{/{companyName}/projects/{farmName}/production(companyName=${selectedCompany?.name?.toLowerCase()?.replace(' ', '-')},farmName=${selectedFarm?.name?.toLowerCase()?.replace(' ', '-')})}">
                     <i class="fas fa-fw fa-industry"></i> Production
                 </a>
-                <a class="collapse-item" th:href="@{/projects/{companyKey}/{farmKey}/livestock(companyKey=${selectedCompany?.id},farmKey=${selectedFarmKey})}">
+                <a class="collapse-item" th:href="@{/{companyName}/projects/{farmName}/livestock(companyName=${selectedCompany?.name?.toLowerCase()?.replace(' ', '-')},farmName=${selectedFarm?.name?.toLowerCase()?.replace(' ', '-')})}">
                     <i class="fas fa-fw fa-cow"></i> Livestock
                 </a>
-                <a class="collapse-item" th:href="@{/projects/{companyKey}/{farmKey}/digesters(companyKey=${selectedCompany?.id},farmKey=${selectedFarmKey})}">
+                <a class="collapse-item" th:href="@{/{companyName}/projects/{farmName}/digesters(companyName=${selectedCompany?.name?.toLowerCase()?.replace(' ', '-')},farmName=${selectedFarm?.name?.toLowerCase()?.replace(' ', '-')})}">
                     <i class="fas fa-fw fa-flask"></i> Digesters
                 </a>
-                <a class="collapse-item" th:href="@{/projects/{companyKey}/{farmKey}/metrics(companyKey=${selectedCompany?.id},farmKey=${selectedFarmKey})}">
+                <a class="collapse-item" th:href="@{/{companyName}/projects/{farmName}/metrics(companyName=${selectedCompany?.name?.toLowerCase()?.replace(' ', '-')},farmName=${selectedFarm?.name?.toLowerCase()?.replace(' ', '-')})}">
                     <i class="fas fa-fw fa-chart-pie"></i> Metrics
                 </a>
             </div>
@@ -108,20 +108,42 @@
     function updateProjectLinks(farmKey) {
         // Store selected farm key in localStorage
         localStorage.setItem('selectedFarmKey', farmKey);
-
-        // Redirect to the same page but with updated farm key
-        const currentUrl = window.location.href;
-        // Get the company ID from the URL
+        
+        // Get the farm name from the select element
+        const farmSelector = document.getElementById('farmSelector');
+        const selectedFarmName = farmSelector.options[farmSelector.selectedIndex].text.toLowerCase().replace(/\s+/g, '-');
+        
+        // Get company name and current page from URL
         const urlParts = window.location.pathname.split('/');
         const projectsIndex = urlParts.indexOf('projects');
-        const companyKey = projectsIndex > 0 && projectsIndex < urlParts.length - 1 ? 
-            urlParts[projectsIndex + 1] : '';
-
-        if (currentUrl.includes('/projects/')) {
-            // Only refresh if we're on a projects page
-            const baseUrl = `/projects/${companyKey}/${farmKey}/`;
-            const currentPage = urlParts[urlParts.length - 1] || 'production';
-            window.location.href = baseUrl + currentPage;
+        
+        if (window.location.pathname.includes('/projects/')) {
+            // We're on a projects page - get company name from URL or data attribute
+            let companyName = '';
+            
+            if (projectsIndex > 0) {
+                // Get company name from URL
+                companyName = urlParts[projectsIndex - 1]; 
+            } else {
+                // Fallback to data attribute on company selector
+                const companyDisplayEl = document.getElementById('currentCompanyDisplay');
+                companyName = companyDisplayEl.getAttribute('data-company-slug') || '';
+            }
+            
+            if (!companyName) {
+                console.error("Unable to determine company name for navigation");
+                return;
+            }
+            
+            // Get current project type (production, livestock, etc.)
+            const projectType = projectsIndex + 2 < urlParts.length ? urlParts[projectsIndex + 2] : 'production';
+            
+            // Build SEO-friendly URL
+            const newUrl = `/${companyName}/projects/${selectedFarmName}/${projectType}`;
+            console.log(`Navigating to: ${newUrl}`);
+            window.location.href = newUrl;
+        } else {
+            console.log("Not on a projects page, no navigation performed");
         }
     }
 
