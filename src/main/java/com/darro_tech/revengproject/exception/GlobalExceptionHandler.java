@@ -30,7 +30,40 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     private static final Logger logger = Logger.getLogger(GlobalExceptionHandler.class.getName());
 
     /**
-     * Handle HttpMessageNotReadableException properly by overriding the method from ResponseEntityExceptionHandler
+     * Handle general exceptions
+     */
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<Object> handleException(Exception ex) {
+        logger.severe("💥 Unhandled exception: " + ex.getMessage());
+        ex.printStackTrace();
+        
+        ApiError error = new ApiError(
+            HttpStatus.INTERNAL_SERVER_ERROR.value(),
+            "Internal Server Error",
+            "An unexpected error occurred"
+        );
+        error.addDetail(ex.getMessage());
+        
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+    }
+    
+    /**
+     * Handle CSRF token exceptions
+     */
+    @ExceptionHandler({InvalidCsrfTokenException.class, MissingCsrfTokenException.class})
+    public ResponseEntity<Object> handleCsrfException(Exception ex) {
+        logger.warning("🛡️ CSRF token error: " + ex.getMessage());
+        
+        Map<String, Object> errorResponse = new HashMap<>();
+        errorResponse.put("success", false);
+        errorResponse.put("message", "CSRF token validation failed");
+        errorResponse.put("error", "Invalid or missing CSRF token");
+        
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
+    }
+    
+    /**
+     * Handle invalid JSON in request body by properly overriding the method from ResponseEntityExceptionHandler
      */
     @Override
     protected ResponseEntity<Object> handleHttpMessageNotReadable(
@@ -39,45 +72,14 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             HttpStatusCode status, 
             WebRequest request) {
         
-        logger.warning("🔴 Error parsing JSON request: " + ex.getMessage());
+        logger.warning("⚠️ Invalid request format: " + ex.getMessage());
         
-        ApiError apiError = new ApiError(
-                HttpStatus.BAD_REQUEST.value(),
-                "Malformed JSON request",
-                ex.getMessage());
+        Map<String, Object> errorResponse = new HashMap<>();
+        errorResponse.put("success", false);
+        errorResponse.put("message", "Invalid request format");
+        errorResponse.put("error", "The request body contains invalid JSON or is missing required fields");
         
-        return new ResponseEntity<>(apiError, HttpStatus.BAD_REQUEST);
-    }
-
-    /**
-     * Handle CSRF token exceptions
-     */
-    @ExceptionHandler({InvalidCsrfTokenException.class, MissingCsrfTokenException.class})
-    public ResponseEntity<Object> handleCsrfExceptions(Exception ex) {
-        logger.warning("🔒 CSRF token error: " + ex.getMessage());
-        
-        ApiError apiError = new ApiError(
-                HttpStatus.FORBIDDEN.value(),
-                "CSRF Token Error",
-                "Invalid or missing CSRF token");
-        
-        return new ResponseEntity<>(apiError, HttpStatus.FORBIDDEN);
-    }
-
-    /**
-     * Handle all other exceptions
-     */
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<Object> handleAllExceptions(Exception ex, WebRequest request) {
-        logger.severe("🔴 Unhandled exception: " + ex.getMessage());
-        ex.printStackTrace();
-        
-        ApiError apiError = new ApiError(
-                HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                "Server Error",
-                "An unexpected error occurred");
-        
-        return new ResponseEntity<>(apiError, HttpStatus.INTERNAL_SERVER_ERROR);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
 }
 

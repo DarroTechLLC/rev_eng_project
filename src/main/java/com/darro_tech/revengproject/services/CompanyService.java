@@ -154,15 +154,55 @@ public class CompanyService {
     }
 
     /**
-     * Helper method to normalize a company name into a URL-friendly slug
+     * Find a company by its URL slug
+     *
+     * @param slug The URL-friendly slug for the company
+     * @return The company, or null if not found
+     */
+    public Company findCompanyBySlug(String slug) {
+        try {
+            logger.info("🔍 Looking up company by slug: {}", slug);
+
+            // First try direct name matching (with URL decoding)
+            Optional<Company> companyByName = getCompanyByName(slug);
+            if (companyByName.isPresent()) {
+                logger.info("✅ Found company by exact name: {}", slug);
+                return companyByName.get();
+            }
+
+            // Then try key lookup
+            Optional<Company> companyByKey = getCompanyByKey(slug);
+            if (companyByKey.isPresent()) {
+                logger.info("✅ Found company by key: {}", slug);
+                return companyByKey.get();
+            }
+
+            // Then try with slug conversion
+            List<Company> allCompanies = getAllCompanies();
+            for (Company company : allCompanies) {
+                String companySlug = normalizeCompanyName(company.getName());
+                if (companySlug.equalsIgnoreCase(slug)) {
+                    logger.info("✅ Found company by normalized slug: {}", slug);
+                    return company;
+                }
+            }
+
+            logger.info("❌ No company found with slug: {}", slug);
+            return null;
+        } catch (Exception e) {
+            logger.error("💥 Error finding company by slug: {}", e.getMessage(), e);
+            return null;
+        }
+    }
+
+    /**
+     * Normalize a company name for URL usage
      */
     public String normalizeCompanyName(String name) {
         if (name == null) {
             return "";
         }
-        return name.toLowerCase()
-                .replaceAll("[^a-z0-9]+", "-")
-                .replaceAll("^-|-$", "");
+        return name.toLowerCase().replace(" ", "-");
     }
 
     @Transactional
