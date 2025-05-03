@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" 
+      th:replace="~{layouts/main :: layout(~{::title}, ~{::section})}">
+<head>
+    <title>Projects Overview</title>
+</head>
+<body>
+    <section>
+        <div class="container-fluid">
+            <h1 class="h3 mb-4 text-gray-800">Projects Overview</h1>
+            <div class="row">
+                <div class="col-12">
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                            <h6 class="m-0 font-weight-bold text-primary">Projects</h6>
+                        </div>
+                        <div class="card-body">
+                            <p>Projects overview content will be implemented here.</p>
+                            
+                            <!-- Project Links -->
+                            <div class="list-group mt-4">
+                                <a th:href="@{/{companyKey}/projects/{farmKey}/production(companyKey=${selectedCompany?.name},farmKey=${selectedFarmKey})}" 
+                                   class="list-group-item list-group-item-action">
+                                    <i class="fas fa-fw fa-industry"></i> Production
+                                </a>
+                                <a th:href="@{/{companyKey}/projects/{farmKey}/livestock(companyKey=${selectedCompany?.name},farmKey=${selectedFarmKey})}" 
+                                   class="list-group-item list-group-item-action">
+                                    <i class="fas fa-fw fa-cow"></i> Livestock
+                                </a>
+                                <a th:href="@{/{companyKey}/projects/{farmKey}/digesters(companyKey=${selectedCompany?.name},farmKey=${selectedFarmKey})}" 
+                                   class="list-group-item list-group-item-action">
+                                    <i class="fas fa-fw fa-flask"></i> Digesters
+                                </a>
+                                <a th:href="@{/{companyKey}/projects/{farmKey}/metrics(companyKey=${selectedCompany?.name},farmKey=${selectedFarmKey})}" 
+                                   class="list-group-item list-group-item-action">
+                                    <i class="fas fa-fw fa-chart-pie"></i> Metrics
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</body>
+</html> 

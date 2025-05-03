@@ -1,14 +1,16 @@
 package com.darro_tech.revengproject.controllers;
 
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Optional;
-import java.util.logging.Logger;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.darro_tech.revengproject.models.Company;
@@ -19,10 +21,9 @@ import com.darro_tech.revengproject.services.CompanyService;
 import jakarta.servlet.http.HttpSession;
 
 @Controller
-@RequestMapping("/dashboard")
 public class DashboardController extends BaseController {
 
-    private static final Logger logger = Logger.getLogger(DashboardController.class.getName());
+    private static final Logger logger = LoggerFactory.getLogger(DashboardController.class);
 
     @Autowired
     private CompanyService companyService;
@@ -36,20 +37,20 @@ public class DashboardController extends BaseController {
     /**
      * Default dashboard route
      */
-    @GetMapping
+    @GetMapping("/dashboard")
     public String dashboard(Model model, HttpSession session) {
         User user = authenticationController.getUserFromSession(session);
         if (user == null) {
-            logger.warning("🔒 No authenticated user found, redirecting to login");
+            logger.warn("🔒 No authenticated user found, redirecting to login");
             return "redirect:/login";
         }
 
-        logger.info("📊 Loading dashboard for user: " + user.getUsername());
+        logger.info("📊 Loading dashboard for user: {}", user.getUsername());
 
         // Get selected company from session
         String selectedCompanyId = (String) session.getAttribute("selectedCompanyId");
         if (selectedCompanyId == null) {
-            logger.warning("⚠️ No company selected for user: " + user.getUsername());
+            logger.warn("⚠️ No company selected for user: {}", user.getUsername());
 
             // Try to auto-select a company for the user
             boolean companySelected = companySelectionService.selectDefaultCompanyForUser(user, session);
@@ -58,7 +59,7 @@ public class DashboardController extends BaseController {
                 selectedCompanyId = (String) session.getAttribute("selectedCompanyId");
                 logger.info("🔄 Auto-selected company for user during dashboard access");
             } else {
-                logger.warning("❌ Failed to auto-select company, redirecting to company selection");
+                logger.warn("❌ Failed to auto-select company, redirecting to company selection");
                 return "redirect:/select-company";
             }
         }
@@ -70,80 +71,285 @@ public class DashboardController extends BaseController {
     }
 
     /**
-     * Company-specific dashboard with path parameter
+     * Company-specific dashboard with path parameter New URL format:
+     * /dashboard/{companyId}/{dashboardType}
      */
-    @GetMapping("/{companyKey}")
-    public String companyDashboard(
+    @GetMapping("/dashboard/{companyId}/{dashboardType}")
+    public String companyDashboardPage(
+            @PathVariable String companyId,
+            @PathVariable String dashboardType,
+            Model model,
+            HttpSession session) {
+
+        try {
+            User user = authenticationController.getUserFromSession(session);
+            if (user == null) {
+                logger.warn("🔒 No authenticated user found, redirecting to login");
+                return "redirect:/login";
+            }
+
+            logger.info("🏢 Loading company dashboard: {}/{}, User: {}", companyId, dashboardType, user.getUsername());
+
+            // Find company by ID
+            logger.debug("🔍 Searching for company by ID: {}", companyId);
+            Optional<Company> companyOpt = companyService.getCompanyById(companyId);
+
+            if (!companyOpt.isPresent()) {
+                logger.warn("❓ Company not found with ID: {}", companyId);
+                return "redirect:/dashboard";
+            }
+
+            Company company = companyOpt.get();
+            logger.debug("✅ Found company: {} (ID: {})", company.getName(), company.getId());
+
+            // Check if user has access to this company
+            boolean hasAccess = companyService.userHasCompanyAccess(user.getId(), company.getId());
+            if (!hasAccess) {
+                logger.warn("🚫 User does not have access to company: {}", company.getName());
+                return "redirect:/dashboard";
+            }
+
+            // Update the selected company in session
+            session.setAttribute("selectedCompanyId", company.getId());
+            logger.info("✅ Selected company: {} (ID: {})", company.getName(), company.getId());
+
+            // Load company-specific data for the dashboard
+            loadDashboardData(model, company.getId(), user);
+
+            // Add the specific dashboard type to the model
+            model.addAttribute("dashboardType", dashboardType);
+
+            // Return the appropriate view based on dashboard type
+            return view("dashboard/" + dashboardType, model);
+        } catch (Exception e) {
+            logger.error("💥 Error in companyDashboardPage: {} - {}", e.getClass().getName(), e.getMessage(), e);
+            return "redirect:/dashboard";
+        }
+    }
+
+    /**
+     * Company-specific dashboard root page
+     */
+    @GetMapping("/dashboard/{companyId}")
+    public String companyDashboardRoot(
+            @PathVariable String companyId,
+            Model model,
+            HttpSession session) {
+
+        try {
+            logger.info("🔄 Redirecting company dashboard to daily-volume: {}", companyId);
+
+            // Default to daily-volume when no specific dashboard type is specified
+            return "redirect:/dashboard/" + companyId + "/daily-volume";
+        } catch (Exception e) {
+            logger.error("💥 Error in companyDashboardRoot: {} - {}", e.getClass().getName(), e.getMessage(), e);
+            return "redirect:/dashboard";
+        }
+    }
+
+    /**
+     * Company-specific projects page
+     */
+    @GetMapping("/projects/{companyId}")
+    public String companyProjects(
+            @PathVariable String companyId,
+            Model model,
+            HttpSession session) {
+
+        try {
+            User user = authenticationController.getUserFromSession(session);
+            if (user == null) {
+                logger.warn("🔒 No authenticated user found, redirecting to login");
+                return "redirect:/login";
+            }
+
+            logger.info("🏢 Loading company projects page: {}, User: {}", companyId, user.getUsername());
+
+            // Find company by ID
+            logger.debug("🔍 Searching for company by ID: {}", companyId);
+            Optional<Company> companyOpt = companyService.getCompanyById(companyId);
+
+            if (!companyOpt.isPresent()) {
+                logger.warn("❓ Company not found with ID: {}", companyId);
+                return "redirect:/dashboard";
+            }
+
+            Company company = companyOpt.get();
+            logger.debug("✅ Found company: {} (ID: {})", company.getName(), company.getId());
+
+            // Check if user has access to this company
+            boolean hasAccess = companyService.userHasCompanyAccess(user.getId(), company.getId());
+            if (!hasAccess) {
+                logger.warn("🚫 User does not have access to company: {}", company.getName());
+                return "redirect:/dashboard";
+            }
+
+            // Update the selected company in session
+            session.setAttribute("selectedCompanyId", company.getId());
+            logger.info("✅ Selected company for projects: {} (ID: {})", company.getName(), company.getId());
+
+            // Load company-specific data
+            loadDashboardData(model, company.getId(), user);
+
+            // Return the projects view
+            return view("projects/index", model);
+        } catch (Exception e) {
+            logger.error("💥 Error in companyProjects: {} - {}", e.getClass().getName(), e.getMessage(), e);
+            return "redirect:/dashboard";
+        }
+    }
+
+    /**
+     * Legacy company-specific dashboard with path parameter Kept for backwards
+     * compatibility
+     */
+    @GetMapping("/dashboard/{companyKey}")
+    public String legacyCompanyDashboard(
             @PathVariable String companyKey,
             @RequestParam(required = false) String id,
             Model model,
             HttpSession session) {
 
-        User user = authenticationController.getUserFromSession(session);
-        if (user == null) {
-            logger.warning("🔒 No authenticated user found, redirecting to login");
-            return "redirect:/login";
-        }
+        try {
+            User user = authenticationController.getUserFromSession(session);
+            if (user == null) {
+                logger.warn("🔒 No authenticated user found, redirecting to login");
+                return "redirect:/login";
+            }
 
-        logger.info("🏢 Loading company-specific dashboard. Company key: " + companyKey + ", User: " + user.getUsername());
+            logger.info("🏢 Loading legacy company dashboard. Company: {}, User: {}", companyKey, user.getUsername());
 
-        // If company ID is provided as query parameter, try to select it
-        if (id != null && !id.isEmpty()) {
-            Optional<Company> companyOpt = companyService.getCompanyById(id);
-            if (companyOpt.isPresent()) {
-                // Check if user has access to this company
-                boolean hasAccess = companyService.userHasCompanyAccess(user.getId(), id);
-                if (hasAccess) {
-                    // Update the selected company in session
-                    session.setAttribute("selectedCompanyId", id);
-                    logger.info("✅ Selected company by ID: " + id + " (" + companyOpt.get().getName() + ")");
+            // If company ID is provided as query parameter, try to select it
+            if (id != null && !id.isEmpty()) {
+                Optional<Company> companyOpt = companyService.getCompanyById(id);
+                if (companyOpt.isPresent()) {
+                    // Check if user has access to this company
+                    boolean hasAccess = companyService.userHasCompanyAccess(user.getId(), id);
+                    if (hasAccess) {
+                        // Update the selected company in session
+                        session.setAttribute("selectedCompanyId", id);
+                        Company company = companyOpt.get();
+                        logger.info("✅ Selected company by ID: {} ({})", id, company.getName());
+
+                        // Redirect to new URL format
+                        return "redirect:/dashboard/" + id + "/daily-volume";
+                    } else {
+                        logger.warn("🚫 User does not have access to company: {}", id);
+                        return "redirect:/dashboard";
+                    }
                 } else {
-                    logger.warning("🚫 User does not have access to company: " + id);
+                    logger.warn("❓ Company not found with ID: {}", id);
                     return "redirect:/dashboard";
                 }
             } else {
-                logger.warning("❓ Company not found with ID: " + id);
-                return "redirect:/dashboard";
-            }
-        } else {
-            // Try to find company by key (slug)
-            Optional<Company> companyByKey = companyService.getCompanyByKey(companyKey);
-            if (companyByKey.isPresent()) {
-                Company company = companyByKey.get();
-                // Check if user has access to this company
-                boolean hasAccess = companyService.userHasCompanyAccess(user.getId(), company.getId());
-                if (hasAccess) {
-                    // Update the selected company in session
-                    session.setAttribute("selectedCompanyId", company.getId());
-                    logger.info("✅ Selected company by key: " + companyKey + " (" + company.getName() + ")");
+                // Try to find company by name first
+                Optional<Company> companyByName = companyService.getCompanyByName(companyKey);
+                if (companyByName.isPresent()) {
+                    Company company = companyByName.get();
+                    logger.info("✅ Found company by name: {}", company.getName());
+
+                    // Redirect to new URL format
+                    return "redirect:/dashboard/" + company.getId() + "/daily-volume";
+                }
+
+                // Fall back to key lookup
+                Optional<Company> companyByKey = companyService.getCompanyByKey(companyKey);
+                if (companyByKey.isPresent()) {
+                    Company company = companyByKey.get();
+                    logger.info("✅ Found company by key: {}", company.getName());
+
+                    // Redirect to new URL format
+                    return "redirect:/dashboard/" + company.getId() + "/daily-volume";
                 } else {
-                    logger.warning("🚫 User does not have access to company: " + companyKey);
+                    logger.warn("❓ Company not found with name or key: {}", companyKey);
                     return "redirect:/dashboard";
                 }
-            } else {
-                logger.warning("❓ Company not found with key: " + companyKey);
-                return "redirect:/dashboard";
             }
-        }
-
-        // Get the current selected company ID from session (after potential updates above)
-        String selectedCompanyId = (String) session.getAttribute("selectedCompanyId");
-        if (selectedCompanyId == null) {
-            logger.warning("⚠️ No company selected after processing, redirecting to dashboard");
+        } catch (Exception e) {
+            logger.error("💥 Error in legacyCompanyDashboard: {} - {}", e.getClass().getName(), e.getMessage(), e);
             return "redirect:/dashboard";
         }
+    }
 
-        // Load company-specific data for the dashboard
-        loadDashboardData(model, selectedCompanyId, user);
+    /**
+     * Handle old style URL routing - redirect to the new URL format
+     */
+    @GetMapping("/{companyName}/dashboard/{dashboardType}")
+    public String legacyCompanyDashboardByName(
+            @PathVariable String companyName,
+            @PathVariable String dashboardType,
+            Model model,
+            HttpSession session) {
 
-        return view("dashboard", model);
+        try {
+            // Decode the company name to handle spaces and special characters
+            String decodedCompanyName = URLDecoder.decode(companyName, StandardCharsets.UTF_8);
+            logger.info("🔄 Redirecting legacy URL format: /{}/dashboard/{}", decodedCompanyName, dashboardType);
+
+            // Try to find company by name
+            Optional<Company> companyOpt = companyService.getCompanyByName(decodedCompanyName);
+
+            if (!companyOpt.isPresent()) {
+                // Fall back to key lookup
+                companyOpt = companyService.getCompanyByKey(decodedCompanyName);
+            }
+
+            if (companyOpt.isPresent()) {
+                Company company = companyOpt.get();
+                // Redirect to new URL format
+                return "redirect:/dashboard/" + company.getId() + "/" + dashboardType;
+            } else {
+                logger.warn("❓ Company not found with name: {}", decodedCompanyName);
+                return "redirect:/dashboard";
+            }
+        } catch (Exception e) {
+            logger.error("💥 Error redirecting legacy URL: {} - {}", e.getClass().getName(), e.getMessage(), e);
+            return "redirect:/dashboard";
+        }
+    }
+
+    /**
+     * Handle old style URL routing for projects - redirect to the new URL
+     * format
+     */
+    @GetMapping("/{companyName}/projects")
+    public String legacyCompanyProjects(
+            @PathVariable String companyName,
+            Model model,
+            HttpSession session) {
+
+        try {
+            // Decode the company name to handle spaces and special characters
+            String decodedCompanyName = URLDecoder.decode(companyName, StandardCharsets.UTF_8);
+            logger.info("🔄 Redirecting legacy URL format: /{}/projects", decodedCompanyName);
+
+            // Try to find company by name
+            Optional<Company> companyOpt = companyService.getCompanyByName(decodedCompanyName);
+
+            if (!companyOpt.isPresent()) {
+                // Fall back to key lookup
+                companyOpt = companyService.getCompanyByKey(decodedCompanyName);
+            }
+
+            if (companyOpt.isPresent()) {
+                Company company = companyOpt.get();
+                // Redirect to new URL format
+                return "redirect:/projects/" + company.getId();
+            } else {
+                logger.warn("❓ Company not found with name: {}", decodedCompanyName);
+                return "redirect:/dashboard";
+            }
+        } catch (Exception e) {
+            logger.error("💥 Error redirecting legacy URL: {} - {}", e.getClass().getName(), e.getMessage(), e);
+            return "redirect:/dashboard";
+        }
     }
 
     /**
      * Helper method to load company-specific dashboard data
      */
     private void loadDashboardData(Model model, String companyId, User user) {
-        logger.info("🔄 Loading dashboard data for company ID: " + companyId);
+        logger.info("🔄 Loading dashboard data for company ID: {}", companyId);
 
         // Add company ID to model for debugging
         model.addAttribute("currentCompanyId", companyId);
@@ -152,11 +358,16 @@ public class DashboardController extends BaseController {
         companyService.getCompanyById(companyId).ifPresent(company -> {
             model.addAttribute("companyName", company.getName());
             model.addAttribute("companyLogoUrl", company.getLogoUrl());
-            logger.info("🏢 Dashboard loaded for company: " + company.getName() + ", User: "
-                    + (user != null ? user.getUsername() : "unknown"));
+            model.addAttribute("selectedCompany", company);
+            logger.info("🏢 Dashboard loaded for company: {}, User: {}",
+                    company.getName(), (user != null ? user.getUsername() : "unknown"));
             // Add any additional company data here
-            // TODO: Add more specific company data
         });
+
+        // Add user to model
+        if (user != null) {
+            model.addAttribute("currentUser", user);
+        }
 
         // Add any other dashboard data here
         model.addAttribute("dashboardTitle", "Company Dashboard");
