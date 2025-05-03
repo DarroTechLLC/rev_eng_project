@@ -217,6 +217,22 @@ public class CompanySelectorController {
     }
 
     /**
+     * Alternative endpoint for company selection - ensures compatibility with frontend
+     * This duplicates the functionality of /select/{companyId} but with a different URL
+     * to accommodate JavaScript code that may be using the alternative URL pattern
+     */
+    @PostMapping("/companies-all/select/{companyId}")
+    public ResponseEntity<Map<String, Object>> selectCompanyAlternative(
+            @PathVariable("companyId") String companyId,
+            HttpSession session) {
+        
+        logger.info("🔄 Alternative endpoint: Attempting to select company: " + companyId);
+        
+        // Simply delegate to the main endpoint method
+        return selectCompany(companyId, session);
+    }
+
+    /**
      * Debug endpoint to check session state
      */
     @GetMapping("/debug/session")

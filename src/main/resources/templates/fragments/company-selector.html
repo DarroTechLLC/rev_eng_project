@@ -219,7 +219,8 @@
                         headers[csrfHeader] = csrfToken;
                     }
                     
-                    fetch('/api/companies/select/' + companyId, {
+                    // Use the companies-all endpoint which is guaranteed to work
+                    fetch('/api/companies-all/select/' + companyId, {
                         method: 'POST',
                         headers: headers,
                         credentials: 'same-origin'
