@@ -118,6 +118,11 @@
                                 const selectedCompany = data.companies.find(c => c.companyId === data.selectedCompanyId) || data.companies[0];
                                 console.log('Selected company:', selectedCompany);
                                 
+                                // Add company slug as data attribute
+                                currentDisplay.setAttribute('data-company-slug', 
+                                    selectedCompany.companyName.toLowerCase().replace(/\s+/g, '-'));
+                                console.log('Company slug:', currentDisplay.getAttribute('data-company-slug'));
+                                
                                 // Update current selection display - logo only
                                 displayCompanyLogo(currentDisplay, selectedCompany, true);
                                 

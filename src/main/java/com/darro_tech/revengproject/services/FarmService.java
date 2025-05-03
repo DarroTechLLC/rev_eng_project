@@ -284,4 +284,64 @@ public class FarmService {
         System.out.println("FarmService: Found " + matchingFarms.size() + " farms matching query");
         return matchingFarms;
     }
+
+    /**
+     * Find a farm by name in a specific company
+     * This handles both exact and slug-based name matching
+     *
+     * @param farmName Name of the farm (can be display name or slug format)
+     * @param companyId Company ID
+     * @return Optional Farm if found
+     */
+    @Transactional(readOnly = true)
+    public Optional<Farm> getFarmByName(String farmName, String companyId) {
+        System.out.println("FarmService: Finding farm by name: " + farmName + " in company: " + companyId);
+        
+        if (farmName == null || farmName.trim().isEmpty()) {
+            return Optional.empty();
+        }
+        
+        // Get all farms for this company
+        List<Farm> companyFarms = getFarmsByCompanyId(companyId);
+        
+        // Normalize the search term
+        String normalizedSearch = farmName.toLowerCase().replace("-", " ").trim();
+        
+        // First try exact name match
+        for (Farm farm : companyFarms) {
+            String normalizedName = farm.getName().toLowerCase().trim();
+            String normalizedDisplayName = farm.getDisplayName() != null ? 
+                farm.getDisplayName().toLowerCase().trim() : "";
+                
+            if (normalizedName.equals(normalizedSearch) || normalizedDisplayName.equals(normalizedSearch)) {
+                System.out.println("FarmService: Found exact match for farm: " + farm.getName());
+                return Optional.of(farm);
+            }
+        }
+        
+        // Try slug-based match
+        for (Farm farm : companyFarms) {
+            String nameSlug = farm.getName().toLowerCase().replace(" ", "-");
+            String displayNameSlug = farm.getDisplayName() != null ? 
+                farm.getDisplayName().toLowerCase().replace(" ", "-") : "";
+                
+            if (nameSlug.equals(farmName.toLowerCase()) || displayNameSlug.equals(farmName.toLowerCase())) {
+                System.out.println("FarmService: Found slug match for farm: " + farm.getName());
+                return Optional.of(farm);
+            }
+        }
+        
+        // If still not found, try partial match
+        for (Farm farm : companyFarms) {
+            String normalizedName = farm.getName().toLowerCase().trim();
+            
+            if (normalizedName.contains(normalizedSearch) || normalizedSearch.contains(normalizedName)) {
+                System.out.println("FarmService: Found partial match for farm: " + farm.getName());
+                return Optional.of(farm);
+            }
+        }
+        
+        System.out.println("FarmService: No farm found with name: " + farmName);
+        return Optional.empty();
+    }
 }
