@@ -5,166 +5,135 @@
     <title>Title</title>
 </head>
 <body>
-    <!-- Sidebar Fragment -->
-    <ul th:fragment="sidebar" class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
-        <!-- Divider -->
-        <hr class="sidebar-divider my-0">
-
-        <!-- Nav Item - Dashboard -->
-        <li class="nav-item">
-            <a class="nav-link" th:href="@{/}">
-                <i class="fas fa-fw fa-tachometer-alt"></i>
-                <span>Dashboard</span>
-            </a>
-        </li>
-
-        <!-- Nav Item - Farm Management -->
-        <li class="nav-item">
-            <a class="nav-link" th:href="@{/admin/farms}">
-                <i class="fas fa-fw fa-barn"></i>
-                <span>Farms</span>
-            </a>
-        </li>
-
-        <!-- Divider -->
-        <hr class="sidebar-divider">
-
-        <!-- Heading -->
-        <div class="sidebar-heading">
-            Interface
+<!-- Sidebar Fragment -->
+<ul th:fragment="sidebar" class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
+    <!-- Sidebar - Brand -->
+    <a class="sidebar-brand d-flex align-items-center justify-content-center" href="/">
+        <div class="sidebar-brand-icon">
+            <i class="fas fa-chart-line"></i>
         </div>
+        <div class="sidebar-brand-text mx-3">Dashboard</div>
+    </a>
 
-        <!-- Nav Item - Pages Collapse Menu -->
-        <li class="nav-item">
-            <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseTwo"
-                aria-expanded="true" aria-controls="collapseTwo">
-                <i class="fas fa-fw fa-cog"></i>
-                <span>Components</span>
-            </a>
-            <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
-                <div class="bg-white py-2 collapse-inner rounded">
-                    <h6 class="collapse-header">Custom Components:</h6>
-                    <a class="collapse-item" th:href="@{/buttons}">Buttons</a>
-                    <a class="collapse-item" th:href="@{/cards}">Cards</a>
-                </div>
+    <!-- Divider -->
+    <hr class="sidebar-divider my-0">
+
+    <!-- Dashboard Section -->
+    <li class="nav-item">
+        <a class="nav-link" th:href="@{/dashboard/{companyKey}/daily-volume(companyKey=${selectedCompany?.id})}">
+            <i class="fas fa-fw fa-tachometer-alt"></i>
+            <span>Dashboard</span>
+        </a>
+        <!-- Dashboard Sub-items -->
+        <div class="collapse show" id="dashboardSubmenu">
+            <div class="bg-white py-2 collapse-inner rounded">
+                <a class="collapse-item" th:href="@{/dashboard/{companyKey}/daily-volume(companyKey=${selectedCompany?.id})}">
+                    <i class="fas fa-fw fa-chart-bar"></i> Daily Volume
+                </a>
+                <a class="collapse-item" th:href="@{/dashboard/{companyKey}/mtd-volume(companyKey=${selectedCompany?.id})}">
+                    <i class="fas fa-fw fa-calendar-week"></i> MTD Volume
+                </a>
+                <a class="collapse-item" th:href="@{/dashboard/{companyKey}/ytd-volume(companyKey=${selectedCompany?.id})}">
+                    <i class="fas fa-fw fa-calendar"></i> YTD Volume
+                </a>
+                <a class="collapse-item" th:href="@{/dashboard/{companyKey}/production-headcount(companyKey=${selectedCompany?.id})}">
+                    <i class="fas fa-fw fa-users"></i> Production Headcount
+                </a>
+                <a class="collapse-item" th:href="@{/dashboard/{companyKey}/animal-headcount(companyKey=${selectedCompany?.id})}">
+                    <i class="fas fa-fw fa-paw"></i> Animal Headcount
+                </a>
+                <a class="collapse-item" th:href="@{/dashboard/{companyKey}/weekly-report(companyKey=${selectedCompany?.id})}">
+                    <i class="fas fa-fw fa-file-alt"></i> Weekly Report
+                </a>
+                <a class="collapse-item" th:href="@{/dashboard/{companyKey}/daily-report(companyKey=${selectedCompany?.id})}">
+                    <i class="fas fa-fw fa-file"></i> Daily Report
+                </a>
+                <a class="collapse-item" th:href="@{/dashboard/{companyKey}/production-detail(companyKey=${selectedCompany?.id})}">
+                    <i class="fas fa-fw fa-info-circle"></i> Production Detail
+                </a>
+                <a class="collapse-item" th:href="@{/dashboard/{companyKey}/market-data(companyKey=${selectedCompany?.id})}">
+                    <i class="fas fa-fw fa-chart-line"></i> Market Data
+                </a>
             </div>
-        </li>
-
-        <!-- Nav Item - Utilities Collapse Menu -->
-        <li class="nav-item">
-            <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseUtilities"
-                aria-expanded="true" aria-controls="collapseUtilities">
-                <i class="fas fa-fw fa-wrench"></i>
-                <span>Utilities</span>
-            </a>
-            <div id="collapseUtilities" class="collapse" aria-labelledby="headingUtilities"
-                data-parent="#accordionSidebar">
-                <div class="bg-white py-2 collapse-inner rounded">
-                    <h6 class="collapse-header">Custom Utilities:</h6>
-                    <a class="collapse-item" th:href="@{/utilities-color}">Colors</a>
-                    <a class="collapse-item" th:href="@{/utilities-border}">Borders</a>
-                    <a class="collapse-item" th:href="@{/utilities-animation}">Animations</a>
-                    <a class="collapse-item" th:href="@{/utilities-other}">Other</a>
-                </div>
-            </div>
-        </li>
-
-        <!-- Divider -->
-        <hr class="sidebar-divider">
-
-        <!-- Heading -->
-        <div class="sidebar-heading">
-            Addons
         </div>
+    </li>
 
-        <!-- Nav Item - Pages Collapse Menu -->
-        <li class="nav-item">
-            <a class="nav-link" href="#" data-toggle="collapse" data-target="#collapsePages" aria-expanded="true"
-                aria-controls="collapsePages">
-                <i class="fas fa-fw fa-folder"></i>
-                <span>Pages</span>
-            </a>
-            <div id="collapsePages" class="collapse" aria-labelledby="headingPages"
-                data-parent="#accordionSidebar">
-                <div class="bg-white py-2 collapse-inner rounded">
-                    <h6 class="collapse-header">Login Screens:</h6>
-                    <a class="collapse-item" th:href="@{/login}">Login</a>
-                    <a class="collapse-item" th:href="@{/register}">Register</a>
-                    <a class="collapse-item" th:href="@{/forgot-password}">Forgot Password</a>
-                    <div class="collapse-divider"></div>
-                    <h6 class="collapse-header">Other Pages:</h6>
-                    <a class="collapse-item" th:href="@{/404}">404 Page</a>
-                    <a class="collapse-item" th:href="@{/blank}">Blank Page</a>
+    <!-- Divider -->
+    <hr class="sidebar-divider">
+
+    <!-- Projects Section -->
+    <li class="nav-item">
+        <a class="nav-link" th:href="@{/projects/{companyKey}(companyKey=${selectedCompany?.id})}">
+            <i class="fas fa-fw fa-project-diagram"></i>
+            <span>Projects</span>
+        </a>
+
+        <!-- Projects Sub-items (with Farm Selector) -->
+        <div class="collapse show" id="projectsSubmenu">
+            <div class="bg-white py-2 collapse-inner rounded">
+                <!-- Farm Selector Placeholder -->
+                <div class="px-3 mb-2">
+                    <span class="text-xs font-weight-bold text-primary mb-1">Select Farm</span>
+                    <select id="farmSelector" class="form-control form-control-sm"
+                            onchange="updateProjectLinks(this.value)">
+                        <option th:each="farm : ${farms}" th:value="${farm.id}"
+                                th:text="${farm.name}"
+                                th:selected="${farm.id == selectedFarmKey}"></option>
+                    </select>
                 </div>
+
+                <!-- Project Links -->
+                <a class="collapse-item" th:href="@{/projects/{companyKey}/{farmKey}/production(companyKey=${selectedCompany?.id},farmKey=${selectedFarmKey})}">
+                    <i class="fas fa-fw fa-industry"></i> Production
+                </a>
+                <a class="collapse-item" th:href="@{/projects/{companyKey}/{farmKey}/livestock(companyKey=${selectedCompany?.id},farmKey=${selectedFarmKey})}">
+                    <i class="fas fa-fw fa-cow"></i> Livestock
+                </a>
+                <a class="collapse-item" th:href="@{/projects/{companyKey}/{farmKey}/digesters(companyKey=${selectedCompany?.id},farmKey=${selectedFarmKey})}">
+                    <i class="fas fa-fw fa-flask"></i> Digesters
+                </a>
+                <a class="collapse-item" th:href="@{/projects/{companyKey}/{farmKey}/metrics(companyKey=${selectedCompany?.id},farmKey=${selectedFarmKey})}">
+                    <i class="fas fa-fw fa-chart-pie"></i> Metrics
+                </a>
             </div>
-        </li>
-
-        <!-- Nav Item - Charts -->
-        <li class="nav-item">
-            <a class="nav-link" th:href="@{/charts}">
-                <i class="fas fa-fw fa-chart-area"></i>
-                <span>Charts</span></a>
-        </li>
-
-        <!-- Nav Item - Tables -->
-        <li class="nav-item">
-            <a class="nav-link" th:href="@{/tables}">
-                <i class="fas fa-fw fa-table"></i>
-                <span>Tables</span></a>
-        </li>
-
-        <!-- Divider -->
-        <hr class="sidebar-divider d-none d-md-block">
-
-        <!-- Sidebar Toggler (Sidebar) -->
-        <div class="text-center d-none d-md-inline">
-            <button class="rounded-circle border-0" id="sidebarToggle"></button>
         </div>
-    </ul>
-    
-    <!-- Add some custom styling for company selector -->
-    <style th:fragment="company-selector-styles">
-        .selector-wrapper {
-            position: relative;
-            display: flex;
-            justify-content: space-between;
-            min-width: 184px;
-            height: 45px;
+    </li>
+
+    <!-- Divider -->
+    <hr class="sidebar-divider">
+</ul>
+
+<!-- JavaScript for Farm Selector -->
+<script th:fragment="sidebar-scripts">
+    function updateProjectLinks(farmKey) {
+        // Store selected farm key in localStorage
+        localStorage.setItem('selectedFarmKey', farmKey);
+
+        // Redirect to the same page but with updated farm key
+        const currentUrl = window.location.href;
+        // Get the company ID from the URL
+        const urlParts = window.location.pathname.split('/');
+        const projectsIndex = urlParts.indexOf('projects');
+        const companyKey = projectsIndex > 0 && projectsIndex < urlParts.length - 1 ? 
+            urlParts[projectsIndex + 1] : '';
+
+        if (currentUrl.includes('/projects/')) {
+            // Only refresh if we're on a projects page
+            const baseUrl = `/projects/${companyKey}/${farmKey}/`;
+            const currentPage = urlParts[urlParts.length - 1] || 'production';
+            window.location.href = baseUrl + currentPage;
+        }
+    }
+
+    // Initialize when document is ready
+    document.addEventListener('DOMContentLoaded', function() {
+        // Set default farm key if none is selected
+        if (!localStorage.getItem('selectedFarmKey') && document.getElementById('farmSelector')) {
+            localStorage.setItem('selectedFarmKey', document.getElementById('farmSelector').value);
         }
         
-        .toggle-wrapper {
-            display: flex;
-            align-items: center;
-        }
-        
-        .toggle-button {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 32px;
-            height: 32px;
-            border: solid 1px #e2e2e2;
-            cursor: pointer;
-        }
-        
-        .logo-wrapper {
-            position: relative;
-            width: 150px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 50px;
-            background-color: #fff;
-            border-radius: 6px;
-        }
-        
-        .min-width-150 {
-            min-width: 150px;
-        }
-        
-        .cursor-pointer {
-            cursor: pointer;
-        }
-    </style>
+        console.log("🧠 Sidebar scripts loaded - updateProjectLinks function now available");
+    });
+</script>
 </body>
 </html>
