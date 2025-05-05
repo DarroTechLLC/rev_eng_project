@@ -84,7 +84,7 @@
             document.addEventListener('DOMContentLoaded', function() {
                 // Function to load companies
                 function loadCompanies() {
-                    console.log('Loading companies...');
+                    console.log('📊 Loading companies...');
                     
                     // Show loading state
                     const companyList = document.getElementById('companyList');
@@ -97,17 +97,17 @@
                     
                     fetch('/api/companies')
                         .then(response => {
-                            console.log('Companies API response status:', response.status);
+                            console.log('📊 Companies API response status:', response.status);
                             if (!response.ok) {
                                 return response.json().then(data => {
-                                    console.error('API error response:', data);
+                                    console.error('❌ API error response:', data);
                                     throw new Error(data.message || `Error ${response.status}: Could not load companies`);
                                 });
                             }
                             return response.json();
                         })
                         .then(data => {
-                            console.log('Companies loaded successfully:', data);
+                            console.log('✅ Companies loaded successfully:', data);
                             
                             // Clear loading messages
                             companyList.innerHTML = '';
@@ -116,12 +116,12 @@
                             if (data.success && data.companies && data.companies.length > 0) {
                                 // Find selected company
                                 const selectedCompany = data.companies.find(c => c.companyId === data.selectedCompanyId) || data.companies[0];
-                                console.log('Selected company:', selectedCompany);
+                                console.log('🏢 Selected company:', selectedCompany);
                                 
                                 // Add company slug as data attribute
                                 currentDisplay.setAttribute('data-company-slug', 
                                     selectedCompany.companyName.toLowerCase().replace(/\s+/g, '-'));
-                                console.log('Company slug:', currentDisplay.getAttribute('data-company-slug'));
+                                console.log('🔗 Company slug:', currentDisplay.getAttribute('data-company-slug'));
                                 
                                 // Update current selection display - logo only
                                 displayCompanyLogo(currentDisplay, selectedCompany, true);
@@ -149,18 +149,18 @@
                                     companyList.appendChild(item);
                                 });
                             } else {
-                                console.warn('No companies found in API response:', data);
+                                console.warn('⚠️ No companies found in API response:', data);
                                 companyList.innerHTML = '<div class="text-center p-2">No companies available</div>';
                                 currentDisplay.innerHTML = '<span class="company-name">No companies available</span>';
                             }
                         })
                         .catch(error => {
-                            console.error('Error loading companies:', error);
+                            console.error('❌ Error loading companies:', error);
                             companyList.innerHTML = '<div class="text-danger p-2">Failed to load companies</div>';
                             currentDisplay.innerHTML = '<span class="company-name text-danger">Error loading companies</span>';
                             
                             // Show detailed error message in console
-                            console.error('Failed to load companies: ' + error.message);
+                            console.error('❌ Failed to load companies: ' + error.message);
                         });
                 }
                 
@@ -193,6 +193,49 @@
                     }
                 }
                 
+                // Helper function to intelligently update URL when company changes
+                function updateUrlForCompanyChange(companySlug) {
+                    // Get current URL path segments
+                    const path = window.location.pathname;
+                    const pathSegments = path.split('/').filter(segment => segment.length > 0);
+                    const queryParams = window.location.search;
+                    
+                    console.log('🔍 Current path segments:', pathSegments);
+                    console.log('🔗 Current query params:', queryParams);
+                    
+                    // Check if this is an admin path
+                    if (pathSegments.length > 0 && pathSegments[0] === 'admin') {
+                        console.log('👨‍💼 Admin page detected, keeping admin context');
+                        // For admin pages, we maintain the current URL but refresh to apply the session change
+                        console.log('🔄 Admin route - refreshing page to maintain state');
+                        return window.location.href; // Return current URL to maintain query params
+                    }
+                    
+                    // If we're on a regular company page
+                    let newUrl = '';
+                    
+                    if (pathSegments.length > 0) {
+                        // The company name is typically the first path segment
+                        // Replace it with the new company slug
+                        pathSegments[0] = companySlug;
+                        newUrl = '/' + pathSegments.join('/');
+                        console.log(`🔄 Updated company in URL: ${newUrl}`);
+                    } else {
+                        // If we're on the root page, go to the company's dashboard
+                        newUrl = `/${companySlug}/dashboard/daily-volume`;
+                        console.log(`🔄 Root page - redirecting to company dashboard: ${newUrl}`);
+                    }
+                    
+                    // Keep any query parameters
+                    if (queryParams) {
+                        newUrl += queryParams;
+                        console.log(`🔗 Added query params to URL: ${newUrl}`);
+                    }
+                    
+                    console.log(`🚀 Final navigation: ${path} → ${newUrl}`);
+                    return newUrl;
+                }
+                
                 // Function to select company
                 function selectCompany(companyId, companyName) {
                     // Close dropdown first
@@ -203,7 +246,7 @@
                     const originalContent = currentDisplay.innerHTML;
                     currentDisplay.innerHTML = '<div class="d-flex align-items-center"><div class="spinner-border spinner-border-sm text-primary mr-2" role="status"></div></div>';
                     
-                    console.log('Selecting company:', companyId, companyName);
+                    console.log('🏢 Selecting company:', companyId, companyName);
                     
                     // Get CSRF token from meta tag
                     const csrfToken = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
@@ -226,17 +269,17 @@
                         credentials: 'same-origin'
                     })
                     .then(response => {
-                        console.log('Company selection response status:', response.status);
+                        console.log('📊 Company selection response status:', response.status);
                         if (!response.ok) {
                             return response.json().then(data => {
-                                console.error('API error response:', data);
+                                console.error('❌ API error response:', data);
                                 throw new Error(data.message || `Error ${response.status}: Failed to switch company`);
                             });
                         }
                         return response.json();
                     })
                     .then(data => {
-                        console.log('Company selection response:', data);
+                        console.log('✅ Company selection response:', data);
                         if (data.success) {
                             // Dispatch custom event for other components
                             const companySelectedEvent = new CustomEvent('companySelected', {
@@ -248,20 +291,26 @@
                                 bubbles: true
                             });
                             document.dispatchEvent(companySelectedEvent);
-                            console.log('Dispatched companySelected event');
+                            console.log('📢 Dispatched companySelected event');
                             
-                            // Simple page refresh to update all content
-                            window.location.reload();
+                            // Create a slug format of the company name for URL
+                            const companySlug = companyName.toLowerCase().replace(/\s+/g, '-');
+                            
+                            // Determine the new URL based on current location
+                            const newUrl = updateUrlForCompanyChange(companySlug);
+                            
+                            // Navigate to the new URL
+                            window.location.href = newUrl;
                         } else {
                             // Restore original display
                             currentDisplay.innerHTML = originalContent;
-                            console.error('Failed to switch company:', data.message);
+                            console.error('❌ Failed to switch company:', data.message);
                         }
                     })
                     .catch(error => {
                         // Restore original display
                         currentDisplay.innerHTML = originalContent;
-                        console.error('Error switching company:', error);
+                        console.error('❌ Error switching company:', error);
                     });
                 }
                 
