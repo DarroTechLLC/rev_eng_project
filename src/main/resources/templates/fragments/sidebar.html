@@ -195,6 +195,21 @@
             }
         }
         
+        // Listen for company selection changes
+        document.addEventListener('companySelected', function(event) {
+            console.log("🏢 Company selection changed event received", event.detail);
+            // Update company slug in company display element
+            const companyName = event.detail.companyName;
+            const companySlug = companyName.toLowerCase().replace(/\s+/g, '-');
+            
+            // Store the new company slug for future reference
+            const companyDisplayEl = document.getElementById('currentCompanyDisplay');
+            if (companyDisplayEl) {
+                companyDisplayEl.setAttribute('data-company-slug', companySlug);
+                console.log("🔄 Updated company slug attribute:", companySlug);
+            }
+        });
+        
         console.log("✅ Sidebar scripts initialized successfully");
     });
 </script>
