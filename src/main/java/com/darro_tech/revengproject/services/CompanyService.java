@@ -1,6 +1,7 @@
 package com.darro_tech.revengproject.services;
 
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -20,6 +21,9 @@ import com.darro_tech.revengproject.repositories.CompanyRepository;
 public class CompanyService {
 
     private static final Logger logger = LoggerFactory.getLogger(CompanyService.class);
+
+    // Special company names that need custom handling
+    private static final List<String> SPECIAL_COMPANIES = Arrays.asList("tuls", "texhoma", "vendor");
 
     @Autowired
     private CompanyRepository companyRepository;
@@ -116,9 +120,7 @@ public class CompanyService {
 
         try {
             // Find by exact name match
-            return companyRepository.findAll().stream()
-                    .filter(company -> company.getName() != null && company.getName().equalsIgnoreCase(name))
-                    .findFirst();
+            return companyRepository.findByNameIgnoreCase(name);
         } catch (Exception e) {
             logger.error("❌ Error finding company by name: {}", e.getMessage());
             return Optional.empty();
@@ -132,23 +134,60 @@ public class CompanyService {
      * @return Optional containing Company if found
      */
     public Optional<Company> getCompanyByKey(String key) {
-        logger.info("Looking up company by key: {}", key);
+        logger.info("🔍 Looking up company by key: {}", key);
 
         try {
-            // First try the direct repository method
-            Optional<Company> company = companyRepository.findByNameKey(key);
-
-            if (company.isPresent()) {
-                return company;
+            // First check if we have an exact match by name
+            Optional<Company> companyByName = companyRepository.findByNameIgnoreCase(key);
+            if (companyByName.isPresent()) {
+                logger.info("✅ Found company by exact name match: {}", key);
+                return companyByName;
             }
 
-            // As a fallback, try to normalize the key and compare with all companies
+            // Handle special cases
+            String lowercaseKey = key.toLowerCase();
+            if (SPECIAL_COMPANIES.contains(lowercaseKey)) {
+                logger.info("⚠️ Special case handling for company key: {}", key);
+
+                // Try to find all special companies and match by lowercase name
+                List<Company> specialNameCompanies = companyRepository.findByNameIgnoreCaseIn(SPECIAL_COMPANIES);
+                for (Company company : specialNameCompanies) {
+                    if (company.getName().equalsIgnoreCase(key)) {
+                        logger.info("✅ Found special company: {}", company.getName());
+                        return Optional.of(company);
+                    }
+                }
+            }
+
+            // Look through all companies for more complex key matching
             List<Company> allCompanies = companyRepository.findAll();
-            return allCompanies.stream()
-                    .filter(c -> normalizeCompanyName(c.getName()).equals(key))
-                    .findFirst();
+
+            // First try a simple replacement of space with dash in company name
+            for (Company company : allCompanies) {
+                if (company.getName() != null) {
+                    String companyNameLower = company.getName().toLowerCase();
+                    String simpleDashKey = companyNameLower.replace(" ", "-");
+
+                    if (simpleDashKey.equals(lowercaseKey)) {
+                        logger.info("✅ Found company by simple key match: {} -> {}", company.getName(), key);
+                        return Optional.of(company);
+                    }
+                }
+            }
+
+            // Next try to find by our normalizeCompanyName method
+            for (Company company : allCompanies) {
+                String normalizedName = normalizeCompanyName(company.getName());
+                if (normalizedName.equalsIgnoreCase(lowercaseKey)) {
+                    logger.info("✅ Found company by normalized name: {} -> {}", company.getName(), key);
+                    return Optional.of(company);
+                }
+            }
+
+            logger.info("❌ No company found with key: {}", key);
+            return Optional.empty();
         } catch (Exception e) {
-            logger.error("Error finding company by key: {}", e.getMessage());
+            logger.error("❌ Error finding company by key: {}", e.getMessage(), e);
             return Optional.empty();
         }
     }
@@ -177,16 +216,6 @@ public class CompanyService {
                 return companyByKey.get();
             }
 
-            // Then try with slug conversion
-            List<Company> allCompanies = getAllCompanies();
-            for (Company company : allCompanies) {
-                String companySlug = normalizeCompanyName(company.getName());
-                if (companySlug.equalsIgnoreCase(slug)) {
-                    logger.info("✅ Found company by normalized slug: {}", slug);
-                    return company;
-                }
-            }
-
             logger.info("❌ No company found with slug: {}", slug);
             return null;
         } catch (Exception e) {
@@ -197,12 +226,39 @@ public class CompanyService {
 
     /**
      * Normalize a company name for URL usage
+     *
+     * Note: This method is designed to match the NextJS app's formatCompanyKey
+     * function which only replaces the FIRST space with a dash, not all spaces.
      */
     public String normalizeCompanyName(String name) {
         if (name == null) {
             return "";
         }
-        return name.toLowerCase().replace(" ", "-");
+
+        // First, check for exact matches for known problematic companies
+        if (name.equalsIgnoreCase("Tuls")) {
+            return "tuls";
+        }
+        if (name.equalsIgnoreCase("Texhoma")) {
+            return "texhoma";
+        }
+        if (name.equalsIgnoreCase("Vendor")) {
+            return "vendor";
+        }
+
+        // Replace only the first space with a dash to match NextJS behavior
+        String result = name.toLowerCase();
+        int firstSpaceIndex = result.indexOf(' ');
+        if (firstSpaceIndex >= 0) {
+            result = result.substring(0, firstSpaceIndex)
+                    + "-"
+                    + result.substring(firstSpaceIndex + 1);
+        }
+
+        // Log for debugging problematic companies
+        logger.debug("🔄 Normalized company name: '{}' -> '{}'", name, result);
+
+        return result;
     }
 
     @Transactional

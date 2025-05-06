@@ -2,6 +2,8 @@ package com.darro_tech.revengproject.controllers;
 
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Optional;
 
 import org.slf4j.Logger;
@@ -56,6 +58,27 @@ public class RoutingController extends BaseController {
     }
 
     /**
+     * Handle direct company name access without any sub-path Format:
+     * /{companyName} This catches routes like /monarch, /tuls, etc. and
+     * redirects to dashboard
+     */
+    @GetMapping("/{companyName}")
+    public String companyDirectAccess(@PathVariable String companyName) {
+        logger.info("🔄 Direct company access route: /{}", companyName);
+
+        // For special case companies, use the exact same format they expect
+        if (companyName.equalsIgnoreCase("tuls")
+                || companyName.equalsIgnoreCase("texhoma")
+                || companyName.equalsIgnoreCase("vendor")) {
+            logger.info("⚠️ Special handling for direct company access: {}", companyName);
+            return "redirect:/" + companyName.toLowerCase() + "/dashboard/daily-volume";
+        }
+
+        // For normal companies, redirect to their dashboard
+        return "redirect:/" + companyName + "/dashboard/daily-volume";
+    }
+
+    /**
      * Company dashboard with specific dashboard type Format:
      * /{companyName}/dashboard/{dashboardType}
      */
@@ -78,6 +101,13 @@ public class RoutingController extends BaseController {
         String decodedCompanyName = URLDecoder.decode(companyName, StandardCharsets.UTF_8);
         logger.info("📊 Loading dashboard: {}/dashboard/{}, User: {}",
                 decodedCompanyName, dashboardType, user.getUsername());
+
+        // Special handling for known problematic companies
+        if (decodedCompanyName.equalsIgnoreCase("tuls")
+                || decodedCompanyName.equalsIgnoreCase("texhoma")
+                || decodedCompanyName.equalsIgnoreCase("vendor")) {
+            logger.info("⚠️ Detected special handling company: {}", decodedCompanyName);
+        }
 
         // Find company by name or key
         Optional<Company> companyOpt = companyService.getCompanyByName(decodedCompanyName);
@@ -238,12 +268,12 @@ public class RoutingController extends BaseController {
      * /{companyName}/projects
      */
     @GetMapping("/{companyName}/projects")
-    public String companyProjects(
+    public String companyProjectsRoot(
             @PathVariable String companyName,
             Model model,
             HttpSession session) {
 
-        logger.info("🏗️ Routing: Company Projects route accessed - /{}/projects", companyName);
+        logger.info("🏢 Routing: Company Projects root route accessed - /{}/projects", companyName);
 
         User user = authenticationController.getUserFromSession(session);
         if (user == null) {
@@ -253,10 +283,9 @@ public class RoutingController extends BaseController {
 
         // Decode company name
         String decodedCompanyName = URLDecoder.decode(companyName, StandardCharsets.UTF_8);
-        logger.info("🏢 Loading projects for company: {}, User: {}",
-                decodedCompanyName, user.getUsername());
+        logger.debug("🔍 Looking up company: {}", decodedCompanyName);
 
-        // Find company by name or key
+        // Find company
         Optional<Company> companyOpt = companyService.getCompanyByName(decodedCompanyName);
         if (!companyOpt.isPresent()) {
             logger.debug("🔍 Company not found by name, trying by key: {}", decodedCompanyName);
@@ -266,11 +295,10 @@ public class RoutingController extends BaseController {
                 return "redirect:/dashboard";
             }
         }
-
         Company company = companyOpt.get();
         logger.debug("🏢 Found company: {} (ID: {})", company.getName(), company.getId());
 
-        // Check if user has access to this company
+        // Check access
         boolean hasAccess = companyService.userHasCompanyAccess(user.getId(), company.getId());
         if (!hasAccess) {
             logger.warn("🚫 User {} doesn't have access to company: {}", user.getUsername(), company.getName());
@@ -278,17 +306,41 @@ public class RoutingController extends BaseController {
         }
         logger.debug("✅ User has access to company: {}", company.getName());
 
-        // Update selected company in session
+        // Get farms for this company
+        List<Farm> farms = farmService.getFarmsByCompanyId(company.getId());
+
+        // Update session
         session.setAttribute("selectedCompanyId", company.getId());
         logger.debug("💾 Updated session with company ID: {}", company.getId());
 
+        // If we have farms, redirect to the first farm's production page
+        if (!farms.isEmpty()) {
+            // Sort farms to ensure consistent behavior
+            farms.sort(Comparator.comparing(Farm::getName));
+            Farm defaultFarm = farms.get(0);
+
+            // Update the session with the selected farm
+            session.setAttribute("selectedFarmKey", defaultFarm.getId());
+            logger.debug("💾 Updated session with default farm ID: {}", defaultFarm.getId());
+
+            // Generate SEO-friendly URL
+            String encodedCompanyName = company.getName().toLowerCase().replace(" ", "-");
+            String encodedFarmName = defaultFarm.getName().toLowerCase().replace(" ", "-");
+
+            logger.info("🔄 Redirecting to default farm production page: /{}/projects/{}/production",
+                    encodedCompanyName, encodedFarmName);
+
+            return "redirect:/" + encodedCompanyName + "/projects/" + encodedFarmName + "/production";
+        }
+
         model.addAttribute("selectedCompany", company);
         model.addAttribute("currentUser", user);
+        model.addAttribute("farms", farms);
 
         // Load other data
         loadCommonData(model, company.getId(), user);
 
-        logger.info("🔄 Returning projects index view");
+        logger.info("🔄 Returning projects index view with no farms");
         return view("projects/index", model);
     }
 
@@ -341,18 +393,52 @@ public class RoutingController extends BaseController {
         logger.debug("✅ User has access to company: {}", company.getName());
 
         // Find farm
+        logger.info("🔍 Looking for farm '{}' in company '{}'", decodedFarmName, company.getName());
+
+        // Get session company ID to check if there's a company mismatch
+        String sessionCompanyId = (String) session.getAttribute("selectedCompanyId");
+        if (sessionCompanyId != null && !sessionCompanyId.equals(company.getId())) {
+            logger.warn("⚠️ Company mismatch - URL company: {} ({}), Session company: {}",
+                    company.getName(), company.getId(), sessionCompanyId);
+        }
+
+        // Find farm by name in the current company context
         Optional<Farm> farmOpt = farmService.getFarmByName(decodedFarmName, company.getId());
         if (!farmOpt.isPresent()) {
             // Try by ID as fallback
-            logger.debug("🔍 Farm not found by name, trying by ID: {}", decodedFarmName);
+            logger.debug("🔍 Farm not found by name in company {}, trying by ID: {}", company.getName(), decodedFarmName);
             farmOpt = farmService.getFarmById(decodedFarmName);
+
             if (!farmOpt.isPresent()) {
-                logger.warn("❓ Farm not found: {} in company: {}", decodedFarmName, company.getName());
+                logger.warn("❓ Farm not found: '{}' in company: '{}'", decodedFarmName, company.getName());
+                logger.info("🔄 Redirecting to company projects page for defaults: /{}/projects", companyName);
+
+                // Update session with the new company ID at least
+                session.setAttribute("selectedCompanyId", company.getId());
+
+                // Redirect to the company projects page, which will select a default farm
+                return "redirect:/" + companyName + "/projects";
+            }
+
+            // Check if the found farm belongs to the current company
+            Farm farm = farmOpt.get();
+
+            // Get all farms for the company and check if this farm is included
+            List<Farm> companyFarms = farmService.getFarmsByCompanyId(company.getId());
+            boolean farmBelongsToCompany = companyFarms.stream()
+                    .anyMatch(f -> f.getId().equals(farm.getId()));
+
+            if (!farmBelongsToCompany) {
+                logger.warn("⚠️ Farm '{}' found but doesn't belong to company '{}'",
+                        farm.getName(), company.getName());
+
+                // Redirect to company projects page for proper default farm selection
                 return "redirect:/" + companyName + "/projects";
             }
         }
+
         Farm farm = farmOpt.get();
-        logger.debug("🚜 Found farm: {} (ID: {})", farm.getName(), farm.getId());
+        logger.debug("🚜 Found farm: {} (ID: {}) in company: {}", farm.getName(), farm.getId(), company.getName());
 
         // Update session
         session.setAttribute("selectedCompanyId", company.getId());
@@ -364,7 +450,10 @@ public class RoutingController extends BaseController {
         model.addAttribute("selectedFarm", farm);
         model.addAttribute("projectType", projectType);
         model.addAttribute("currentUser", user);
-        logger.debug("🧩 Added company, farm and project type to model");
+
+        // Add all farms from this company to model for the farm selector
+        model.addAttribute("farms", farmService.getFarmsByCompanyId(company.getId()));
+        logger.debug("🧩 Added company, farm, farms list and project type to model");
 
         // Load other data
         loadCommonData(model, company.getId(), user);

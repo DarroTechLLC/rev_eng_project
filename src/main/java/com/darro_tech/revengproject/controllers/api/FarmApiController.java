@@ -1,5 +1,6 @@
 package com.darro_tech.revengproject.controllers.api;
 
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -106,11 +107,30 @@ public class FarmApiController {
 
             logger.info("Found " + farms.size() + " farms for company: " + companyName);
 
+            // Set a default farm in the session when changing companies
+            // This is crucial for proper navigation when switching between companies
+            if (!farms.isEmpty()) {
+                // Sort farms alphabetically for consistent selection
+                farms.sort(Comparator.comparing(Farm::getName));
+                String defaultFarmId = farms.get(0).getId();
+                session.setAttribute("selectedFarmKey", defaultFarmId);
+                logger.info("🔄 Set default farm in session: " + farms.get(0).getName() + " (ID: " + defaultFarmId + ")");
+            } else {
+                // Clear the farm key if no farms exist for this company
+                session.removeAttribute("selectedFarmKey");
+                logger.info("⚠️ No farms found for company, cleared farm selection from session");
+            }
+
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("farms", farms);
             response.put("companyId", companyId);
             response.put("companyName", companyName);
+
+            // Include the selected farm in the response
+            if (session.getAttribute("selectedFarmKey") != null) {
+                response.put("selectedFarmId", session.getAttribute("selectedFarmKey"));
+            }
 
             return ResponseEntity.ok(response);
         } catch (Exception e) {
