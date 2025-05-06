@@ -201,6 +201,7 @@
             // Update company slug in company display element
             const companyName = event.detail.companyName;
             const companySlug = companyName.toLowerCase().replace(/\s+/g, '-');
+            const companyId = event.detail.companyId;
             
             // Store the new company slug for future reference
             const companyDisplayEl = document.getElementById('currentCompanyDisplay');
@@ -208,7 +209,84 @@
                 companyDisplayEl.setAttribute('data-company-slug', companySlug);
                 console.log("🔄 Updated company slug attribute:", companySlug);
             }
+            
+            // Refresh farms for the new company
+            console.log("🚜 Will fetch farms for company ID:", companyId);
+            console.log("🔄 Company change will trigger page navigation, defer farm updates");
+            
+            // The actual farm update will happen after page reload
+            // This is because changing company redirects to a new URL
+            // But we'll still make the API call to ensure the session is updated
+            fetch(`/api/farms/by-company/${companyId}`)
+                .then(response => {
+                    console.log("✅ Pre-fetched farms for new company:", companyId);
+                })
+                .catch(error => {
+                    console.error("❌ Error pre-fetching farms:", error);
+                });
         });
+        
+        // Function to fetch farms for a company and update the farm selector
+        function fetchFarmsForCompany(companyId) {
+            console.log("🚜 Fetching farms for company ID:", companyId);
+            
+            // API call to get farms for the selected company
+            fetch(`/api/farms/by-company/${companyId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.farms) {
+                        console.log("✅ Successfully fetched farms:", data.farms.length);
+                        updateFarmSelector(data.farms, data.selectedFarmId);
+                    } else {
+                        console.error("❌ Failed to fetch farms:", data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error("❌ Error fetching farms:", error);
+                });
+        }
+        
+        // Function to update the farm selector dropdown
+        function updateFarmSelector(farms, selectedFarmId) {
+            const farmSelector = document.getElementById('farmSelector');
+            if (!farmSelector) {
+                console.error("⚠️ Farm selector element not found");
+                return;
+            }
+            
+            console.log("🧩 Updating farm selector with farms:", farms.length);
+            
+            // Clear existing options
+            farmSelector.innerHTML = '';
+            
+            // Add options for farms
+            farms.forEach(farm => {
+                const option = document.createElement('option');
+                option.value = farm.id;
+                option.text = farm.name;
+                
+                // Select the farm if it matches the one in session
+                if (selectedFarmId && farm.id === selectedFarmId) {
+                    option.selected = true;
+                    console.log("✅ Selected farm in dropdown:", farm.name);
+                }
+                
+                farmSelector.appendChild(option);
+            });
+            
+            // If no farm is selected but we have farms, select the first one
+            if (farmSelector.selectedIndex === -1 && farms.length > 0) {
+                farmSelector.selectedIndex = 0;
+                console.log("ℹ️ No farm was selected, defaulted to first farm:", farmSelector.options[0].text);
+                
+                // Store the default farm key
+                localStorage.setItem('selectedFarmKey', farmSelector.value);
+            }
+            
+            // Update farm links based on the selected farm
+            updateProjectLinks(farmSelector.value);
+            console.log("🔄 Updated project links based on selected farm");
+        }
         
         console.log("✅ Sidebar scripts initialized successfully");
     });

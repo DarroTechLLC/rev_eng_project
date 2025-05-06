@@ -203,6 +203,18 @@
                     console.log('🔍 Current path segments:', pathSegments);
                     console.log('🔗 Current query params:', queryParams);
                     
+                    // Special handling for known problematic companies
+                    if (companySlug.toLowerCase() === 'tuls' || 
+                        companySlug.toLowerCase() === 'texhoma' ||
+                        companySlug.toLowerCase() === 'vendor') {
+                        console.log('⚠️ Special handling for company: ' + companySlug);
+                        
+                        // Always redirect to dashboard for these companies
+                        const safeUrl = `/${companySlug.toLowerCase()}/dashboard/daily-volume`;
+                        console.log(`🛡️ Using safe URL for special company: ${safeUrl}`);
+                        return safeUrl;
+                    }
+                    
                     // Check if this is an admin path
                     if (pathSegments.length > 0 && pathSegments[0] === 'admin') {
                         console.log('👨‍💼 Admin page detected, keeping admin context');
@@ -215,11 +227,21 @@
                     let newUrl = '';
                     
                     if (pathSegments.length > 0) {
-                        // The company name is typically the first path segment
-                        // Replace it with the new company slug
-                        pathSegments[0] = companySlug;
-                        newUrl = '/' + pathSegments.join('/');
-                        console.log(`🔄 Updated company in URL: ${newUrl}`);
+                        // Always redirect to the company's projects root when in a project view
+                        // This ensures we get the correct default farm for the new company
+                        if (pathSegments.includes('projects')) {
+                            newUrl = `/${companySlug}/projects`;
+                            console.log(`🔄 Project page detected - redirecting to company projects root: ${newUrl}`);
+                            console.log(`ℹ️ The server will select a default farm for company: ${companySlug}`);
+                        } else if (pathSegments.length > 1 && pathSegments[1] === 'dashboard' && pathSegments.length > 2) {
+                            // For dashboard pages with a specific view, maintain that view
+                            newUrl = `/${companySlug}/dashboard/${pathSegments[2]}`;
+                            console.log(`🔄 Dashboard with view - maintaining view: ${newUrl}`);
+                        } else {
+                            // Default to daily-volume dashboard for all other cases
+                            newUrl = `/${companySlug}/dashboard/daily-volume`;
+                            console.log(`🔄 Using default dashboard: ${newUrl}`);
+                        }
                     } else {
                         // If we're on the root page, go to the company's dashboard
                         newUrl = `/${companySlug}/dashboard/daily-volume`;
