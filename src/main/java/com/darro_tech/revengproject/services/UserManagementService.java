@@ -503,9 +503,10 @@ public class UserManagementService {
             // Add new company associations
             if (companyIds != null && !companyIds.isEmpty()) {
                 for (String companyId : companyIds) {
+                    // Let the database auto-generate the ID by omitting it from the INSERT
                     jdbcTemplate.update(
-                            "INSERT INTO company_users (id, user_id, company_id) VALUES (?, ?, ?)",
-                            java.util.UUID.randomUUID().toString(), userId, companyId);
+                            "INSERT INTO company_users (user_id, company_id, timestamp) VALUES (?, ?, ?)",
+                            userId, companyId, new java.sql.Timestamp(System.currentTimeMillis()));
                 }
                 logger.info("✅ Added " + companyIds.size() + " new company associations for user: " + userId);
             }

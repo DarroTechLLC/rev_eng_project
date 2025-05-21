@@ -721,10 +721,10 @@ public class UserManagementServiceImpl implements UserManagementServiceInterface
                                 userId, companyId);
 
                         if (existing.isEmpty() || ((Number) existing.get(0).get("count")).intValue() == 0) {
-                            // Insert the new company association
+                            // Insert the new company association - let the database auto-generate the ID
                             jdbcTemplate.update(
-                                    "INSERT INTO company_users (id, user_id, company_id, timestamp) VALUES (?, ?, ?, ?)",
-                                    java.util.UUID.randomUUID().toString(), userId, companyId, java.time.Instant.now());
+                                    "INSERT INTO company_users (user_id, company_id, timestamp) VALUES (?, ?, ?)",
+                                    userId, companyId, java.time.Instant.now());
                             addedCount++;
                             logger.info("➕ Added company association for company ID: " + companyId);
                         } else {
