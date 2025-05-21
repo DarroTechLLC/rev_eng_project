@@ -5,7 +5,28 @@
 
 <!-- Error Message Alert -->
 <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
-    <strong>Error!</strong> <span th:text="${errorMessage}">An error occurred.</span>
+    <strong><i class="fas fa-exclamation-triangle mr-1"></i> Error!</strong> 
+    <span th:text="${errorMessage}" class="font-weight-bold">An error occurred.</span>
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+    </button>
+</div>
+
+<!-- Success Message Alert -->
+<div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+    <strong><i class="fas fa-check-circle mr-1"></i> Success!</strong> 
+    <span th:text="${successMessage}">Operation completed successfully.</span>
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+    </button>
+</div>
+
+<!-- Display validation errors if any -->
+<div th:if="${validationErrors}" class="alert alert-danger alert-dismissible fade show" role="alert">
+    <strong><i class="fas fa-exclamation-circle mr-1"></i> Validation Error!</strong>
+    <ul class="mb-0 mt-2">
+        <li th:each="error : ${validationErrors}" th:text="${error}"></li>
+    </ul>
     <button type="button" class="close" data-dismiss="alert" aria-label="Close">
         <span aria-hidden="true">&times;</span>
     </button>
@@ -22,37 +43,46 @@
             </div>
             
             <form id="editUserForm" th:action="@{/admin/users/update}" method="post" th:object="${editUser}">
-                <input type="hidden" th:field="*{id}">
+                <input type="hidden" th:field="*{id}" th:attr="data-original-id=*{id}" id="userId">
+                <div class="small text-muted text-right mb-2" th:text="'User ID: ' + *{id}"></div>
                 
                 <div class="row-panel">
                     <div class="column-panel">
                         <!-- Left column: Basic info -->
                         <div class="form-group float-row">
                             <div class="floating-input">
-                                <input id="username" th:field="*{username}" class="form-control">
+                                <input id="username" th:field="*{username}" class="form-control" 
+                                       th:classappend="${#fields.hasErrors('username')} ? 'is-invalid'" >
                                 <label for="username">Username</label>
                                 <small>Leave blank for user to create</small>
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('username')}" th:errors="*{username}"></div>
                             </div>
                         </div>
                         
                         <div class="form-group float-row">
                             <div class="floating-input">
-                                <input id="firstName" th:field="*{firstName}" class="form-control" required>
+                                <input id="firstName" th:field="*{firstName}" class="form-control" required
+                                       th:classappend="${#fields.hasErrors('firstName')} ? 'is-invalid'">
                                 <label for="firstName">First Name</label>
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('firstName')}" th:errors="*{firstName}"></div>
                             </div>
                         </div>
                         
                         <div class="form-group float-row">
                             <div class="floating-input">
-                                <input id="lastName" th:field="*{lastName}" class="form-control" required>
+                                <input id="lastName" th:field="*{lastName}" class="form-control" required
+                                       th:classappend="${#fields.hasErrors('lastName')} ? 'is-invalid'">
                                 <label for="lastName">Last Name</label>
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('lastName')}" th:errors="*{lastName}"></div>
                             </div>
                         </div>
                         
                         <div class="form-group float-row">
                             <div class="floating-input">
-                                <input id="email" th:field="*{email}" class="form-control">
+                                <input id="email" th:field="*{email}" class="form-control" 
+                                       th:classappend="${#fields.hasErrors('email')} ? 'is-invalid'">
                                 <label for="email">Email</label>
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></div>
                             </div>
                         </div>
                         
@@ -67,26 +97,34 @@
                     
                     <div class="column-panel">
                         <!-- Right column: Roles, Companies, Password -->
-                        <div class="form-group float-row">
-                            <div class="floating-multiselect">
-                                <select id="roleIds" th:field="*{roleIds}" multiple class="form-control">
-                                    <option th:each="role : ${roles}" 
-                                            th:value="${role.id}" 
-                                            th:text="${role.name}">Role</option>
-                                </select>
-                                <label for="roleIds">Roles</label>
+                        <div class="form-group mb-3">
+                            <label class="form-label font-weight-bold">User Roles</label>
+                            <div class="role-checkbox-group border rounded p-3" style="max-height: 200px; overflow-y: auto;">
+                                <div th:each="role : ${roles}" class="custom-control custom-checkbox mb-2">
+                                    <input type="checkbox" class="custom-control-input" 
+                                           th:id="${'role-' + role.id}" 
+                                           th:name="roleIds" 
+                                           th:value="${role.id}" 
+                                           th:checked="${#lists.contains(editUser.roleIds, role.id)}">
+                                    <label class="custom-control-label" th:for="${'role-' + role.id}" th:text="${role.name}">Role Name</label>
+                                </div>
                             </div>
+                            <div class="invalid-feedback" id="roleError">At least one role is required</div>
                         </div>
                         
-                        <div class="form-group float-row">
-                            <div class="floating-multiselect">
-                                <select id="companyIds" th:field="*{companyIds}" multiple class="form-control">
-                                    <option th:each="company : ${companies}" 
-                                            th:value="${company.id}" 
-                                            th:text="${company.name}">Company</option>
-                                </select>
-                                <label for="companyIds">Companies</label>
+                        <div class="form-group mb-3">
+                            <label class="form-label font-weight-bold">User Companies</label>
+                            <div class="company-checkbox-group border rounded p-3" style="max-height: 200px; overflow-y: auto;">
+                                <div th:each="company : ${companies}" class="custom-control custom-checkbox mb-2">
+                                    <input type="checkbox" class="custom-control-input" 
+                                           th:id="${'company-' + company.id}" 
+                                           th:name="companyIds" 
+                                           th:value="${company.id}" 
+                                           th:checked="${#lists.contains(editUser.companyIds, company.id)}">
+                                    <label class="custom-control-label" th:for="${'company-' + company.id}" th:text="${company.name}">Company Name</label>
+                                </div>
                             </div>
+                            <div class="invalid-feedback" id="companyError">Companies required unless Super Admin is selected</div>
                         </div>
                         
                         <!-- Password section -->
@@ -94,11 +132,11 @@
                             <div class="form-group">
                                 <h4>Password Options</h4>
                                 <div class="radio-group">
-                                    <input type="radio" id="passlink" name="passOption" value="passlink" checked>
+                                    <input type="radio" id="passlink" th:field="*{passOption}" value="passlink" checked>
                                     <label for="passlink">Send Password Reset Link</label>
                                 </div>
                                 <div class="radio-group">
-                                    <input type="radio" id="manual" name="passOption" value="manual">
+                                    <input type="radio" id="manual" th:field="*{passOption}" value="manual">
                                     <label for="manual">Set Manual Password</label>
                                 </div>
                             </div>
@@ -106,7 +144,7 @@
                             <div id="manualPasswordFields" style="display: none;">
                                 <div class="form-group float-row">
                                     <div class="floating-input">
-                                        <input id="password" name="password" type="password" class="form-control">
+                                        <input id="password" th:field="*{password}" type="password" class="form-control">
                                         <label for="password">New Password</label>
                                     </div>
                                 </div>
@@ -181,18 +219,18 @@
         margin-bottom: 15px;
     }
     
-    .floating-input, .floating-multiselect {
+    .floating-input {
         position: relative;
     }
     
-    .floating-input input, .floating-multiselect select {
+    .floating-input input {
         width: 100%;
         padding: 10px;
         border: 1px solid #ddd;
         border-radius: 4px;
     }
     
-    .floating-input label, .floating-multiselect label {
+    .floating-input label {
         position: absolute;
         top: -7px;
         left: 10px;
@@ -260,6 +298,32 @@
         font-size: .75em;
         color: red;
     }
+    
+    /* Checkbox styling */
+    .role-checkbox-group, .company-checkbox-group {
+        background-color: #f8f9fc;
+    }
+    
+    .custom-control-input:checked ~ .custom-control-label::before {
+        background-color: #4e73df;
+        border-color: #4e73df;
+    }
+    
+    .custom-checkbox .custom-control-label {
+        cursor: pointer;
+    }
+    
+    /* Add visual indication for invalid status */
+    .is-invalid {
+        border-color: #e74a3b !important;
+    }
+    
+    #roleError, #companyError {
+        display: none;
+        color: #e74a3b;
+        margin-top: 0.25rem;
+        font-size: 80%;
+    }
 </style>
 
 <!-- Add JavaScript for form functionality -->
@@ -273,6 +337,38 @@
         const deleteBtn = document.getElementById('deleteBtn');
         const passOptions = document.querySelectorAll('input[name="passOption"]');
         const manualPasswordFields = document.getElementById('manualPasswordFields');
+        const roleCheckboxes = document.querySelectorAll('input[name="roleIds"]');
+        const companyCheckboxes = document.querySelectorAll('input[name="companyIds"]');
+        const roleError = document.getElementById('roleError');
+        const companyError = document.getElementById('companyError');
+        const roleCheckboxGroup = document.querySelector('.role-checkbox-group');
+        const companyCheckboxGroup = document.querySelector('.company-checkbox-group');
+        const userIdField = document.getElementById('userId');
+        
+        // Display error notification to console for debugging
+        const errorMessageElement = document.querySelector('.alert-danger');
+        if (errorMessageElement) {
+            console.error('❌ Error: ' + errorMessageElement.textContent.trim());
+        }
+        
+        // Log user ID information
+        if (userIdField) {
+            console.log("🆔 User ID field value: " + userIdField.value);
+            console.log("🆔 User ID data attribute: " + userIdField.getAttribute('data-original-id'));
+        }
+        
+        // Log selected form values for debugging
+        console.log("📝 Form Data Debug:");
+        console.log("🔍 User ID: " + (document.querySelector('input[name="id"]') ? document.querySelector('input[name="id"]').value : 'Not found'));
+        console.log("🔍 Username: " + (document.querySelector('#username') ? document.querySelector('#username').value : 'Not found'));
+        console.log("🔍 First Name: " + (document.querySelector('#firstName') ? document.querySelector('#firstName').value : 'Not found'));
+        console.log("🔍 Last Name: " + (document.querySelector('#lastName') ? document.querySelector('#lastName').value : 'Not found'));
+        console.log("🔍 Email: " + (document.querySelector('#email') ? document.querySelector('#email').value : 'Not found'));
+        
+        // Log initial state for debugging
+        console.log("🔍 Initial form state - roles: " + roleCheckboxes.length + ", companies: " + companyCheckboxes.length);
+        console.log("🔍 Selected roles: " + Array.from(roleCheckboxes).filter(cb => cb.checked).length);
+        console.log("🔍 Selected companies: " + Array.from(companyCheckboxes).filter(cb => cb.checked).length);
         
         // Track form changes
         let formDirty = false;
@@ -313,6 +409,91 @@
         // Delete confirmation
         deleteBtn.addEventListener('click', function() {
             confirmDeleteDiv.style.display = 'block';
+        });
+        
+        // Check if user has selected Super Admin role
+        function hasSuperAdminRole() {
+            const superAdminCheckbox = Array.from(roleCheckboxes).find(checkbox => 
+                checkbox.nextElementSibling.textContent.trim() === "Super Admin" && checkbox.checked
+            );
+            return !!superAdminCheckbox;
+        }
+        
+        // Validation for roles and companies
+        function validateSelections() {
+            let isValid = true;
+            
+            // Validate roles (at least one required)
+            const hasRoleSelected = Array.from(roleCheckboxes).some(checkbox => checkbox.checked);
+            if (!hasRoleSelected) {
+                roleCheckboxGroup.classList.add('is-invalid');
+                roleError.style.display = 'block';
+                isValid = false;
+            } else {
+                roleCheckboxGroup.classList.remove('is-invalid');
+                roleError.style.display = 'none';
+            }
+            
+            // Validate companies (required unless Super Admin is selected)
+            const hasCompanySelected = Array.from(companyCheckboxes).some(checkbox => checkbox.checked);
+            const isSuperAdmin = hasSuperAdminRole();
+            
+            if (!isSuperAdmin && !hasCompanySelected) {
+                companyCheckboxGroup.classList.add('is-invalid');
+                companyError.style.display = 'block';
+                isValid = false;
+            } else {
+                companyCheckboxGroup.classList.remove('is-invalid');
+                companyError.style.display = 'none';
+            }
+            
+            return isValid;
+        }
+        
+        // Monitor role selection changes to update company validation
+        roleCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                console.log("🔄 Role changed: " + this.value + " - checked: " + this.checked);
+                
+                // If Super Admin is selected, companies are optional
+                if (hasSuperAdminRole()) {
+                    companyCheckboxGroup.classList.remove('is-invalid');
+                    companyError.style.display = 'none';
+                } else {
+                    // Validate again if user already tried to submit
+                    if (form.classList.contains('was-validated')) {
+                        validateSelections();
+                    }
+                }
+            });
+        });
+        
+        // Form validation before submit
+        form.addEventListener('submit', function(event) {
+            // Log form data before submission
+            console.log("📝 Form submission - roles: " + document.querySelectorAll('input[name="roleIds"]:checked').length);
+            console.log("📝 Form submission - companies: " + document.querySelectorAll('input[name="companyIds"]:checked').length);
+            
+            form.classList.add('was-validated');
+            if (!validateSelections()) {
+                event.preventDefault();
+                console.log("⚠️ Form validation failed");
+            }
+            
+            // Log the form data just before submission
+            console.log("📤 Form submission data:");
+            const formData = new FormData(form);
+            for (let pair of formData.entries()) {
+                console.log(pair[0] + ': ' + pair[1]);
+            }
+            
+            // Clean the user ID if it contains a comma
+            const userIdValue = userIdField.value;
+            if (userIdValue && userIdValue.includes(',')) {
+                const cleanedId = userIdValue.split(',')[0].trim();
+                console.log("🧹 Cleaning user ID from: " + userIdValue + " to: " + cleanedId);
+                userIdField.value = cleanedId;
+            }
         });
     });
 </script> 

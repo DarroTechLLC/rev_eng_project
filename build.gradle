@@ -22,8 +22,8 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'  // Spring Boot validation starter
     implementation 'io.github.cdimascio:dotenv-java:3.0.0' // dotenv-java dependency
-    implementation 'javax.validation:validation-api:2.0.1.Final'//for data validation
     implementation 'org.springframework.security:spring-security-crypto'//for password encryption
     implementation 'org.projectlombok:lombok:1.18.28'//for getters and setters
     annotationProcessor 'org.projectlombok:lombok:1.18.28'
@@ -35,4 +35,16 @@ dependencies {
 
 tasks.named('test') {
     useJUnitPlatform()
+}
+
+// Configure bootRun task to prevent DevTools SilentExitException from causing build failure
+bootRun {
+    // Add a special SystemProperty to disable restart
+    systemProperty 'spring.devtools.restart.enabled', 'false'
+    
+    // Configure the main class
+    mainClass = 'com.darro_tech.revengproject.RevEngProjectApplication'
+    
+    // Ensure task doesn't fail on DevTools exit
+    systemProperty 'spring.devtools.exit.hook.enabled', 'false'
 }

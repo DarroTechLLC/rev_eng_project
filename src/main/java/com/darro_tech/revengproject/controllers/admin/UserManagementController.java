@@ -1,11 +1,14 @@
 package com.darro_tech.revengproject.controllers.admin;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.logging.Logger;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -15,11 +18,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.darro_tech.revengproject.controllers.BaseController;
+import com.darro_tech.revengproject.models.User;
 import com.darro_tech.revengproject.models.dto.RegisterFormDTO;
 import com.darro_tech.revengproject.models.dto.UserManagementDTO;
 import com.darro_tech.revengproject.models.dto.UserUpdateDTO;
 import com.darro_tech.revengproject.repositories.CompanyRepository;
 import com.darro_tech.revengproject.repositories.RoleRepository;
+import com.darro_tech.revengproject.repositories.UserRepository;
 import com.darro_tech.revengproject.services.UserManagementService;
 
 @Controller
@@ -36,6 +41,9 @@ public class UserManagementController extends BaseController {
 
     @Autowired
     private UserManagementService userManagementService;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @GetMapping
     public String manageUsers(Model model) {
@@ -121,21 +129,124 @@ public class UserManagementController extends BaseController {
     }
 
     @PostMapping("/update")
-    public String updateUser(@ModelAttribute UserUpdateDTO userUpdateDTO, RedirectAttributes redirectAttributes) {
+    public String updateUser(@ModelAttribute("editUser") UserUpdateDTO userUpdateDTO,
+            BindingResult bindingResult,
+            Model model,
+            RedirectAttributes redirectAttributes) {
+
+        // Log the exact format of the received ID
+        logger.info("🔍 Raw user ID received: '" + userUpdateDTO.getId() + "'");
+
+        // Extra cleaning for the ID value in case the form submission has issues
+        if (userUpdateDTO.getId() != null && userUpdateDTO.getId().contains(",")) {
+            String originalId = userUpdateDTO.getId();
+            String cleanedId = originalId.split(",")[0].trim();
+            userUpdateDTO.setId(cleanedId);
+            logger.info("🛠️ Cleaned user ID from '" + originalId + "' to '" + cleanedId + "'");
+        }
+
         logger.info("🔄 Processing user update for user ID: " + userUpdateDTO.getId());
         logger.info("🔄 Update details - Username: " + userUpdateDTO.getUsername()
                 + ", First Name: " + userUpdateDTO.getFirstName()
                 + ", Last Name: " + userUpdateDTO.getLastName());
 
-        try {
-            boolean success = userManagementService.updateUser(userUpdateDTO);
+        // Manual validation
+        boolean hasErrors = false;
+        List<String> errorMessages = new ArrayList<>();
 
-            if (success) {
+        // Validate username
+        if (userUpdateDTO.getUsername() == null || userUpdateDTO.getUsername().trim().isEmpty()) {
+            errorMessages.add("Username: Username is required");
+            hasErrors = true;
+        } else if (userUpdateDTO.getUsername().length() < 3 || userUpdateDTO.getUsername().length() > 50) {
+            errorMessages.add("Username: Username must be between 3 and 50 characters");
+            hasErrors = true;
+        }
+
+        // Validate first name
+        if (userUpdateDTO.getFirstName() == null || userUpdateDTO.getFirstName().trim().isEmpty()) {
+            errorMessages.add("First Name: First name is required");
+            hasErrors = true;
+        } else if (userUpdateDTO.getFirstName().length() > 50) {
+            errorMessages.add("First Name: First name cannot exceed 50 characters");
+            hasErrors = true;
+        }
+
+        // Validate last name
+        if (userUpdateDTO.getLastName() == null || userUpdateDTO.getLastName().trim().isEmpty()) {
+            errorMessages.add("Last Name: Last name is required");
+            hasErrors = true;
+        } else if (userUpdateDTO.getLastName().length() > 50) {
+            errorMessages.add("Last Name: Last name cannot exceed 50 characters");
+            hasErrors = true;
+        }
+
+        // Validate email (basic validation)
+        if (userUpdateDTO.getEmail() == null || userUpdateDTO.getEmail().trim().isEmpty()) {
+            errorMessages.add("Email: Email is required");
+            hasErrors = true;
+        } else if (!userUpdateDTO.getEmail().matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
+            errorMessages.add("Email: Invalid email format");
+            hasErrors = true;
+        }
+
+        // Check for binding errors (if any)
+        if (bindingResult.hasErrors() || hasErrors) {
+            logger.warning("⚠️ Validation errors in user update form");
+
+            // Add roles and companies back to the model for the form
+            model.addAttribute("roles", roleRepository.findAll());
+            model.addAttribute("companies", companyRepository.findAll());
+
+            // Add validation error messages to model
+            if (bindingResult.hasErrors()) {
+                bindingResult.getFieldErrors().forEach(error
+                        -> errorMessages.add(error.getField() + ": " + error.getDefaultMessage())
+                );
+            }
+            model.addAttribute("validationErrors", errorMessages);
+
+            return view("admin/users/edit-user", model);
+        }
+
+        try {
+            // Log roles and companies for debugging
+            if (userUpdateDTO.getRoleIds() != null) {
+                logger.info("📋 Roles selected: " + userUpdateDTO.getRoleIds().size() + " roles");
+                userUpdateDTO.getRoleIds().forEach(roleId
+                        -> logger.info("👤 Role ID: " + roleId));
+            } else {
+                logger.warning("⚠️ No roles selected for user");
+                userUpdateDTO.setRoleIds(new ArrayList<>());
+            }
+
+            if (userUpdateDTO.getCompanyIds() != null) {
+                logger.info("🏢 Companies selected: " + userUpdateDTO.getCompanyIds().size() + " companies");
+                userUpdateDTO.getCompanyIds().forEach(companyId
+                        -> logger.info("🏢 Company ID: " + companyId));
+            } else {
+                logger.warning("⚠️ No companies selected for user");
+                userUpdateDTO.setCompanyIds(new ArrayList<>());
+            }
+
+            // Proceed with updating the user
+            UserManagementService.UpdateResult result = userManagementService.updateUser(userUpdateDTO);
+
+            if (result.isSuccess()) {
                 logger.info("✅ Successfully updated user with ID: " + userUpdateDTO.getId());
                 redirectAttributes.addFlashAttribute("successMessage", "User updated successfully");
             } else {
-                logger.warning("⚠️ Failed to update user with ID: " + userUpdateDTO.getId());
-                redirectAttributes.addFlashAttribute("errorMessage", "Failed to update user");
+                logger.warning("⚠️ Failed to update user with ID: " + userUpdateDTO.getId() + ". Error: " + result.getErrorMessage());
+
+                // Check if this is a "User not found" error
+                if (result.getErrorMessage() != null && result.getErrorMessage().contains("User not found")) {
+                    // This is a more serious error - the user ID might be invalid
+                    logger.severe("❌ Critical error: Attempt to update non-existent user: " + userUpdateDTO.getId());
+                    redirectAttributes.addFlashAttribute("errorMessage", "Critical error: The user ID appears to be invalid. Please return to the user list and try again.");
+                } else {
+                    // Regular update error
+                    redirectAttributes.addFlashAttribute("errorMessage", "Failed to update user: " + result.getErrorMessage());
+                }
             }
 
             return "redirect:/admin/users";
@@ -152,15 +263,26 @@ public class UserManagementController extends BaseController {
         logger.info("🗑️ Processing user deletion for user ID: " + id);
 
         try {
-            // Implement deletion logic here
-            // For now, just redirect back to users page
+            // Find the user
+            Optional<User> userOptional = userRepository.findById(id);
+            if (!userOptional.isPresent()) {
+                logger.warning("⚠️ User not found with ID: " + id);
+                redirectAttributes.addFlashAttribute("errorMessage", "User not found");
+                return "redirect:/admin/users";
+            }
+
+            User user = userOptional.get();
+
+            // Delete the user
+            userRepository.delete(user);
+
             logger.info("✅ Successfully deleted user with ID: " + id);
             redirectAttributes.addFlashAttribute("successMessage", "User deleted successfully");
             return "redirect:/admin/users";
         } catch (Exception e) {
             logger.severe("❌ Error deleting user: " + e.getMessage());
             e.printStackTrace();
-            redirectAttributes.addFlashAttribute("errorMessage", "An error occurred while deleting user");
+            redirectAttributes.addFlashAttribute("errorMessage", "An error occurred while deleting user: " + e.getMessage());
             return "redirect:/admin/users";
         }
     }

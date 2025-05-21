@@ -3,7 +3,6 @@ package com.darro_tech.revengproject.controllers;
 import java.util.Optional;
 
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -15,13 +14,14 @@ import com.darro_tech.revengproject.models.Company;
 import com.darro_tech.revengproject.models.User;
 import com.darro_tech.revengproject.services.CompanySelectionService;
 import com.darro_tech.revengproject.services.CompanyService;
+import com.darro_tech.revengproject.util.LoggerUtils;
 
 import jakarta.servlet.http.HttpSession;
 
 @Controller
 public class DashboardController extends BaseController {
 
-    private static final Logger logger = LoggerFactory.getLogger(DashboardController.class);
+    private static final Logger logger = LoggerUtils.getLogger(DashboardController.class);
 
     @Autowired
     private CompanyService companyService;
@@ -37,35 +37,57 @@ public class DashboardController extends BaseController {
      */
     @GetMapping("/dashboard")
     public String dashboard(Model model, HttpSession session) {
-        User user = authenticationController.getUserFromSession(session);
-        if (user == null) {
-            logger.warn("🔒 No authenticated user found, redirecting to login");
-            return "redirect:/login";
-        }
+        LoggerUtils.logRequest(logger, "GET", "/dashboard");
+        logger.debug("📊 Processing default dashboard request");
 
-        logger.info("📊 Loading dashboard for user: {}", user.getUsername());
+        // Performance tracking
+        long startTime = System.currentTimeMillis();
 
-        // Get selected company from session
-        String selectedCompanyId = (String) session.getAttribute("selectedCompanyId");
-        if (selectedCompanyId == null) {
-            logger.warn("⚠️ No company selected for user: {}", user.getUsername());
-
-            // Try to auto-select a company for the user
-            boolean companySelected = companySelectionService.selectDefaultCompanyForUser(user, session);
-            if (companySelected) {
-                // Get the newly selected company ID
-                selectedCompanyId = (String) session.getAttribute("selectedCompanyId");
-                logger.info("🔄 Auto-selected company for user during dashboard access");
-            } else {
-                logger.warn("❌ Failed to auto-select company, redirecting to company selection");
-                return "redirect:/select-company";
+        try {
+            User user = authenticationController.getUserFromSession(session);
+            if (user == null) {
+                logger.warn("🔒 No authenticated user found, redirecting to login");
+                LoggerUtils.logResponse(logger, "/dashboard", "Redirecting to login due to missing authentication");
+                return "redirect:/login";
             }
+
+            LoggerUtils.logUserAction(logger, user.getUsername(), "accessed dashboard", null);
+
+            // Get selected company from session
+            String selectedCompanyId = (String) session.getAttribute("selectedCompanyId");
+            if (selectedCompanyId == null) {
+                logger.warn("⚠️ No company selected for user: {}", user.getUsername());
+
+                // Try to auto-select a company for the user
+                logger.debug("🔄 Attempting to auto-select company for user");
+                boolean companySelected = companySelectionService.selectDefaultCompanyForUser(user, session);
+                if (companySelected) {
+                    // Get the newly selected company ID
+                    selectedCompanyId = (String) session.getAttribute("selectedCompanyId");
+                    logger.info("✅ Successfully auto-selected company during dashboard access: {}", selectedCompanyId);
+                } else {
+                    logger.warn("❌ Failed to auto-select company, redirecting to company selection");
+                    LoggerUtils.logResponse(logger, "/dashboard", "Redirecting to company selection due to no company available");
+                    return "redirect:/select-company";
+                }
+            } else {
+                logger.debug("🏢 Using company from session: {}", selectedCompanyId);
+            }
+
+            // Load company-specific data for the dashboard
+            logger.debug("📊 Loading dashboard data for company: {}", selectedCompanyId);
+            loadDashboardData(model, selectedCompanyId, user);
+
+            // Track performance
+            long endTime = System.currentTimeMillis();
+            LoggerUtils.logPerformance(logger, "Dashboard page preparation", endTime - startTime);
+
+            LoggerUtils.logResponse(logger, "/dashboard", "Dashboard rendered successfully");
+            return view("dashboard", model);
+        } catch (Exception e) {
+            LoggerUtils.logException(logger, e, "processing dashboard request");
+            throw e; // Re-throw to let Spring's exception handlers deal with it
         }
-
-        // Load company-specific data for the dashboard
-        loadDashboardData(model, selectedCompanyId, user);
-
-        return view("dashboard", model);
     }
 
     /**
@@ -78,20 +100,31 @@ public class DashboardController extends BaseController {
             Model model,
             HttpSession session) {
 
+        LoggerUtils.logRequest(logger, "GET", "/dashboard/" + companyId + "/" + dashboardType);
+        logger.debug("📊 Processing typed dashboard request for company: {}, type: {}", companyId, dashboardType);
+
+        // Performance tracking
+        long startTime = System.currentTimeMillis();
+
         try {
             User user = authenticationController.getUserFromSession(session);
             if (user == null) {
                 logger.warn("🔒 No authenticated user found, redirecting to login");
+                LoggerUtils.logResponse(logger, "/dashboard/" + companyId + "/" + dashboardType, "Redirecting to login due to missing authentication");
                 return "redirect:/login";
             }
 
-            logger.info("🏢 Loading dashboard page: {}/{}, User: {}",
-                    companyId, dashboardType, user.getUsername());
+            LoggerUtils.logUserAction(logger, user.getUsername(), "accessed dashboard",
+                    "company: " + companyId + ", type: " + dashboardType);
 
             // Find company by ID
+            logger.debug("🔍 Looking up company by ID: {}", companyId);
+            LoggerUtils.logDatabase(logger, "SELECT", "Company", "Finding company by ID: " + companyId);
             Optional<Company> companyOpt = companyService.getCompanyById(companyId);
+
             if (!companyOpt.isPresent()) {
                 logger.warn("❓ Company not found with ID: {}", companyId);
+                LoggerUtils.logResponse(logger, "/dashboard/" + companyId + "/" + dashboardType, "Redirecting to default dashboard due to company not found");
                 return "redirect:/dashboard";
             }
 
@@ -99,27 +132,43 @@ public class DashboardController extends BaseController {
             logger.debug("✅ Found company: {} (ID: {})", company.getName(), company.getId());
 
             // Check if user has access to this company
+            logger.debug("🔒 Checking if user has access to company: {}", company.getName());
+            LoggerUtils.logDatabase(logger, "SELECT", "UserCompany", "Checking user access to company");
             boolean hasAccess = companyService.userHasCompanyAccess(user.getId(), company.getId());
+
             if (!hasAccess) {
-                logger.warn("🚫 User does not have access to company: {}", company.getName());
+                logger.warn("🚫 User {} does not have access to company: {}", user.getUsername(), company.getName());
+                LoggerUtils.logAuthorization(logger, false, user.getUsername(), "company: " + company.getName());
+                LoggerUtils.logResponse(logger, "/dashboard/" + companyId + "/" + dashboardType, "Redirecting to default dashboard due to access denied");
                 return "redirect:/dashboard";
             }
 
             // Update the selected company in session
+            logger.debug("🔄 Updating selected company in session to: {}", company.getName());
             session.setAttribute("selectedCompanyId", company.getId());
-            logger.info("✅ Selected company for dashboard: {} (ID: {})", company.getName(), company.getId());
 
             // Add project type to model
+            logger.debug("📝 Setting dashboard type in model: {}", dashboardType);
             model.addAttribute("dashboardType", dashboardType);
 
             // Load company-specific data
+            logger.debug("📊 Loading dashboard data for company: {}", company.getName());
             loadDashboardData(model, company.getId(), user);
 
             // Redirect to SEO-friendly URL format
             String companySlug = company.getName().toLowerCase().replace(" ", "-");
+            logger.debug("🔄 Redirecting to SEO-friendly URL: /{}/dashboard/{}", companySlug, dashboardType);
+
+            // Track performance
+            long endTime = System.currentTimeMillis();
+            LoggerUtils.logPerformance(logger, "Typed dashboard preparation", endTime - startTime);
+
+            LoggerUtils.logResponse(logger, "/dashboard/" + companyId + "/" + dashboardType,
+                    "Redirecting to SEO-friendly dashboard URL");
             return "redirect:/" + companySlug + "/dashboard/" + dashboardType;
         } catch (Exception e) {
-            logger.error("💥 Error in companyDashboardPage: {} - {}", e.getClass().getName(), e.getMessage(), e);
+            LoggerUtils.logException(logger, e, "processing typed dashboard request");
+            logger.error("💥 Error in companyDashboardPage: {} - {}", e.getClass().getName(), e.getMessage());
             return "redirect:/dashboard";
         }
     }
@@ -133,13 +182,19 @@ public class DashboardController extends BaseController {
             Model model,
             HttpSession session) {
 
+        LoggerUtils.logRequest(logger, "GET", "/dashboard/" + companyId);
+        logger.debug("🔄 Processing company dashboard root request for company: {}", companyId);
+
         try {
-            logger.info("🔄 Redirecting company dashboard to daily-volume: {}", companyId);
+            logger.info("🔄 Redirecting to default dashboard type (daily-volume) for company: {}", companyId);
 
             // Default to daily-volume when no specific dashboard type is specified
+            LoggerUtils.logResponse(logger, "/dashboard/" + companyId,
+                    "Redirecting to daily-volume dashboard for company");
             return "redirect:/dashboard/" + companyId + "/daily-volume";
         } catch (Exception e) {
-            logger.error("💥 Error in companyDashboardRoot: {} - {}", e.getClass().getName(), e.getMessage(), e);
+            LoggerUtils.logException(logger, e, "processing company dashboard root request");
+            logger.error("💥 Error in companyDashboardRoot: {} - {}", e.getClass().getName(), e.getMessage());
             return "redirect:/dashboard";
         }
     }
@@ -153,21 +208,30 @@ public class DashboardController extends BaseController {
             Model model,
             HttpSession session) {
 
+        LoggerUtils.logRequest(logger, "GET", "/projects/" + companyId);
+        logger.debug("📋 Processing company projects request for company: {}", companyId);
+
+        // Performance tracking
+        long startTime = System.currentTimeMillis();
+
         try {
             User user = authenticationController.getUserFromSession(session);
             if (user == null) {
                 logger.warn("🔒 No authenticated user found, redirecting to login");
+                LoggerUtils.logResponse(logger, "/projects/" + companyId, "Redirecting to login due to missing authentication");
                 return "redirect:/login";
             }
 
-            logger.info("🏢 Loading company projects page: {}, User: {}", companyId, user.getUsername());
+            LoggerUtils.logUserAction(logger, user.getUsername(), "accessed projects page", "company: " + companyId);
 
             // Find company by ID
-            logger.debug("🔍 Searching for company by ID: {}", companyId);
+            logger.debug("🔍 Looking up company by ID: {}", companyId);
+            LoggerUtils.logDatabase(logger, "SELECT", "Company", "Finding company by ID: " + companyId);
             Optional<Company> companyOpt = companyService.getCompanyById(companyId);
 
             if (!companyOpt.isPresent()) {
                 logger.warn("❓ Company not found with ID: {}", companyId);
+                LoggerUtils.logResponse(logger, "/projects/" + companyId, "Redirecting to dashboard due to company not found");
                 return "redirect:/dashboard";
             }
 
@@ -175,23 +239,35 @@ public class DashboardController extends BaseController {
             logger.debug("✅ Found company: {} (ID: {})", company.getName(), company.getId());
 
             // Check if user has access to this company
+            logger.debug("🔒 Checking if user has access to company: {}", company.getName());
+            LoggerUtils.logDatabase(logger, "SELECT", "UserCompany", "Checking user access to company");
             boolean hasAccess = companyService.userHasCompanyAccess(user.getId(), company.getId());
+
             if (!hasAccess) {
-                logger.warn("🚫 User does not have access to company: {}", company.getName());
+                logger.warn("🚫 User {} does not have access to company: {}", user.getUsername(), company.getName());
+                LoggerUtils.logAuthorization(logger, false, user.getUsername(), "company: " + company.getName());
+                LoggerUtils.logResponse(logger, "/projects/" + companyId, "Redirecting to dashboard due to access denied");
                 return "redirect:/dashboard";
             }
 
             // Update the selected company in session
+            logger.debug("🔄 Updating selected company in session to: {}", company.getName());
             session.setAttribute("selectedCompanyId", company.getId());
-            logger.info("✅ Selected company for projects: {} (ID: {})", company.getName(), company.getId());
 
             // Load company-specific data
+            logger.debug("📊 Loading dashboard data for company: {}", company.getName());
             loadDashboardData(model, company.getId(), user);
 
+            // Track performance
+            long endTime = System.currentTimeMillis();
+            LoggerUtils.logPerformance(logger, "Projects page preparation", endTime - startTime);
+
             // Return the projects view
+            LoggerUtils.logResponse(logger, "/projects/" + companyId, "Projects page rendered successfully");
             return view("projects/index", model);
         } catch (Exception e) {
-            logger.error("💥 Error in companyProjects: {} - {}", e.getClass().getName(), e.getMessage(), e);
+            LoggerUtils.logException(logger, e, "processing company projects request");
+            logger.error("💥 Error in companyProjects: {} - {}", e.getClass().getName(), e.getMessage());
             return "redirect:/dashboard";
         }
     }
@@ -272,28 +348,28 @@ public class DashboardController extends BaseController {
      * Helper method to load company-specific dashboard data
      */
     private void loadDashboardData(Model model, String companyId, User user) {
-        logger.info("🔄 Loading dashboard data for company ID: {}", companyId);
+        try {
+            logger.debug("📊 Loading dashboard data for company ID: {}", companyId);
 
-        // Add company ID to model for debugging
-        model.addAttribute("currentCompanyId", companyId);
+            // Load the company
+            LoggerUtils.logDatabase(logger, "SELECT", "Company", "Loading company data for dashboard");
+            Optional<Company> companyOpt = companyService.getCompanyById(companyId);
 
-        // Get company details
-        companyService.getCompanyById(companyId).ifPresent(company -> {
+            if (!companyOpt.isPresent()) {
+                logger.warn("❓ Company not found when loading dashboard data: {}", companyId);
+                return;
+            }
+
+            Company company = companyOpt.get();
             model.addAttribute("companyName", company.getName());
+            model.addAttribute("currentCompanyId", company.getId());
             model.addAttribute("companyLogoUrl", company.getLogoUrl());
-            model.addAttribute("selectedCompany", company);
-            logger.info("🏢 Dashboard loaded for company: {}, User: {}",
-                    company.getName(), (user != null ? user.getUsername() : "unknown"));
-            // Add any additional company data here
-        });
+            logger.debug("📊 Added company details to model: {}", company.getName());
 
-        // Add user to model
-        if (user != null) {
-            model.addAttribute("currentUser", user);
+            // Load other data here...
+        } catch (Exception e) {
+            LoggerUtils.logException(logger, e, "loading dashboard data");
+            logger.error("💥 Error loading dashboard data: {} - {}", e.getClass().getName(), e.getMessage());
         }
-
-        // Add any other dashboard data here
-        model.addAttribute("dashboardTitle", "Company Dashboard");
-        model.addAttribute("lastUpdated", java.time.LocalDateTime.now().toString());
     }
 }
