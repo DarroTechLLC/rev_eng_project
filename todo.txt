@@ -1,1 +1,5 @@
--finish dropdown links (Website Alerts)
+-(Website Alerts)
+-password functionality
+-user specific view
+-take active alert to icon in top, on hover active, onclick ???
+-create new alert???

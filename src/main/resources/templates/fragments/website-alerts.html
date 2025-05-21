@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+    <!-- Website Alert Panel -->
+    <div th:fragment="website-alerts" id="websiteAlertPanel" style="display: none;">
+        <div class="website-alert-title-row">
+            <button id="alertTitleButton" class="website-alert-title-button">
+                <span id="alertCount" class="website-alert-title-text"></span>
+                <span id="alertToggleIcon" class="website-alert-title-icon">
+                    <i class="fas fa-plus"></i>
+                </span>
+            </button>
+        </div>
+        <div id="alertMessagesPanel" class="website-alert-messages-panel" style="display: none;">
+            <!-- Alert messages will be inserted here -->
+        </div>
+    </div>
+
+    <!-- CSS for Website Alerts -->
+    <style th:fragment="website-alerts-css">
+        /* Website Alert Styles */
+        #websiteAlertPanel {
+            display: flex;
+            flex-direction: column;
+            border-bottom: solid 1px #ddd;
+        }
+        
+        .website-alert-title-row {
+            padding: 8px 18px;
+            display: flex;
+            flex-direction: row;
+            justify-content: flex-end;
+        }
+        
+        .website-alert-title-button {
+            display: flex;
+            flex-direction: row;
+            border-radius: 20px;
+            padding: 6px;
+            color: white;
+            background-color: #d00;
+            cursor: pointer;
+            border: none;
+        }
+        
+        .website-alert-title-button.open {
+            color: #d00;
+            background-color: white;
+        }
+        
+        .website-alert-title-text {
+            font-weight: bold;
+            margin-left: 12px;
+        }
+        
+        .website-alert-title-icon {
+            width: 24px;
+            border: 2px solid white;
+            border-radius: 50%;
+            margin-left: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .website-alert-title-button.open .website-alert-title-icon {
+            border-color: #d00;
+        }
+        
+        .website-alert-messages-panel {
+            width: 100%;
+        }
+        
+        .website-alert-message-row {
+            display: flex;
+            flex-direction: row;
+            border-top: solid 1px #aaa;
+            background-color: #f8f8f8;
+            padding: 8px;
+        }
+        
+        .website-alert-message-icon {
+            display: flex;
+            width: 30px;
+            color: #d00;
+        }
+        
+        .website-alert-message-text {
+            flex: 1;
+            padding: 2px 12px;
+            color: #000;
+        }
+    </style>
+
+    <!-- JavaScript for Website Alerts -->
+    <script th:fragment="website-alerts-js" th:inline="javascript">
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get current company ID from session or HTML data attribute
+            const companyId = document.body.getAttribute('data-company-id') || 'default';
+            
+            // Load active alerts
+            loadActiveAlerts(companyId);
+            
+            // Set up refresh interval (every 60 seconds)
+            setInterval(() => {
+                loadActiveAlerts(companyId);
+            }, 60000);
+            
+            // Set up click handler for alert panel toggle
+            document.getElementById('alertTitleButton').addEventListener('click', toggleAlertsPanel);
+        });
+        
+        function loadActiveAlerts(companyId) {
+            fetch('/api/website-alerts/list-active', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ companyId: companyId })
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.data && result.data.length > 0) {
+                    displayAlerts(result.data);
+                } else {
+                    hideAlertPanel();
+                }
+            })
+            .catch(error => {
+                console.error('Error loading alerts:', error);
+                hideAlertPanel();
+            });
+        }
+        
+        function displayAlerts(alerts) {
+            const alertPanel = document.getElementById('websiteAlertPanel');
+            const alertCount = document.getElementById('alertCount');
+            const alertText = alerts.length > 1 ? 'Active Alerts' : 'Active Alert';
+            
+            // Update alert count
+            alertCount.textContent = `${alerts.length} ${alertText}`;
+            
+            // Update messages panel
+            const messagesPanel = document.getElementById('alertMessagesPanel');
+            messagesPanel.innerHTML = '';
+            
+            // Add each alert message
+            alerts.forEach(alert => {
+                const messageRow = document.createElement('div');
+                messageRow.className = 'website-alert-message-row';
+                
+                const iconDiv = document.createElement('div');
+                iconDiv.className = 'website-alert-message-icon';
+                iconDiv.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
+                
+                const textDiv = document.createElement('div');
+                textDiv.className = 'website-alert-message-text';
+                textDiv.textContent = alert.message;
+                
+                messageRow.appendChild(iconDiv);
+                messageRow.appendChild(textDiv);
+                messagesPanel.appendChild(messageRow);
+            });
+            
+            // Show the alert panel
+            alertPanel.style.display = 'flex';
+        }
+        
+        function hideAlertPanel() {
+            const alertPanel = document.getElementById('websiteAlertPanel');
+            alertPanel.style.display = 'none';
+            
+            // Also hide the messages panel if it was open
+            const messagesPanel = document.getElementById('alertMessagesPanel');
+            messagesPanel.style.display = 'none';
+            
+            // Reset the button state
+            const titleButton = document.getElementById('alertTitleButton');
+            titleButton.classList.remove('open');
+            
+            // Reset the icon
+            const toggleIcon = document.getElementById('alertToggleIcon');
+            toggleIcon.innerHTML = '<i class="fas fa-plus"></i>';
+        }
+        
+        function toggleAlertsPanel() {
+            const messagesPanel = document.getElementById('alertMessagesPanel');
+            // Check current display style
+            const computedStyle = window.getComputedStyle(messagesPanel);
+            const isOpen = computedStyle.display !== 'none';
+            
+            // Toggle the panel
+            messagesPanel.style.display = isOpen ? 'none' : 'block';
+            
+            // Toggle the button appearance
+            const titleButton = document.getElementById('alertTitleButton');
+            titleButton.classList.toggle('open', !isOpen);
+            
+            // Toggle the icon
+            const toggleIcon = document.getElementById('alertToggleIcon');
+            toggleIcon.innerHTML = isOpen 
+                ? '<i class="fas fa-plus"></i>' 
+                : '<i class="fas fa-minus"></i>';
+        }
+    </script>
+</body>
+</html> 

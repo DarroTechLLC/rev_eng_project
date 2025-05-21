@@ -1,0 +1,401 @@
+<!-- Page Heading -->
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800" th:text="${isNew ? 'Create Website Alert' : 'Edit Website Alert'}"></h1>
+    <a href="/admin/alerts" class="d-none d-sm-inline-block btn btn-sm btn-secondary shadow-sm">
+        <i class="fas fa-arrow-left fa-sm text-white-50"></i> Back to Alerts
+    </a>
+</div>
+
+<!-- Content Row -->
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary" th:text="${isNew ? 'New Alert' : 'Edit Alert #' + alertId}"></h6>
+            </div>
+            <div class="card-body">
+                <form id="alertForm">
+                    <input type="hidden" id="alertId" th:value="${alertId}" />
+                    
+                    <div class="form-group">
+                        <label for="message">Alert Message</label>
+                        <textarea class="form-control" id="message" rows="3" required></textarea>
+                        <small class="form-text text-muted">Enter the message that will be displayed to users.</small>
+                    </div>
+                    
+                    <div class="form-group" id="companiesContainer">
+                        <label>Companies</label>
+                        <div class="mb-2">
+                            <button type="button" id="allCompaniesBtn" class="btn btn-outline-primary mb-2">All Companies</button>
+                        </div>
+                        <div class="d-flex flex-wrap" id="companyButtonsContainer">
+                            <!-- Company buttons will be added here -->
+                            <div class="spinner-border text-primary mr-2" role="status">
+                                <span class="sr-only">Loading...</span>
+                            </div>
+                            <span>Loading companies...</span>
+                        </div>
+                        <input type="hidden" id="selectedCompanies" name="selectedCompanies" />
+                        <small class="form-text text-muted">Select which companies should see this alert. Selected companies appear in blue. Clicking "All Companies" will show the alert to everyone.</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <div class="custom-control custom-switch">
+                            <input type="checkbox" class="custom-control-input" id="isActive">
+                            <label class="custom-control-label" for="isActive">Active</label>
+                        </div>
+                        <small class="form-text text-muted">Toggle to activate or deactivate this alert.</small>
+                    </div>
+                    
+                    <div class="form-group" id="timestampsContainer" style="display: none;">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label>Created</label>
+                                <p id="createdAt" class="form-control-static"></p>
+                            </div>
+                            <div class="col-md-6">
+                                <label>Last Updated</label>
+                                <p id="updatedAt" class="form-control-static"></p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-danger" id="errorMessage" style="display: none;"></div>
+                    
+                    <button type="submit" class="btn btn-primary">Save Alert</button>
+                    <a href="/admin/alerts" class="btn btn-secondary">Cancel</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add styles for company buttons -->
+<style>
+    .company-btn {
+        margin-right: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+    .company-selected {
+        background-color: #4e73df;
+        color: white;
+    }
+</style>
+
+<!-- JavaScript for the form -->
+<script th:inline="javascript">
+    document.addEventListener('DOMContentLoaded', function() {
+        const isNew = [[${isNew}]];
+        const alertId = isNew ? 0 : [[${alertId}]];
+        
+        // Load companies
+        loadCompanies();
+        
+        // If editing, load the alert data
+        if (!isNew) {
+            loadAlertData(alertId);
+        }
+        
+        // Form submission
+        document.getElementById('alertForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            saveAlert();
+        });
+        
+        // Set up all companies button
+        document.getElementById('allCompaniesBtn').addEventListener('click', function() {
+            toggleAllCompanies();
+        });
+    });
+    
+    // Store selected company IDs
+    let selectedCompanyIds = [];
+    let allCompaniesSelected = false;
+    
+    // Load companies from API
+    function loadCompanies() {
+        console.log("🏢 Loading companies...");
+        fetch('/api/companies/list', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(result => {
+            console.log("🏢 Companies response received:", result);
+            if (!result) {
+                throw new Error("Empty response received");
+            }
+            
+            if (result.data && Array.isArray(result.data)) {
+                const container = document.getElementById('companyButtonsContainer');
+                container.innerHTML = ''; // Clear loading indicator
+                
+                result.data.forEach(company => {
+                    createCompanyButton(company, container);
+                });
+                console.log("🏢 Companies loaded successfully:", result.data.length);
+            } else if (result.error) {
+                showError('Failed to load companies: ' + result.error);
+            } else {
+                showError('Failed to load companies: Invalid response format');
+            }
+        })
+        .catch(error => {
+            console.error("🏢 Error loading companies:", error);
+            showError('Failed to load companies: ' + error.message);
+        });
+    }
+    
+    // Create a button for a company
+    function createCompanyButton(company, container) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'btn btn-outline-secondary company-btn';
+        button.dataset.companyId = company.companyId;
+        button.textContent = company.companyName;
+        
+        button.addEventListener('click', function() {
+            toggleCompany(company.companyId);
+        });
+        
+        container.appendChild(button);
+    }
+    
+    // Toggle a company selection
+    function toggleCompany(companyId) {
+        if (allCompaniesSelected) {
+            // If "All Companies" was selected, deselect it first
+            allCompaniesSelected = false;
+            document.getElementById('allCompaniesBtn').classList.remove('company-selected');
+            selectedCompanyIds = [];
+        }
+        
+        const index = selectedCompanyIds.indexOf(companyId);
+        const button = document.querySelector(`.company-btn[data-company-id="${companyId}"]`);
+        
+        if (index === -1) {
+            // Add company
+            selectedCompanyIds.push(companyId);
+            button.classList.add('company-selected');
+            button.classList.remove('btn-outline-secondary');
+            button.classList.add('btn-primary');
+        } else {
+            // Remove company
+            selectedCompanyIds.splice(index, 1);
+            button.classList.remove('company-selected');
+            button.classList.remove('btn-primary');
+            button.classList.add('btn-outline-secondary');
+        }
+        
+        updateSelectedCompaniesInput();
+    }
+    
+    // Toggle "All Companies" selection
+    function toggleAllCompanies() {
+        const allCompaniesBtn = document.getElementById('allCompaniesBtn');
+        
+        if (allCompaniesSelected) {
+            // Deselect "All Companies"
+            allCompaniesSelected = false;
+            allCompaniesBtn.classList.remove('company-selected');
+            allCompaniesBtn.classList.remove('btn-primary');
+            allCompaniesBtn.classList.add('btn-outline-primary');
+        } else {
+            // Select "All Companies" and deselect all other companies
+            allCompaniesSelected = true;
+            allCompaniesBtn.classList.add('company-selected');
+            allCompaniesBtn.classList.remove('btn-outline-primary');
+            allCompaniesBtn.classList.add('btn-primary');
+            
+            // Deselect all individual companies
+            document.querySelectorAll('.company-btn').forEach(btn => {
+                btn.classList.remove('company-selected');
+                btn.classList.remove('btn-primary');
+                btn.classList.add('btn-outline-secondary');
+            });
+            
+            selectedCompanyIds = [];
+        }
+        
+        updateSelectedCompaniesInput();
+    }
+    
+    // Update the hidden input field with selected companies
+    function updateSelectedCompaniesInput() {
+        const input = document.getElementById('selectedCompanies');
+        if (allCompaniesSelected) {
+            input.value = JSON.stringify(['all']);
+        } else {
+            input.value = JSON.stringify(selectedCompanyIds);
+        }
+    }
+    
+    // Load alert data when editing
+    function loadAlertData(id) {
+        console.log("📢 Loading alert data for ID:", id);
+        fetch('/api/admin/website-alerts/get', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ id: id })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(result => {
+            console.log("📢 Alert data response received:", result);
+            if (!result) {
+                throw new Error("Empty response received");
+            }
+            
+            if (result.data) {
+                const alert = result.data;
+                
+                // Set form values
+                document.getElementById('message').value = alert.message;
+                document.getElementById('isActive').checked = alert.is_active;
+                
+                // Set created/updated timestamps
+                document.getElementById('timestampsContainer').style.display = 'block';
+                document.getElementById('createdAt').textContent = formatDate(alert.created_at);
+                document.getElementById('updatedAt').textContent = formatDate(alert.updated_at);
+                
+                // Store company IDs for selection once companies are loaded
+                const companyIds = alert.company_ids;
+                console.log("📢 Alert company IDs:", companyIds);
+                
+                // Wait for company buttons to be created
+                const selectInterval = setInterval(() => {
+                    if (document.querySelectorAll('.company-btn').length > 0) {
+                        clearInterval(selectInterval);
+                        
+                        // Select companies from alert
+                        if (companyIds.includes('all')) {
+                            // If "all" is included, select the "All Companies" button
+                            allCompaniesSelected = true;
+                            const allCompaniesBtn = document.getElementById('allCompaniesBtn');
+                            allCompaniesBtn.classList.add('company-selected');
+                            allCompaniesBtn.classList.remove('btn-outline-primary');
+                            allCompaniesBtn.classList.add('btn-primary');
+                        } else {
+                            // Otherwise select specific companies
+                            selectedCompanyIds = [...companyIds];
+                            
+                            // Update buttons
+                            selectedCompanyIds.forEach(companyId => {
+                                const button = document.querySelector(`.company-btn[data-company-id="${companyId}"]`);
+                                if (button) {
+                                    button.classList.add('company-selected');
+                                    button.classList.remove('btn-outline-secondary');
+                                    button.classList.add('btn-primary');
+                                }
+                            });
+                        }
+                        
+                        updateSelectedCompaniesInput();
+                        console.log("📢 Companies selected for alert");
+                    }
+                }, 100);
+            } else if (result.error) {
+                showError('Failed to load alert: ' + result.error);
+            } else {
+                showError('Failed to load alert: Invalid response format');
+            }
+        })
+        .catch(error => {
+            console.error("📢 Error loading alert data:", error);
+            showError('Failed to load alert: ' + error.message);
+        });
+    }
+    
+    // Save the alert
+    function saveAlert() {
+        // Gather form values
+        const message = document.getElementById('message').value.trim();
+        const isActive = document.getElementById('isActive').checked;
+        
+        // Validate
+        if (!message) {
+            showError('Message is required');
+            return;
+        }
+        
+        // Get selected companies
+        let finalCompanyIds;
+        if (allCompaniesSelected) {
+            finalCompanyIds = ['all'];
+        } else if (selectedCompanyIds.length === 0) {
+            showError('At least one company must be selected');
+            return;
+        } else {
+            finalCompanyIds = selectedCompanyIds;
+        }
+        
+        // Create request body
+        const requestBody = {
+            id: parseInt(document.getElementById('alertId').value) || 0,
+            message: message,
+            is_active: isActive,
+            company_ids: finalCompanyIds
+        };
+        
+        console.log("📢 Saving alert with data:", requestBody);
+        
+        // Send to API
+        fetch('/api/admin/website-alerts/upsert', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(requestBody)
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(result => {
+            if (result.data) {
+                // Redirect to list page on success
+                window.location.href = '/admin/alerts';
+            } else if (result.error) {
+                showError('Failed to save alert: ' + result.error);
+            } else {
+                showError('Failed to save alert: Invalid response format');
+            }
+        })
+        .catch(error => {
+            console.error("📢 Error saving alert:", error);
+            showError('Failed to save alert: ' + error.message);
+        });
+    }
+    
+    // Format a date string
+    function formatDate(dateString) {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        return date.toLocaleString();
+    }
+    
+    // Show error message
+    function showError(message) {
+        const errorElement = document.getElementById('errorMessage');
+        errorElement.textContent = message;
+        errorElement.style.display = 'block';
+        
+        // Scroll to error
+        errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+</script> 
