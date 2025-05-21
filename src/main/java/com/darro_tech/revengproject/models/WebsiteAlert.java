@@ -1,15 +1,21 @@
 package com.darro_tech.revengproject.models;
 
-import jakarta.persistence.*;
+import java.time.Instant;
+import java.util.List;
+
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
-import java.time.Instant;
-import java.util.Map;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Lob;
+import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "website_alerts")
 public class WebsiteAlert {
+
     @Id
     @Column(name = "id", nullable = false)
     private Integer id;
@@ -23,7 +29,7 @@ public class WebsiteAlert {
 
     @Column(name = "company_ids", nullable = false)
     @JdbcTypeCode(SqlTypes.JSON)
-    private Map<String, Object> companyIds;
+    private List<String> companyIds;
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
@@ -55,11 +61,11 @@ public class WebsiteAlert {
         this.isActive = isActive;
     }
 
-    public Map<String, Object> getCompanyIds() {
+    public List<String> getCompanyIds() {
         return companyIds;
     }
 
-    public void setCompanyIds(Map<String, Object> companyIds) {
+    public void setCompanyIds(List<String> companyIds) {
         this.companyIds = companyIds;
     }
 

@@ -47,6 +47,33 @@ public class CompanyApiController {
     @Autowired
     private UserRoleService userRoleService;
 
+    @PostMapping("/companies/list")
+    public ResponseEntity<?> listCompanies() {
+        logger.info("🏢 API request for company list");
+        try {
+            List<Company> companies = companyService.getAllCompanies();
+            List<Map<String, String>> companyList = companies.stream()
+                    .map(company -> {
+                        Map<String, String> companyMap = new HashMap<>();
+                        companyMap.put("companyId", company.getId());
+                        companyMap.put("companyName", company.getName());
+                        return companyMap;
+                    })
+                    .sorted(Comparator.comparing(map -> map.get("companyName")))
+                    .collect(Collectors.toList());
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("data", companyList);
+            logger.info("🏢 Returning {} companies", companyList.size());
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("❌ Error fetching company list", e);
+            Map<String, Object> response = new HashMap<>();
+            response.put("error", "Failed to fetch companies: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
     @GetMapping("/companies-all")
     public ResponseEntity<?> getCompanies(HttpSession session) {
         logger.info("🏢 Fetching all companies");
