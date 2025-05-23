@@ -53,9 +53,12 @@ public class WebsiteAlertServiceImpl implements WebsiteAlertService {
         WebsiteAlert alert;
         if (isNew) {
             alert = new WebsiteAlert();
+            // Don't set ID for new entities, let it be auto-generated
         } else {
             alert = websiteAlertRepository.findById(id)
                     .orElseThrow(() -> new IllegalArgumentException("Alert not found with ID: " + id));
+            // For existing entities, keep the ID
+            alert.setId(id);
         }
 
         // Set values from request
