@@ -6,13 +6,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Random;
 import java.util.UUID;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.darro_tech.revengproject.dto.ValidationResult;
 import com.darro_tech.revengproject.models.Company;
 import com.darro_tech.revengproject.models.CompanyFarm;
 import com.darro_tech.revengproject.models.Farm;
@@ -20,8 +22,13 @@ import com.darro_tech.revengproject.repositories.CompanyFarmRepository;
 import com.darro_tech.revengproject.repositories.CompanyRepository;
 import com.darro_tech.revengproject.repositories.FarmRepository;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @Service
 public class FarmService {
+
+    private static final Logger logger = Logger.getLogger(FarmService.class.getName());
 
     @Autowired
     private FarmRepository farmRepository;
@@ -46,7 +53,7 @@ public class FarmService {
      */
     @Transactional(readOnly = true)
     public Optional<Farm> getFarmById(String id) {
-        System.out.println("FarmService: Getting farm by ID: " + id);
+        logger.info(String.format("🔍 Fetching farm with ID: %s", id));
         return farmRepository.findById(id);
     }
 
@@ -55,28 +62,11 @@ public class FarmService {
      */
     @Transactional(readOnly = true)
     public List<Farm> getFarmsByCompanyId(String companyId) {
-        System.out.println("FarmService: Getting farms for company ID: " + companyId);
-
-        // First get CompanyFarm links
+        logger.info(String.format("🔍 Fetching farms for company ID: %s", companyId));
         List<CompanyFarm> companyFarms = companyFarmRepository.findByCompanyId(companyId);
-
-        if (companyFarms.isEmpty()) {
-            System.out.println("FarmService: No farms found for company ID: " + companyId);
-            return new ArrayList<>();
-        }
-
-        // Then get Farm entities
-        List<Farm> farms = new ArrayList<>();
-        for (CompanyFarm cf : companyFarms) {
-            // Get farm directly from CompanyFarm entity
-            Farm farm = cf.getFarm();
-            if (farm != null) {
-                farms.add(farm);
-            }
-        }
-
-        System.out.println("FarmService: Found " + farms.size() + " farms for company ID: " + companyId);
-        return farms;
+        return companyFarms.stream()
+                .map(CompanyFarm::getFarm)
+                .collect(Collectors.toList());
     }
 
     /**
@@ -84,14 +74,12 @@ public class FarmService {
      */
     @Transactional
     public Farm createFarm(String name, String displayName) {
-        System.out.println("FarmService: Creating farm: " + name);
-
+        logger.info(String.format("📝 Creating new farm with name: %s", name));
         Farm farm = new Farm();
         farm.setId(UUID.randomUUID().toString());
         farm.setName(name);
         farm.setDisplayName(displayName);
         farm.setTimestamp(Instant.now());
-
         return farmRepository.save(farm);
     }
 
@@ -100,16 +88,16 @@ public class FarmService {
      */
     @Transactional
     public Farm updateFarm(String id, String name, String displayName) {
-        System.out.println("FarmService: Updating farm: " + id);
-
-        Farm farm = farmRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Farm not found"));
-
-        farm.setName(name);
-        farm.setDisplayName(displayName);
-        farm.setTimestamp(Instant.now());
-
-        return farmRepository.save(farm);
+        logger.info(String.format("📝 Updating farm with ID: %s", id));
+        Optional<Farm> farmOpt = farmRepository.findById(id);
+        if (farmOpt.isPresent()) {
+            Farm farm = farmOpt.get();
+            farm.setName(name);
+            farm.setDisplayName(displayName);
+            farm.setTimestamp(Instant.now());
+            return farmRepository.save(farm);
+        }
+        throw new RuntimeException("Farm not found with ID: " + id);
     }
 
     /**
@@ -117,12 +105,7 @@ public class FarmService {
      */
     @Transactional
     public void deleteFarm(String id) {
-        System.out.println("FarmService: Deleting farm: " + id);
-
-        // First remove any company associations
-        companyFarmRepository.deleteByFarmId(id);
-
-        // Then delete the farm
+        logger.info(String.format("🗑️ Deleting farm with ID: %s", id));
         farmRepository.deleteById(id);
     }
 
@@ -131,28 +114,17 @@ public class FarmService {
      */
     @Transactional
     public void assignFarmToCompany(String farmId, String companyId) {
-        System.out.println("FarmService: Assigning farm " + farmId + " to company " + companyId);
-
-        // Check if association already exists
-        if (companyFarmRepository.findByCompanyIdAndFarmId(companyId, farmId).isPresent()) {
-            System.out.println("FarmService: Farm is already assigned to this company");
-            return;
-        }
-
-        // Get the farm and company entities
-        Farm farm = farmRepository.findById(farmId)
-                .orElseThrow(() -> new RuntimeException("Farm not found"));
-
-        Company company = companyRepository.findById(companyId)
-                .orElseThrow(() -> new RuntimeException("Company not found"));
-
-        // Create new association
+        logger.info(String.format("🔗 Assigning farm %s to company %s", farmId, companyId));
         CompanyFarm companyFarm = new CompanyFarm();
-        companyFarm.setId(new Random().nextInt(1000000)); // Generate a random integer ID
+        Company company = new Company();
+        company.setId(companyId);
         companyFarm.setCompany(company);
-        companyFarm.setFarm(farm);
-        companyFarm.setTimestamp(Instant.now());
 
+        Farm farm = new Farm();
+        farm.setId(farmId);
+        companyFarm.setFarm(farm);
+
+        companyFarm.setTimestamp(Instant.now());
         companyFarmRepository.save(companyFarm);
     }
 
@@ -161,35 +133,9 @@ public class FarmService {
      */
     @Transactional
     public void updateFarmCompanyAssociation(String farmId, String companyId) {
-        System.out.println("FarmService: Updating farm-company association for farm " + farmId);
-
-        // First get current associations
-        List<CompanyFarm> existingAssociations = companyFarmRepository.findByFarmId(farmId);
-
-        // Get the company
-        Company company = companyRepository.findById(companyId)
-                .orElseThrow(() -> new RuntimeException("Company not found"));
-
-        // Check if there's already an association with this company
-        boolean found = false;
-        for (CompanyFarm cf : existingAssociations) {
-            if (cf.getCompany().getId().equals(companyId)) {
-                found = true;
-                break;
-            }
-        }
-
-        // If there's already a correct association, return
-        if (found && existingAssociations.size() == 1) {
-            System.out.println("FarmService: No changes needed to farm-company association");
-            return;
-        }
-
-        // Remove existing associations
-        for (CompanyFarm cf : existingAssociations) {
-            companyFarmRepository.delete(cf);
-        }
-
+        logger.info(String.format("🔄 Updating farm %s company association to %s", farmId, companyId));
+        // Delete existing association
+        companyFarmRepository.deleteByFarmId(farmId);
         // Create new association
         assignFarmToCompany(farmId, companyId);
     }
@@ -286,8 +232,8 @@ public class FarmService {
     }
 
     /**
-     * Find a farm by name in a specific company
-     * This handles both exact and slug-based name matching
+     * Find a farm by name in a specific company This handles both exact and
+     * slug-based name matching
      *
      * @param farmName Name of the farm (can be display name or slug format)
      * @param companyId Company ID
@@ -296,52 +242,114 @@ public class FarmService {
     @Transactional(readOnly = true)
     public Optional<Farm> getFarmByName(String farmName, String companyId) {
         System.out.println("FarmService: Finding farm by name: " + farmName + " in company: " + companyId);
-        
+
         if (farmName == null || farmName.trim().isEmpty()) {
             return Optional.empty();
         }
-        
+
         // Get all farms for this company
         List<Farm> companyFarms = getFarmsByCompanyId(companyId);
-        
+
         // Normalize the search term
         String normalizedSearch = farmName.toLowerCase().replace("-", " ").trim();
-        
+
         // First try exact name match
         for (Farm farm : companyFarms) {
             String normalizedName = farm.getName().toLowerCase().trim();
-            String normalizedDisplayName = farm.getDisplayName() != null ? 
-                farm.getDisplayName().toLowerCase().trim() : "";
-                
+            String normalizedDisplayName = farm.getDisplayName() != null
+                    ? farm.getDisplayName().toLowerCase().trim() : "";
+
             if (normalizedName.equals(normalizedSearch) || normalizedDisplayName.equals(normalizedSearch)) {
                 System.out.println("FarmService: Found exact match for farm: " + farm.getName());
                 return Optional.of(farm);
             }
         }
-        
+
         // Try slug-based match
         for (Farm farm : companyFarms) {
             String nameSlug = farm.getName().toLowerCase().replace(" ", "-");
-            String displayNameSlug = farm.getDisplayName() != null ? 
-                farm.getDisplayName().toLowerCase().replace(" ", "-") : "";
-                
+            String displayNameSlug = farm.getDisplayName() != null
+                    ? farm.getDisplayName().toLowerCase().replace(" ", "-") : "";
+
             if (nameSlug.equals(farmName.toLowerCase()) || displayNameSlug.equals(farmName.toLowerCase())) {
                 System.out.println("FarmService: Found slug match for farm: " + farm.getName());
                 return Optional.of(farm);
             }
         }
-        
+
         // If still not found, try partial match
         for (Farm farm : companyFarms) {
             String normalizedName = farm.getName().toLowerCase().trim();
-            
+
             if (normalizedName.contains(normalizedSearch) || normalizedSearch.contains(normalizedName)) {
                 System.out.println("FarmService: Found partial match for farm: " + farm.getName());
                 return Optional.of(farm);
             }
         }
-        
+
         System.out.println("FarmService: No farm found with name: " + farmName);
         return Optional.empty();
+    }
+
+    /**
+     * Get all farms that are temperature sources for a company
+     */
+    public List<Farm> getTempSourceFarms(String companyId) {
+        logger.info(String.format("🌡️ Fetching temperature source farms for company %s", companyId));
+        List<Farm> companyFarms = getFarmsByCompanyId(companyId);
+        return companyFarms.stream()
+                .filter(Farm::getIsTempSource)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Validate farm name
+     */
+    public ValidationResult validateFarmName(String name, String companyId) {
+        logger.info(String.format("✔️ Validating farm name: %s for company: %s", name, companyId));
+
+        if (name == null || name.trim().isEmpty()) {
+            return new ValidationResult(false, "Farm name is required");
+        }
+
+        // Check min length (3 characters as per Next.js app)
+        if (name.length() < 3) {
+            return new ValidationResult(false, "Farm name must be at least 3 characters");
+        }
+
+        // Check max length (20 characters as per Next.js app)
+        if (name.length() > 20) {
+            return new ValidationResult(false, "Farm name cannot be more than 20 characters");
+        }
+
+        List<Farm> companyFarms = getFarmsByCompanyId(companyId);
+        boolean exists = companyFarms.stream()
+                .anyMatch(farm -> name.trim().equalsIgnoreCase(farm.getName()));
+
+        return new ValidationResult(!exists, exists ? "Farm name already exists" : null);
+    }
+
+    /**
+     * Validate farm display name
+     */
+    public ValidationResult validateDisplayName(String displayName, String companyId) {
+        logger.info(String.format("✔️ Validating farm display name: %s for company: %s", displayName, companyId));
+
+        // If display name is null or empty, it's valid since it's optional
+        if (displayName == null || displayName.trim().isEmpty()) {
+            return new ValidationResult(true, null);
+        }
+
+        // Check max length (6 characters as per Next.js app)
+        if (displayName.length() > 6) {
+            return new ValidationResult(false, "Display Name cannot be more than 6 characters");
+        }
+
+        // Check uniqueness
+        List<Farm> companyFarms = getFarmsByCompanyId(companyId);
+        boolean exists = companyFarms.stream()
+                .anyMatch(farm -> displayName.trim().equalsIgnoreCase(farm.getDisplayName()));
+
+        return new ValidationResult(!exists, exists ? "Display name already exists" : null);
     }
 }

@@ -2,17 +2,24 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <body>
     <!-- Website Alert Panel -->
-    <div th:fragment="website-alerts" id="websiteAlertPanel" style="display: none;">
-        <div class="website-alert-title-row">
-            <button id="alertTitleButton" class="website-alert-title-button">
-                <span id="alertCount" class="website-alert-title-text"></span>
-                <span id="alertToggleIcon" class="website-alert-title-icon">
-                    <i class="fas fa-plus"></i>
-                </span>
-            </button>
-        </div>
-        <div id="alertMessagesPanel" class="website-alert-messages-panel" style="display: none;">
-            <!-- Alert messages will be inserted here -->
+    <div th:fragment="website-alerts" id="websiteAlertPanel">
+        <div class="navbar-nav ml-auto">
+            <div class="nav-item dropdown no-arrow mx-1">
+                <a class="nav-link dropdown-toggle" href="#" id="websiteAlertsDropdown" role="button"
+                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <i class="fas fa-exclamation-circle fa-fw"></i>
+                    <!-- Counter - Website Alerts -->
+                    <span id="alertCount" class="badge badge-danger badge-counter"></span>
+                </a>
+                <!-- Dropdown - Website Alerts -->
+                <div id="alertMessagesPanel" class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in"
+                    aria-labelledby="websiteAlertsDropdown">
+                    <h6 class="dropdown-header">
+                        Website Alerts
+                    </h6>
+                    <!-- Alert messages will be inserted here -->
+                </div>
+            </div>
         </div>
     </div>
 
@@ -20,129 +27,61 @@
     <style th:fragment="website-alerts-css">
         /* Website Alert Styles */
         #websiteAlertPanel {
-            display: flex;
-            flex-direction: column;
-            border-bottom: solid 1px #ddd;
-        }
-        
-        .website-alert-title-row {
-            padding: 8px 18px;
-            display: flex;
-            flex-direction: row;
-            justify-content: flex-end;
-        }
-        
-        .website-alert-title-button {
-            display: flex;
-            flex-direction: row;
-            border-radius: 20px;
-            padding: 6px;
-            color: white;
-            background-color: #d00;
-            cursor: pointer;
-            border: none;
-        }
-        
-        .website-alert-title-button.open {
-            color: #d00;
-            background-color: white;
-        }
-        
-        .website-alert-title-text {
-            font-weight: bold;
-            margin-left: 12px;
-        }
-        
-        .website-alert-title-icon {
-            width: 24px;
-            border: 2px solid white;
-            border-radius: 50%;
-            margin-left: 12px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        
-        .website-alert-title-button.open .website-alert-title-icon {
-            border-color: #d00;
-        }
-        
-        .website-alert-messages-panel {
-            width: 100%;
+            border-bottom: none;
         }
         
         .website-alert-message-row {
             display: flex;
-            flex-direction: row;
-            border-top: solid 1px #aaa;
-            background-color: #f8f8f8;
-            padding: 8px;
+            padding: .5rem 1rem;
+            border-bottom: 1px solid #e3e6f0;
+            white-space: normal;
         }
         
         .website-alert-message-icon {
             display: flex;
             width: 30px;
-            color: #d00;
+            color: #e74a3b;
+            align-items: center;
         }
         
         .website-alert-message-text {
             flex: 1;
             padding: 2px 12px;
-            color: #000;
+            color: #3a3b45;
+            font-size: .85rem;
+            line-height: 1.3;
+        }
+
+        .dropdown-list {
+            padding: 0;
+            border: none;
+            max-height: 350px;
+            overflow-y: auto;
+        }
+
+        .dropdown-header {
+            background-color: #4e73df;
+            border: 1px solid #4e73df;
+            padding-top: 0.75rem;
+            padding-bottom: 0.75rem;
+            color: #fff;
         }
     </style>
 
     <!-- JavaScript for Website Alerts -->
-    <script th:fragment="website-alerts-js" th:inline="javascript">
-        document.addEventListener('DOMContentLoaded', function() {
-            // Get current company ID from session or HTML data attribute
-            const companyId = document.body.getAttribute('data-company-id') || 'default';
-            
-            // Load active alerts
-            loadActiveAlerts(companyId);
-            
-            // Set up refresh interval (every 60 seconds)
-            setInterval(() => {
-                loadActiveAlerts(companyId);
-            }, 60000);
-            
-            // Set up click handler for alert panel toggle
-            document.getElementById('alertTitleButton').addEventListener('click', toggleAlertsPanel);
-        });
-        
-        function loadActiveAlerts(companyId) {
-            fetch('/api/website-alerts/list-active', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ companyId: companyId })
-            })
-            .then(response => response.json())
-            .then(result => {
-                if (result.data && result.data.length > 0) {
-                    displayAlerts(result.data);
-                } else {
-                    hideAlertPanel();
-                }
-            })
-            .catch(error => {
-                console.error('Error loading alerts:', error);
-                hideAlertPanel();
-            });
-        }
-        
+    <script th:fragment="website-alerts-js">
         function displayAlerts(alerts) {
             const alertPanel = document.getElementById('websiteAlertPanel');
             const alertCount = document.getElementById('alertCount');
-            const alertText = alerts.length > 1 ? 'Active Alerts' : 'Active Alert';
             
             // Update alert count
-            alertCount.textContent = `${alerts.length} ${alertText}`;
+            alertCount.textContent = alerts.length > 0 ? alerts.length + (alerts.length > 3 ? '+' : '') : '';
             
             // Update messages panel
             const messagesPanel = document.getElementById('alertMessagesPanel');
-            messagesPanel.innerHTML = '';
+            messagesPanel.innerHTML = `
+                <h6 class="dropdown-header">Website Alerts</h6>
+            `;
             
             // Add each alert message
             alerts.forEach(alert => {
@@ -163,44 +102,7 @@
             });
             
             // Show the alert panel
-            alertPanel.style.display = 'flex';
-        }
-        
-        function hideAlertPanel() {
-            const alertPanel = document.getElementById('websiteAlertPanel');
-            alertPanel.style.display = 'none';
-            
-            // Also hide the messages panel if it was open
-            const messagesPanel = document.getElementById('alertMessagesPanel');
-            messagesPanel.style.display = 'none';
-            
-            // Reset the button state
-            const titleButton = document.getElementById('alertTitleButton');
-            titleButton.classList.remove('open');
-            
-            // Reset the icon
-            const toggleIcon = document.getElementById('alertToggleIcon');
-            toggleIcon.innerHTML = '<i class="fas fa-plus"></i>';
-        }
-        
-        function toggleAlertsPanel() {
-            const messagesPanel = document.getElementById('alertMessagesPanel');
-            // Check current display style
-            const computedStyle = window.getComputedStyle(messagesPanel);
-            const isOpen = computedStyle.display !== 'none';
-            
-            // Toggle the panel
-            messagesPanel.style.display = isOpen ? 'none' : 'block';
-            
-            // Toggle the button appearance
-            const titleButton = document.getElementById('alertTitleButton');
-            titleButton.classList.toggle('open', !isOpen);
-            
-            // Toggle the icon
-            const toggleIcon = document.getElementById('alertToggleIcon');
-            toggleIcon.innerHTML = isOpen 
-                ? '<i class="fas fa-plus"></i>' 
-                : '<i class="fas fa-minus"></i>';
+            alertPanel.style.display = alerts.length > 0 ? 'block' : 'none';
         }
     </script>
 </body>

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Create Farm Modal</title>
+</head>
+<body>
+    <div th:fragment="create-farm-modal">
+        <div class="modal fade" id="createFarmModal" tabindex="-1" role="dialog" aria-labelledby="createFarmModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="createFarmModalLabel">Create Farm</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="createFarmForm" class="needs-validation" novalidate>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="floating-form-group">
+                                        <input type="text" class="floating-input" id="farmName" data-validate="name" required>
+                                        <label class="floating-label">Farm Name*</label>
+                                        <div class="invalid-feedback"></div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="floating-form-group">
+                                        <input type="text" class="floating-input" id="displayName" data-validate="displayName">
+                                        <label class="floating-label">Display Name</label>
+                                        <div class="invalid-feedback"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row mt-3">
+                                <div class="col-md-6">
+                                    <div class="floating-form-group">
+                                        <select class="floating-input" id="tempSourceId">
+                                            <option value="">- None -</option>
+                                        </select>
+                                        <label class="floating-label">Temperature Source</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="floating-form-group">
+                                        <select class="floating-input" id="farmType">
+                                            <option value="">- Please Select -</option>
+                                            <option value="direct-injection">Direct Injection</option>
+                                            <option value="loading-unloading">Loading/Unloading Site</option>
+                                        </select>
+                                        <label class="floating-label">Farm Type</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row mt-3">
+                                <div class="col-md-12">
+                                    <div class="form-check">
+                                        <input type="checkbox" class="form-check-input" id="isTempSource">
+                                        <label class="form-check-label" for="isTempSource">Use as Temperature Source</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" id="saveFarmBtn">
+                            <span class="spinner-border spinner-border-sm d-none" role="status"></span>
+                            Save
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html> 

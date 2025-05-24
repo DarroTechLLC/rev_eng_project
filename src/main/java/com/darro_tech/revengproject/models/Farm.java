@@ -1,13 +1,19 @@
 package com.darro_tech.revengproject.models;
 
-import jakarta.persistence.*;
+import java.time.Instant;
+
 import org.hibernate.annotations.ColumnDefault;
 
-import java.time.Instant;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Lob;
+import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "farms")
 public class Farm {
+
     @Id
     @Column(name = "id", nullable = false, length = 36)
     private String id;

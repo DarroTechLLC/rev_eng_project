@@ -1,5 +1,6 @@
 package com.darro_tech.revengproject.controllers.api;
 
+import java.time.Instant;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -10,10 +11,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.SessionAttribute;
 
+import com.darro_tech.revengproject.dto.FarmCreateDTO;
+import com.darro_tech.revengproject.dto.ValidationResult;
 import com.darro_tech.revengproject.models.Farm;
 import com.darro_tech.revengproject.services.CompanyService;
 import com.darro_tech.revengproject.services.FarmService;
@@ -25,7 +31,7 @@ import jakarta.servlet.http.HttpSession;
  * API controller for farm-related operations
  */
 @RestController
-@RequestMapping("/api/farms")
+@RequestMapping("/api")
 public class FarmApiController {
 
     private static final Logger logger = Logger.getLogger(FarmApiController.class.getName());
@@ -42,7 +48,7 @@ public class FarmApiController {
     /**
      * Get farms for the currently selected company
      */
-    @GetMapping
+    @GetMapping("/farms")
     public ResponseEntity<Map<String, Object>> getFarms(HttpSession session) {
         logger.info("Getting farms for selected company");
 
@@ -86,7 +92,7 @@ public class FarmApiController {
     /**
      * Get farms for a specific company
      */
-    @GetMapping("/by-company/{companyId}")
+    @GetMapping("/farms/by-company/{companyId}")
     public ResponseEntity<Map<String, Object>> getFarmsByCompany(
             @PathVariable String companyId,
             HttpSession session) {
@@ -145,7 +151,7 @@ public class FarmApiController {
     /**
      * Get a specific farm by ID
      */
-    @GetMapping("/{id}")
+    @GetMapping("/farms/{id}")
     public ResponseEntity<Map<String, Object>> getFarm(@PathVariable String id) {
         logger.info("Getting farm details for ID: " + id);
 
@@ -173,7 +179,7 @@ public class FarmApiController {
     /**
      * Search farms by name
      */
-    @GetMapping("/search")
+    @GetMapping("/farms/search")
     public ResponseEntity<Map<String, Object>> searchFarms(
             @RequestParam String query,
             HttpSession session) {
@@ -209,5 +215,88 @@ public class FarmApiController {
                     "message", "Error searching farms: " + e.getMessage()
             ));
         }
+    }
+
+    @PostMapping("/admin/farms/create")
+    public ResponseEntity<Map<String, Object>> createFarm(
+            @RequestBody FarmCreateDTO farm,
+            @SessionAttribute("selectedCompanyId") String companyId) {
+        logger.info("📝 Creating new farm via API");
+
+        try {
+            Farm created = farmService.createFarm(farm.getName(), farm.getDisplayName());
+
+            // Update additional farm properties
+            if (farm.getFarmType() != null) {
+                created.setFarmType(farm.getFarmType());
+            }
+
+            if (farm.getIsTempSource() != null) {
+                created.setIsTempSource(farm.getIsTempSource());
+            }
+
+            if (farm.getTempSourceId() != null) {
+                created.setTempSourceId(farm.getTempSourceId());
+            }
+
+            created.setTimestamp(Instant.now());
+            farmService.updateFarm(created.getId(), created.getName(), created.getDisplayName());
+
+            // Assign the farm to the company
+            farmService.assignFarmToCompany(created.getId(), companyId);
+
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "farmId", created.getId(),
+                    "message", "Farm created successfully"
+            ));
+        } catch (Exception e) {
+            logger.severe("❌ Error creating farm: " + e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "message", e.getMessage()
+            ));
+        }
+    }
+
+    @PostMapping("/admin/farms/validate/name")
+    public ResponseEntity<ValidationResult> validateName(
+            @RequestBody Map<String, String> request,
+            @SessionAttribute("selectedCompanyId") String companyId) {
+        logger.info("✔️ Validating farm name: " + request.get("name"));
+        return ResponseEntity.ok(farmService.validateFarmName(request.get("name"), companyId));
+    }
+
+    @PostMapping("/admin/farms/validate/display-name")
+    public ResponseEntity<ValidationResult> validateDisplayName(
+            @RequestBody Map<String, String> request,
+            @SessionAttribute("selectedCompanyId") String companyId) {
+        String displayName = request.get("displayName");
+        logger.info("✔️ Validating farm display name: " + displayName);
+
+        // If display name is null or empty, it's valid since it's optional
+        if (displayName == null || displayName.trim().isEmpty()) {
+            return ResponseEntity.ok(new ValidationResult(true, null));
+        }
+
+        return ResponseEntity.ok(farmService.validateDisplayName(displayName, companyId));
+    }
+
+    @GetMapping("/admin/farms/temp-sources")
+    public ResponseEntity<List<Map<String, String>>> getTempSources(
+            @SessionAttribute("selectedCompanyId") String companyId) {
+        logger.info("🔍 Fetching temperature source farms for company: " + companyId);
+        List<Farm> tempSources = farmService.getTempSourceFarms(companyId);
+
+        List<Map<String, String>> response = tempSources.stream()
+                .map(farm -> {
+                    Map<String, String> farmData = new HashMap<>();
+                    farmData.put("id", farm.getId());
+                    farmData.put("name", farm.getName());
+                    return farmData;
+                })
+                .toList();
+
+        return ResponseEntity.ok(response);
     }
 }
