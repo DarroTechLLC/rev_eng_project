@@ -21,7 +21,7 @@
     <!-- Table Navigation -->
     <div class="table-nav">
         <input type="text" id="farmSearchInput" class="search-input" placeholder="Search farms...">
-        <a th:if="${selectedCompany != null}" th:href="@{/admin/farms/create}" class="create-button">
+        <a href="#" class="create-button" data-toggle="modal" data-target="#createFarmModal">
             Create Farm
         </a>
     </div>
@@ -116,6 +116,9 @@
     <div class="alert alert-danger" th:if="${error != null}" th:text="${error}">
         An error occurred!
     </div>
+
+    <!-- Create Farm Modal -->
+    <th:block th:replace="~{fragments/modals/create-farm-modal :: create-farm-modal}"></th:block>
 
     <style>
         .table-nav {
