@@ -43,7 +43,7 @@ public class CompanyService {
      * @return List of CompanyDTO objects
      */
     public List<CompanyDTO> getUserCompanies(String userId, boolean isSuperAdmin) {
-        logger.info("Fetching companies for user: {} (superAdmin: {})", userId, isSuperAdmin);
+        logger.info("🏢 Fetching companies for user: {} (superAdmin: {})", userId, isSuperAdmin);
 
         try {
             if (isSuperAdmin) {
@@ -59,8 +59,11 @@ public class CompanyService {
                 );
             } else {
                 return jdbcTemplate.query(
-                        "SELECT company_id, company_name, display_name, logo_url "
-                        + "FROM user_company_view WHERE user_id = ? ORDER BY company_name",
+                        "SELECT c.id as company_id, c.name as company_name, c.display_name, c.logo_url "
+                        + "FROM companies c "
+                        + "INNER JOIN company_users cu ON cu.company_id = c.id "
+                        + "WHERE cu.user_id = ? "
+                        + "ORDER BY c.name",
                         (rs, rowNum) -> new CompanyDTO(
                                 rs.getString("company_id"),
                                 rs.getString("company_name"),
@@ -71,8 +74,9 @@ public class CompanyService {
                 );
             }
         } catch (Exception e) {
-            logger.error("Error fetching companies: {}", e.getMessage());
-            throw new RuntimeException("Failed to fetch companies", e);
+            logger.error("❌ Error fetching companies: {}", e.getMessage());
+            logger.debug("Detailed error:", e); // Add stack trace in debug level
+            return List.of(); // Return empty list instead of throwing
         }
     }
 

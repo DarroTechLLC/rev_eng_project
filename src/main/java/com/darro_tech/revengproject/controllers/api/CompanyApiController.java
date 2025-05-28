@@ -88,12 +88,12 @@ public class CompanyApiController {
                 ));
             }
 
-            // Check if user is admin
-            boolean isAdmin = userRoleService.isAdmin(currentUser);
-            logger.debug("👑 User admin status: {}", isAdmin);
+            // Check if user is super admin
+            boolean isSuperAdmin = userRoleService.isSuperAdmin(currentUser);
+            logger.debug("👑 User super admin status: {}", isSuperAdmin);
 
             // Get companies based on user access
-            List<CompanyDTO> companyDTOs = companyService.getUserCompanies(currentUser.getId(), isAdmin);
+            List<CompanyDTO> companyDTOs = companyService.getUserCompanies(currentUser.getId(), isSuperAdmin);
             logger.info("📋 Found {} companies for user", companyDTOs.size());
 
             // Sort companies alphabetically by name
@@ -177,9 +177,9 @@ public class CompanyApiController {
                 ));
             }
 
-            // If user is not admin, verify they have access to this company
-            boolean isAdmin = userRoleService.isAdmin(currentUser);
-            if (!isAdmin && !companyService.userHasCompanyAccess(currentUser.getId(), id)) {
+            // If user is not super admin, verify they have access to this company
+            boolean isSuperAdmin = userRoleService.isSuperAdmin(currentUser);
+            if (!isSuperAdmin && !companyService.userHasCompanyAccess(currentUser.getId(), id)) {
                 logger.error("🔒 User {} does not have access to company {}", currentUser.getId(), id);
                 return ResponseEntity.badRequest().body(Map.of(
                         "success", false,

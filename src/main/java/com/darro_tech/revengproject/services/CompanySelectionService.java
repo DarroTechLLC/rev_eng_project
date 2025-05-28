@@ -43,11 +43,10 @@ public class CompanySelectionService {
 
         logger.info("🔍 Selecting default company for user: " + user.getUsername());
 
-        boolean isAdmin = userRoleService.isAdmin(user);
         boolean isSuperAdmin = userRoleService.isSuperAdmin(user);
 
         // Get all companies for the user
-        List<CompanyDTO> userCompanies = companyService.getUserCompanies(user.getId(), isAdmin || isSuperAdmin);
+        List<CompanyDTO> userCompanies = companyService.getUserCompanies(user.getId(), isSuperAdmin);
 
         if (userCompanies.isEmpty()) {
             logger.warning("⚠️ No companies available for user: " + user.getUsername());
@@ -80,8 +79,10 @@ public class CompanySelectionService {
         }
 
         // Check if user has access to this company
-        boolean hasAccess = companyService.userHasCompanyAccess(user.getId(), companyId);
-        if (!hasAccess && !userRoleService.isAdmin(user)) {
+        boolean isSuperAdmin = userRoleService.isSuperAdmin(user);
+        boolean hasAccess = isSuperAdmin || companyService.userHasCompanyAccess(user.getId(), companyId);
+
+        if (!hasAccess) {
             logger.warning("🔒 User " + user.getUsername() + " does not have access to company ID: " + companyId);
             return false;
         }
