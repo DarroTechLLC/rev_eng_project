@@ -18,9 +18,14 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import com.darro_tech.revengproject.controllers.AuthenticationController;
 import com.darro_tech.revengproject.controllers.BaseController;
 import com.darro_tech.revengproject.models.Company;
+import com.darro_tech.revengproject.models.User;
 import com.darro_tech.revengproject.services.CompanyService;
+import com.darro_tech.revengproject.services.UserRoleService;
+
+import jakarta.servlet.http.HttpSession;
 
 @Controller("adminCompanyController")
 @RequestMapping("/admin/companies")
@@ -29,11 +34,23 @@ public class CompanyController extends BaseController {
     @Autowired
     private CompanyService companyService;
 
+    @Autowired
+    private UserRoleService userRoleService;
+
+    @Autowired
+    private AuthenticationController authenticationController;
+
     // List all companies view
     @GetMapping
-    public String listCompanies(Model model) {
+    public String listCompanies(Model model, HttpSession session) {
+        // Get current user from session
+        User user = authenticationController.getUserFromSession(session);
+        if (user == null) {
+            return "redirect:/login";
+        }
+
         List<Company> companies = companyService.getAllCompanies();
-        System.out.println("Found " + companies.size() + " companies in the database");
+        System.out.println("🏢 Found " + companies.size() + " companies in the database");
         model.addAttribute("companies", companies);
         model.addAttribute("title", "Companies Management");
         return view("admin/companies/index", model);
@@ -41,9 +58,11 @@ public class CompanyController extends BaseController {
 
     // Create company form
     @GetMapping("/create")
-    public String showCreateForm(Model model) {
+    public String showCreateForm(Model model,
+            @RequestParam(value = "isAjaxRequest", required = false) Boolean isAjaxRequest) {
         model.addAttribute("company", new Company());
         model.addAttribute("title", "Create Company");
+        model.addAttribute("isAjaxRequest", isAjaxRequest != null && isAjaxRequest);
         return view("admin/companies/create", model);
     }
 
@@ -52,7 +71,8 @@ public class CompanyController extends BaseController {
     public String createCompany(@RequestParam String name,
             @RequestParam String displayName,
             @RequestParam(required = false) String logoUrl,
-            RedirectAttributes redirectAttributes) {
+            RedirectAttributes redirectAttributes,
+            @RequestParam(value = "isAjaxRequest", required = false) Boolean isAjaxRequest) {
         try {
             Company company = companyService.createCompany(name, displayName);
 
@@ -62,8 +82,18 @@ public class CompanyController extends BaseController {
             }
 
             redirectAttributes.addFlashAttribute("success", "Company created successfully!");
+
+            // For AJAX requests, return a success response
+            if (isAjaxRequest != null && isAjaxRequest) {
+                return "redirect:/admin/companies?success=true";
+            }
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", "Error creating company: " + e.getMessage());
+
+            // For AJAX requests, return an error response
+            if (isAjaxRequest != null && isAjaxRequest) {
+                return "redirect:/admin/companies?error=" + e.getMessage();
+            }
         }
         return "redirect:/admin/companies";
     }

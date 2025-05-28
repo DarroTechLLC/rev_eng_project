@@ -1,0 +1,60 @@
+/* Company management styles */
+.create-company-link {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    border-radius: 0.2rem;
+    background-color: #4e73df;
+    border-color: #4e73df;
+    color: white;
+    transition: all 0.15s ease-in-out;
+}
+
+.create-company-link:hover {
+    background-color: #2e59d9;
+    border-color: #2e59d9;
+    color: white;
+    text-decoration: none;
+}
+
+.input-group-text {
+    background-color: #f8f9fc;
+    border: 1px solid #d1d3e2;
+    border-left: none;
+}
+
+#searchInput {
+    border-right: none;
+}
+
+#searchInput:focus + .input-group-append .input-group-text {
+    border-color: #bac8f3;
+}
+
+/* Modal styles */
+.modal-form {
+    padding: 1rem;
+}
+
+.modal-form .form-group {
+    margin-bottom: 1rem;
+}
+
+.modal-form label {
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+#drop-area {
+    border: 2px dashed #d1d3e2;
+    border-radius: 0.35rem;
+    padding: 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.15s ease-in-out;
+}
+
+#drop-area:hover {
+    border-color: #4e73df;
+    background-color: #f8f9fc;
+} 
