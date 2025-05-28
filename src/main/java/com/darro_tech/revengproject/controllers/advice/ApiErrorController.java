@@ -8,56 +8,78 @@ import org.springframework.boot.web.servlet.error.ErrorController;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.servlet.http.HttpServletRequest;
 
 /**
- * Controller to handle error responses for API endpoints
- * This ensures that error responses are returned as JSON for API paths
+ * Unified error controller that handles both API and web errors
  */
-@RestController
+@Controller
 public class ApiErrorController implements ErrorController {
 
     private static final Logger logger = Logger.getLogger(ApiErrorController.class.getName());
 
     /**
-     * Handle errors for API endpoints
+     * Handle all errors - both API and web
      */
-    @RequestMapping(value = "/error", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Object> handleError(HttpServletRequest request) {
-        // Get error status
+    @RequestMapping("/error")
+    public Object handleError(HttpServletRequest request, Model model) {
+        // Get error details
         Integer statusCode = (Integer) request.getAttribute("javax.servlet.error.status_code");
         String errorMessage = (String) request.getAttribute("javax.servlet.error.message");
         String requestUri = (String) request.getAttribute("javax.servlet.error.request_uri");
-        
+
         if (statusCode == null) {
             statusCode = HttpStatus.INTERNAL_SERVER_ERROR.value();
         }
-        
+
         if (errorMessage == null) {
             errorMessage = "An unexpected error occurred";
         }
-        
-        // Check if this is an API request
-        if (requestUri != null && requestUri.startsWith("/api/")) {
+
+        // Check if this is an API request by path or Accept header
+        boolean isApiRequest = isApiRequest(request);
+
+        if (isApiRequest) {
             logger.warning("🔴 API error occurred for " + requestUri + ": " + statusCode + " - " + errorMessage);
-            
+
             // Create JSON error response
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("success", false);
             errorResponse.put("status", statusCode);
             errorResponse.put("message", errorMessage);
             errorResponse.put("path", requestUri);
-            
+
             return ResponseEntity
                     .status(statusCode)
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(errorResponse);
+        } else {
+            // Handle web errors
+            logger.warning("🌐 Web error occurred for " + requestUri + ": " + statusCode + " - " + errorMessage);
+
+            // Add error details to model
+            model.addAttribute("status", statusCode);
+            model.addAttribute("error", HttpStatus.valueOf(statusCode).getReasonPhrase());
+            model.addAttribute("message", errorMessage);
+            model.addAttribute("path", requestUri);
+
+            // Return the error view
+            return "error";
         }
-        
-        // For non-API requests, return null to let the default error handler take over
-        return null;
     }
-} 
+
+    /**
+     * Determine if the request is an API request based on path or Accept header
+     */
+    private boolean isApiRequest(HttpServletRequest request) {
+        String path = request.getRequestURI();
+        String acceptHeader = request.getHeader("Accept");
+
+        return path.startsWith("/api/")
+                || (acceptHeader != null && acceptHeader.contains(MediaType.APPLICATION_JSON_VALUE));
+    }
+}

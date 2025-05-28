@@ -3,6 +3,7 @@ package com.darro_tech.revengproject.controllers.admin;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -72,28 +73,82 @@ public class CompanyController extends BaseController {
             @RequestParam String displayName,
             @RequestParam(required = false) String logoUrl,
             RedirectAttributes redirectAttributes,
-            @RequestParam(value = "isAjaxRequest", required = false) Boolean isAjaxRequest) {
+            @RequestParam(value = "isAjaxRequest", required = false) Boolean isAjaxRequest,
+            HttpSession session) {
+
+        // Get current user from session
+        User user = authenticationController.getUserFromSession(session);
+        if (user == null) {
+            System.out.println("❌ Company creation failed: user not authenticated");
+            redirectAttributes.addFlashAttribute("errorMessage", "Authentication required");
+            redirectAttributes.addFlashAttribute("requestedUrl", "/admin/companies/create");
+            return "redirect:/login";
+        }
+
+        // Verify user has superadmin access
+        if (!userRoleService.isSuperAdmin(user)) {
+            System.out.println("⛔ Company creation failed: user " + user.getUsername() + " is not a super admin");
+            redirectAttributes.addFlashAttribute("errorMessage", "Super Admin privileges required to create companies");
+            redirectAttributes.addFlashAttribute("username", user.getUsername());
+            redirectAttributes.addFlashAttribute("userRoles", user.getRoles().stream()
+                    .map(role -> role.getName())
+                    .collect(Collectors.joining(", ")));
+            redirectAttributes.addFlashAttribute("requestedUrl", "/admin/companies/create");
+            redirectAttributes.addFlashAttribute("debugInfo", "Current roles: " + user.getRoles().stream()
+                    .map(role -> role.getName())
+                    .collect(Collectors.joining(", ")));
+            return "redirect:/access-denied";
+        }
+
         try {
-            Company company = companyService.createCompany(name, displayName);
+            // Validate input
+            if (name == null || name.trim().isEmpty()) {
+                throw new IllegalArgumentException("Company name is required");
+            }
+            if (!name.matches("[a-zA-Z0-9\\s-]+")) {
+                throw new IllegalArgumentException("Company name can only contain letters, numbers, spaces and hyphens");
+            }
+            if (displayName == null || displayName.trim().isEmpty()) {
+                throw new IllegalArgumentException("Display name is required");
+            }
+            if (logoUrl != null && !logoUrl.trim().isEmpty() && !logoUrl.matches("^https?://.*")) {
+                throw new IllegalArgumentException("Logo URL must be a valid HTTP/HTTPS URL");
+            }
+
+            System.out.println("🏢 Creating new company: " + name);
+            Company company = companyService.createCompany(name.trim(), displayName.trim());
 
             // Set logo URL if provided
             if (logoUrl != null && !logoUrl.trim().isEmpty()) {
-                companyService.updateLogoUrl(company.getId(), logoUrl);
+                System.out.println("🖼️ Setting logo URL for company: " + company.getId());
+                companyService.updateLogoUrl(company.getId(), logoUrl.trim());
             }
 
-            redirectAttributes.addFlashAttribute("success", "Company created successfully!");
+            System.out.println("✅ Company created successfully: " + company.getId());
+            redirectAttributes.addFlashAttribute("success", "Company '" + displayName + "' created successfully!");
+            redirectAttributes.addFlashAttribute("companyId", company.getId());
 
             // For AJAX requests, return a success response
             if (isAjaxRequest != null && isAjaxRequest) {
-                return "redirect:/admin/companies?success=true";
+                return "redirect:/admin/companies?success=true&companyId=" + company.getId();
             }
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", "Error creating company: " + e.getMessage());
+            String errorMsg = "Error creating company: " + e.getMessage();
+            System.out.println("❌ " + errorMsg);
+            System.out.println("Stack trace: " + e.getStackTrace());
+
+            redirectAttributes.addFlashAttribute("error", errorMsg);
+            redirectAttributes.addFlashAttribute("formData", Map.of(
+                    "name", name,
+                    "displayName", displayName,
+                    "logoUrl", logoUrl != null ? logoUrl : ""
+            ));
 
             // For AJAX requests, return an error response
             if (isAjaxRequest != null && isAjaxRequest) {
-                return "redirect:/admin/companies?error=" + e.getMessage();
+                return "redirect:/admin/companies/create?error=" + errorMsg;
             }
+            return "redirect:/admin/companies/create";
         }
         return "redirect:/admin/companies";
     }

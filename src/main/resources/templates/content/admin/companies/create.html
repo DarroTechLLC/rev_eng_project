@@ -14,63 +14,75 @@
                 <h6 class="m-0 font-weight-bold text-primary">Company Details</h6>
             </div>
             <div class="card-body">
-                <form method="post" action="/admin/companies/create" id="companyForm">
+                <form id="createCompanyForm" th:action="@{/admin/companies/create}" method="post" class="needs-validation" novalidate>
                     <div class="form-group">
                         <label for="name">Company Name <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="name" name="name" required>
-                        <small class="form-text text-muted">Internal name, used for system identification.</small>
+                        <input type="text" class="form-control" id="name" name="name" required
+                               pattern="[a-zA-Z0-9\s-]+" title="Only letters, numbers, spaces and hyphens allowed">
+                        <div class="invalid-feedback">
+                            Please enter a valid company name.
+                        </div>
                     </div>
                     
                     <div class="form-group">
                         <label for="displayName">Display Name <span class="text-danger">*</span></label>
                         <input type="text" class="form-control" id="displayName" name="displayName" required>
-                        <small class="form-text text-muted">Name displayed to users.</small>
+                        <div class="invalid-feedback">
+                            Please enter a display name.
+                        </div>
                     </div>
                     
                     <div class="form-group">
                         <label for="logoUrl">Logo URL</label>
                         <input type="url" class="form-control" id="logoUrl" name="logoUrl">
-                        <small class="form-text text-muted">URL to company logo image (optional).</small>
+                        <div class="invalid-feedback">
+                            Please enter a valid URL.
+                        </div>
                     </div>
-                    
-                    <div class="text-right mt-4">
-                        <a href="/admin/companies" class="btn btn-secondary mr-2">Cancel</a>
-                        <button type="submit" class="btn btn-primary">Create Company</button>
-                    </div>
+
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Create Company
+                    </button>
+                    <a href="/admin/companies" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Cancel
+                    </a>
                 </form>
             </div>
         </div>
     </div>
 </div>
 
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Form validation
-        const form = document.getElementById('companyForm');
-        form.addEventListener('submit', function(event) {
-            let isValid = true;
-            
-            // Simple validation - ensure required fields have values
-            const name = document.getElementById('name').value.trim();
-            const displayName = document.getElementById('displayName').value.trim();
-            
-            if (!name) {
-                isValid = false;
-                document.getElementById('name').classList.add('is-invalid');
-            } else {
-                document.getElementById('name').classList.remove('is-invalid');
-            }
-            
-            if (!displayName) {
-                isValid = false;
-                document.getElementById('displayName').classList.add('is-invalid');
-            } else {
-                document.getElementById('displayName').classList.remove('is-invalid');
-            }
-            
-            if (!isValid) {
-                event.preventDefault();
-            }
+<!-- Form validation and logging script -->
+<script th:inline="javascript">
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('📝 Company creation form loaded');
+    
+    const form = document.getElementById('createCompanyForm');
+    
+    // Log form field changes
+    ['name', 'displayName', 'logoUrl'].forEach(fieldId => {
+        const field = document.getElementById(fieldId);
+        field.addEventListener('input', function() {
+            console.log(`🔤 ${fieldId} changed:`, this.value);
         });
     });
+    
+    // Form validation and submission
+    form.addEventListener('submit', function(event) {
+        if (!form.checkValidity()) {
+            event.preventDefault();
+            event.stopPropagation();
+            console.log('❌ Form validation failed');
+        } else {
+            console.log('✅ Form validation passed');
+            console.log('📤 Submitting company data:', {
+                name: form.name.value,
+                displayName: form.displayName.value,
+                logoUrl: form.logoUrl.value
+            });
+        }
+        
+        form.classList.add('was-validated');
+    });
+});
 </script> 
