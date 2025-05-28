@@ -1,8 +1,8 @@
 <!-- Page Heading -->
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800">Companies Management</h1>
-    <a href="/admin/companies/create" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm">
-        <i class="fas fa-plus fa-sm text-white-50"></i> Add New Company
+    <h1 class="h3 mb-0 text-gray-800">Companies Management-Real Page</h1>
+    <a href="/admin/companies/create" class="d-sm-inline-block btn btn-sm btn-primary shadow-sm">
+        <i class="fas fa-plus fa-sm text-white-50"></i> Create Company
     </a>
 </div>
 
@@ -70,7 +70,7 @@
 </div>
 
 <!-- Delete Confirmation Modal -->
-<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-hidden="true">
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" role="dialog">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
@@ -84,8 +84,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                <form id="deleteForm" method="post">
-                    <input type="hidden" name="_method" value="DELETE">
+                <form id="deleteCompanyForm" method="POST" style="display: inline;">
                     <button type="submit" class="btn btn-danger">Delete</button>
                 </form>
             </div>
@@ -93,20 +92,17 @@
     </div>
 </div>
 
+<!-- Custom JavaScript for this page -->
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Initialize datatable
-        $('#companiesTable').DataTable();
-        
-        // Setup delete buttons
-        const deleteButtons = document.querySelectorAll('.delete-company');
-        deleteButtons.forEach(button => {
-            button.addEventListener('click', function() {
-                const companyId = this.getAttribute('data-id');
-                const deleteForm = document.getElementById('deleteForm');
-                deleteForm.action = `/admin/companies/${companyId}/delete`;
-                $('#deleteModal').modal('show');
-            });
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle delete company buttons
+    document.querySelectorAll('.delete-company').forEach(button => {
+        button.addEventListener('click', function() {
+            const companyId = this.getAttribute('data-id');
+            const form = document.getElementById('deleteCompanyForm');
+            form.action = `/admin/companies/${companyId}/delete`;
+            $('#deleteConfirmModal').modal('show');
         });
     });
+});
 </script> 
