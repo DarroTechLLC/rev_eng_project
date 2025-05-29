@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import org.hibernate.annotations.ColumnDefault;
 
 import java.time.Instant;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "meters")
@@ -31,6 +33,72 @@ public class Meter {
     @ColumnDefault("0")
     @Column(name = "is_archived", nullable = false)
     private Boolean isArchived = false;
+
+    @OneToMany(mappedBy = "meter")
+    private Set<BuyBack> buyBacks = new LinkedHashSet<>();
+
+    @OneToMany(mappedBy = "meter")
+    private Set<CompanyMeter> companyMeters = new LinkedHashSet<>();
+
+    @OneToMany(mappedBy = "meter")
+    private Set<MeterDaily> meterDailies = new LinkedHashSet<>();
+
+    @OneToMany(mappedBy = "meter")
+    private Set<MeterHourly> meterHourlies = new LinkedHashSet<>();
+
+    @OneToMany(mappedBy = "meter")
+    private Set<MeterMonthlyForecast> meterMonthlyForecasts = new LinkedHashSet<>();
+
+    @OneToMany(mappedBy = "meter")
+    private Set<WebsiteMeter> websiteMeters = new LinkedHashSet<>();
+
+    public Set<WebsiteMeter> getWebsiteMeters() {
+        return websiteMeters;
+    }
+
+    public void setWebsiteMeters(Set<WebsiteMeter> websiteMeters) {
+        this.websiteMeters = websiteMeters;
+    }
+
+    public Set<MeterMonthlyForecast> getMeterMonthlyForecasts() {
+        return meterMonthlyForecasts;
+    }
+
+    public void setMeterMonthlyForecasts(Set<MeterMonthlyForecast> meterMonthlyForecasts) {
+        this.meterMonthlyForecasts = meterMonthlyForecasts;
+    }
+
+    public Set<MeterHourly> getMeterHourlies() {
+        return meterHourlies;
+    }
+
+    public void setMeterHourlies(Set<MeterHourly> meterHourlies) {
+        this.meterHourlies = meterHourlies;
+    }
+
+    public Set<MeterDaily> getMeterDailies() {
+        return meterDailies;
+    }
+
+    public void setMeterDailies(Set<MeterDaily> meterDailies) {
+        this.meterDailies = meterDailies;
+    }
+
+    public Set<CompanyMeter> getCompanyMeters() {
+        return companyMeters;
+    }
+
+    public void setCompanyMeters(Set<CompanyMeter> companyMeters) {
+        this.companyMeters = companyMeters;
+    }
+
+    public Set<BuyBack> getBuyBacks() {
+        return buyBacks;
+    }
+
+    public void setBuyBacks(Set<BuyBack> buyBacks) {
+        this.buyBacks = buyBacks;
+    }
 
     public String getId() {
         return id;

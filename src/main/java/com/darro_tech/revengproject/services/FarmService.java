@@ -10,6 +10,7 @@ import java.util.UUID;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import com.darro_tech.revengproject.repositories.MeterRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,6 +19,7 @@ import com.darro_tech.revengproject.dto.ValidationResult;
 import com.darro_tech.revengproject.models.Company;
 import com.darro_tech.revengproject.models.CompanyFarm;
 import com.darro_tech.revengproject.models.Farm;
+import com.darro_tech.revengproject.models.Meter;
 import com.darro_tech.revengproject.repositories.CompanyFarmRepository;
 import com.darro_tech.revengproject.repositories.CompanyRepository;
 import com.darro_tech.revengproject.repositories.FarmRepository;
@@ -38,6 +40,9 @@ public class FarmService {
 
     @Autowired
     private CompanyRepository companyRepository;
+
+    @Autowired
+    private MeterRepository meterRepository;
 
     /**
      * Get all farms
@@ -104,9 +109,16 @@ public class FarmService {
      * Delete a farm
      */
     @Transactional
-    public void deleteFarm(String id) {
-        logger.info(String.format("🗑️ Deleting farm with ID: %s", id));
-        farmRepository.deleteById(id);
+    public void deleteFarm(String farmId) {
+        logger.info("🗑️ Attempting to delete farm with ID: " + farmId);
+
+        // First delete all company_farm associations
+        companyFarmRepository.deleteByFarmId(farmId);
+        logger.info("✅ Deleted company farm associations for farm: " + farmId);
+
+        // Then delete the farm itself
+        farmRepository.deleteById(farmId);
+        logger.info("✅ Successfully deleted farm: " + farmId);
     }
 
     /**
@@ -387,5 +399,63 @@ public class FarmService {
         farm.setTimestamp(Instant.now());
 
         return farmRepository.save(farm);
+    }
+
+    /**
+     * Get all meters for a farm
+     */
+    @Transactional(readOnly = true)
+    public List<Meter> getFarmMeters(String farmId) {
+        logger.info(String.format("🔍 Fetching meters for farm ID: %s", farmId));
+        return meterRepository.findByFarmId(farmId);
+    }
+
+    /**
+     * Add a meter to a farm
+     */
+    @Transactional
+    public Meter addMeterToFarm(String farmId, String meterName, String displayName, Boolean includeWebsite) {
+        logger.info(String.format("📝 Adding meter '%s' to farm ID: %s", meterName, farmId));
+
+        Meter meter = new Meter();
+        meter.setId(UUID.randomUUID().toString());
+        meter.setName(meterName);
+        meter.setDisplayName(displayName);
+        meter.setIncludeWebsite(includeWebsite);
+        meter.setIsArchived(false);
+        meter.setTimestamp(Instant.now());
+
+        Farm farm = farmRepository.findById(farmId)
+                .orElseThrow(() -> new RuntimeException("Farm not found with ID: " + farmId));
+        meter.setFarm(farm);
+
+        return meterRepository.save(meter);
+    }
+
+    /**
+     * Update a meter
+     */
+    @Transactional
+    public Meter updateMeter(String meterId, String meterName, String displayName, Boolean includeWebsite) {
+        logger.info(String.format("📝 Updating meter ID: %s", meterId));
+
+        Meter meter = meterRepository.findById(meterId)
+                .orElseThrow(() -> new RuntimeException("Meter not found with ID: " + meterId));
+
+        meter.setName(meterName);
+        meter.setDisplayName(displayName);
+        meter.setIncludeWebsite(includeWebsite);
+        meter.setTimestamp(Instant.now());
+
+        return meterRepository.save(meter);
+    }
+
+    /**
+     * Delete a meter
+     */
+    @Transactional
+    public void deleteMeter(String meterId) {
+        logger.info(String.format("🗑️ Deleting meter ID: %s", meterId));
+        meterRepository.deleteById(meterId);
     }
 }
