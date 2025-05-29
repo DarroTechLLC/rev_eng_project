@@ -4,40 +4,40 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Application</title>
-    
+
     <!-- CSRF token for Ajax requests -->
     <meta name="_csrf" th:content="${_csrf != null ? _csrf.token : ''}" />
     <meta name="_csrf_header" th:content="${_csrf != null ? _csrf.headerName : ''}" />
-    
+
     <!-- jQuery first, then Bootstrap JS -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
-    
+
     <!-- Toastr CSS and JS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
-    
+
     <!-- DataTables CSS and JS -->
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap4.min.css">
     <script type="text/javascript" src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
     <script type="text/javascript" src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap4.min.js"></script>
-    
+
     <!-- Bootstrap CSS and Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" th:href="@{/css/sb-admin-2.min.css}">
-    <link rel="stylesheet" th:href="@{https://fonts.googleapis.com/css?family=Nunito:200,300,400,700,900}">
-    
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nunito:200,300,400,700,900">
+
     <!-- Company Selector Styles -->
     <link rel="stylesheet" th:href="@{/css/company-selector.css}">
-    
+
     <!-- Custom dropdown styles -->
     <style>
         /* Ensure dropdowns show properly */
         .dropdown-menu.show {
             display: block !important;
         }
-        
+
         /* Smooth transitions for dropdowns */
         .dropdown-menu {
             transition: opacity 0.2s, transform 0.2s;
@@ -45,28 +45,28 @@
             transform: translateY(-10px);
             display: none;
         }
-        
+
         .dropdown-menu.show {
             opacity: 1;
             transform: translateY(0);
         }
-        
+
         /* Better styling for user dropdown items */
         .dropdown-item {
             padding: 0.5rem 1.5rem;
             transition: background-color 0.2s;
         }
-        
+
         .dropdown-item:hover {
             background-color: #f8f9fa;
         }
-        
+
         /* Fix for admin-only items */
         .admin-only, .super-admin-only {
             display: none;
         }
     </style>
-    
+
     <!-- Custom styles for this template-->
     <link th:href="@{/css/sb-admin-2.min.css}" rel="stylesheet">
     <link th:href="@{/css/farm-modal.css}" rel="stylesheet">
@@ -86,7 +86,7 @@
                 <!-- Topbar -->
                 <div th:replace="fragments/topbar :: topbar"></div>
                 <!-- End of Topbar -->
-                
+
                 <!-- Begin Page Content -->
                 <div class="container-fluid">
                     <!-- Main content will be inserted here -->
@@ -113,19 +113,23 @@
 
     <!-- Logout Modal-->
     <div th:replace="fragments/logout-modal :: logout-modal"></div>
-    
+
+    <!-- Change Password Modal -->
+    <div th:replace="fragments/change-password-modal :: change-password-modal"></div>
+    <script th:replace="fragments/change-password-modal :: change-password-script"></script>
+
     <!-- Sidebar Script -->
     <div th:replace="fragments/sidebar :: sidebar-scripts"></div>
-    
+
     <!-- Company Selector Script -->
     <div th:replace="fragments/company-selector :: company-selector-script"></div>
-    
+
     <!-- Core custom scripts -->
     <script th:src="@{/js/sb-admin-2.min.js}"></script>
-    
+
     <!-- Dropdown functionality -->
     <script th:src="@{/js/dropdowns.js}"></script>
-    
+
     <!-- Custom JavaScript -->
     <script>
         console.log('🚀 Main layout loaded');
@@ -133,7 +137,7 @@
             console.log('📄 DOM fully loaded and parsed');
         });
     </script>
-    
+
     <!-- Debug information -->
     <div class="d-none">
         <div id="debug-info">
@@ -141,7 +145,7 @@
             <p>User ID: <span th:text="${session.user ?: 'None'}">None</span></p>
         </div>
     </div>
-    
+
     <!-- Custom scripts for all pages-->
     <script th:src="@{/js/sb-admin-2.min.js}"></script>
     <script th:src="@{/js/farm-creation.js}"></script>
