@@ -352,4 +352,40 @@ public class FarmService {
 
         return new ValidationResult(!exists, exists ? "Display name already exists" : null);
     }
+
+    /**
+     * Update all farm details
+     */
+    @Transactional
+    public Farm updateFarmDetails(Farm farm) {
+        logger.info(String.format("📝 Updating all details for farm with ID: %s", farm.getId()));
+        Optional<Farm> farmOpt = farmRepository.findById(farm.getId());
+        if (farmOpt.isPresent()) {
+            Farm existingFarm = farmOpt.get();
+            existingFarm.setName(farm.getName());
+            existingFarm.setDisplayName(farm.getDisplayName());
+            existingFarm.setFarmType(farm.getFarmType());
+            existingFarm.setIsTempSource(farm.getIsTempSource());
+            existingFarm.setTempSourceId(farm.getTempSourceId());
+            existingFarm.setTimestamp(Instant.now());
+            return farmRepository.save(existingFarm);
+        }
+        throw new RuntimeException("Farm not found with ID: " + farm.getId());
+    }
+
+    /**
+     * Create a new farm with all details
+     */
+    @Transactional
+    public Farm createFarmWithDetails(Farm farm) {
+        logger.info(String.format("📝 Creating new farm with name: %s and all details", farm.getName()));
+
+        // Set ID and timestamp if not already set
+        if (farm.getId() == null) {
+            farm.setId(UUID.randomUUID().toString());
+        }
+        farm.setTimestamp(Instant.now());
+
+        return farmRepository.save(farm);
+    }
 }

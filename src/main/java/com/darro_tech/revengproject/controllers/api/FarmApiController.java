@@ -1,6 +1,5 @@
 package com.darro_tech.revengproject.controllers.api;
 
-import java.time.Instant;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -219,28 +218,22 @@ public class FarmApiController {
 
     @PostMapping("/admin/farms/create")
     public ResponseEntity<Map<String, Object>> createFarm(
-            @RequestBody FarmCreateDTO farm,
+            @RequestBody FarmCreateDTO farmDTO,
             @SessionAttribute("selectedCompanyId") String companyId) {
         logger.info("📝 Creating new farm via API");
 
         try {
-            Farm created = farmService.createFarm(farm.getName(), farm.getDisplayName());
+            // Create a new Farm entity from the DTO
+            Farm farm = new Farm();
+            farm.setName(farmDTO.getName());
+            farm.setDisplayName(farmDTO.getDisplayName());
+            farm.setFarmType(farmDTO.getFarmType());
+            farm.setTempSourceId(farmDTO.getTempSourceId());
+            farm.setIsTempSource(farmDTO.getIsTempSource() != null ? farmDTO.getIsTempSource() : false);
 
-            // Update additional farm properties
-            if (farm.getFarmType() != null) {
-                created.setFarmType(farm.getFarmType());
-            }
-
-            if (farm.getIsTempSource() != null) {
-                created.setIsTempSource(farm.getIsTempSource());
-            }
-
-            if (farm.getTempSourceId() != null) {
-                created.setTempSourceId(farm.getTempSourceId());
-            }
-
-            created.setTimestamp(Instant.now());
-            farmService.updateFarm(created.getId(), created.getName(), created.getDisplayName());
+            // Save the farm with all details
+            Farm created = farmService.createFarmWithDetails(farm);
+            logger.info(String.format("🌾 Created farm with type: %s", created.getFarmType()));
 
             // Assign the farm to the company
             farmService.assignFarmToCompany(created.getId(), companyId);
