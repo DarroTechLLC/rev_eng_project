@@ -3,6 +3,7 @@ package com.darro_tech.revengproject.controllers.admin;
 import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
+import java.util.logging.Logger;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -17,6 +18,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.darro_tech.revengproject.controllers.BaseController;
 import com.darro_tech.revengproject.models.Company;
+import com.darro_tech.revengproject.models.CompanyFarm;
 import com.darro_tech.revengproject.models.Farm;
 import com.darro_tech.revengproject.services.CompanyService;
 import com.darro_tech.revengproject.services.FarmService;
@@ -26,6 +28,8 @@ import jakarta.servlet.http.HttpSession;
 @Controller
 @RequestMapping("/admin/farms")
 public class FarmController extends BaseController {
+
+    private static final Logger logger = Logger.getLogger(FarmController.class.getName());
 
     @Autowired
     private FarmService farmService;
@@ -108,33 +112,27 @@ public class FarmController extends BaseController {
             @RequestParam String companyId,
             RedirectAttributes redirectAttributes) {
 
-        // Generate a UUID for the farm
-        farm.setId(UUID.randomUUID().toString());
+        try {
+            // Generate a UUID for the farm if not already set
+            if (farm.getId() == null) {
+                farm.setId(UUID.randomUUID().toString());
+            }
 
-        // Save the farm
-        Farm savedFarm = farmService.createFarm(farm.getName(), farm.getDisplayName());
+            // Save the farm with all its details in one operation
+            Farm savedFarm = farmService.createFarmWithDetails(farm);
+            logger.info(String.format("🌾 Created farm with type: %s", farm.getFarmType()));
 
-        // Update additional farm properties
-        if (farm.getFarmType() != null) {
-            savedFarm.setFarmType(farm.getFarmType());
+            // Assign the farm to the company if a company ID was provided
+            if (companyId != null && !companyId.isEmpty()) {
+                farmService.assignFarmToCompany(savedFarm.getId(), companyId);
+            }
+
+            redirectAttributes.addFlashAttribute("message", "Farm created successfully!");
+        } catch (Exception e) {
+            logger.severe(String.format("❌ Error creating farm: %s", e.getMessage()));
+            redirectAttributes.addFlashAttribute("errorMessage", "Error creating farm: " + e.getMessage());
         }
 
-        if (farm.getIsTempSource() != null) {
-            savedFarm.setIsTempSource(farm.getIsTempSource());
-        }
-
-        if (farm.getTempSourceId() != null) {
-            savedFarm.setTempSourceId(farm.getTempSourceId());
-        }
-
-        farmService.updateFarm(savedFarm.getId(), savedFarm.getName(), savedFarm.getDisplayName());
-
-        // Assign the farm to the company if a company ID was provided
-        if (companyId != null && !companyId.isEmpty()) {
-            farmService.assignFarmToCompany(savedFarm.getId(), companyId);
-        }
-
-        redirectAttributes.addFlashAttribute("message", "Farm created successfully!");
         return "redirect:/admin/farms?companyId=" + companyId;
     }
 
@@ -169,30 +167,33 @@ public class FarmController extends BaseController {
             @RequestParam String companyId,
             RedirectAttributes redirectAttributes) {
 
-        // Update the farm
-        Farm updatedFarm = farmService.updateFarm(id, farm.getName(), farm.getDisplayName());
+        try {
+            // Set the ID from the path variable
+            farm.setId(id);
 
-        // Update additional farm properties
-        if (farm.getFarmType() != null) {
-            updatedFarm.setFarmType(farm.getFarmType());
+            // Update all farm details
+            Farm updatedFarm = farmService.updateFarmDetails(farm);
+
+            // Only update company association if it's different
+            List<CompanyFarm> existingAssociations = farmService.getCompanyFarmsForFarm(id);
+            boolean needsCompanyUpdate = true;
+
+            if (!existingAssociations.isEmpty()) {
+                CompanyFarm currentAssociation = existingAssociations.get(0);
+                if (currentAssociation.getCompany().getId().equals(companyId)) {
+                    needsCompanyUpdate = false;
+                }
+            }
+
+            if (needsCompanyUpdate && companyId != null && !companyId.isEmpty()) {
+                farmService.updateFarmCompanyAssociation(updatedFarm.getId(), companyId);
+            }
+
+            redirectAttributes.addFlashAttribute("successMessage", "Farm updated successfully!");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Error updating farm: " + e.getMessage());
         }
 
-        if (farm.getIsTempSource() != null) {
-            updatedFarm.setIsTempSource(farm.getIsTempSource());
-        }
-
-        if (farm.getTempSourceId() != null) {
-            updatedFarm.setTempSourceId(farm.getTempSourceId());
-        }
-
-        farmService.updateFarm(updatedFarm.getId(), updatedFarm.getName(), updatedFarm.getDisplayName());
-
-        // Update company association if needed
-        if (companyId != null && !companyId.isEmpty()) {
-            farmService.updateFarmCompanyAssociation(updatedFarm.getId(), companyId);
-        }
-
-        redirectAttributes.addFlashAttribute("message", "Farm updated successfully!");
         return "redirect:/admin/farms?companyId=" + companyId;
     }
 
