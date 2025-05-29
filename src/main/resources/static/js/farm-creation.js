@@ -4,6 +4,69 @@ document.addEventListener('DOMContentLoaded', function() {
     const spinner = submitBtn.querySelector('.spinner-border');
     let isDirty = false;
 
+    // Helper functions for meter names
+    function getDirectMeterName(farmName) {
+        return `${farmName}-direct`;
+    }
+
+    function getLoadingMeterName(farmName) {
+        return `${farmName}-loading`;
+    }
+
+    function getUnloadingMeterName(farmName) {
+        return `${farmName}-unloading`;
+    }
+
+    // Function to update meters display
+    function updateMetersDisplay(farmName, farmType) {
+        const metersContainer = document.getElementById('metersContainer');
+        let metersHtml = '';
+
+        if (!farmName || farmName.trim() === '') {
+            metersHtml = '<div class="meter-row">None Specified</div>';
+        } else {
+            switch (farmType) {
+                case 'direct-injection':
+                    metersHtml = `
+                        <div class="meter-row">
+                            <div class="meter-name">${getDirectMeterName(farmName)}</div>
+                            <div class="meter-flag production">Production</div>
+                        </div>
+                    `;
+                    break;
+                case 'loading-unloading':
+                    metersHtml = `
+                        <div class="meter-row">
+                            <div class="meter-name">${getLoadingMeterName(farmName)}</div>
+                            <div class="meter-flag archived">Archived</div>
+                        </div>
+                        <div class="meter-row">
+                            <div class="meter-name">${getUnloadingMeterName(farmName)}</div>
+                            <div class="meter-flag production">Production</div>
+                        </div>
+                    `;
+                    break;
+                default:
+                    metersHtml = '<div class="meter-row">None Specified</div>';
+            }
+        }
+
+        metersContainer.innerHTML = metersHtml;
+    }
+
+    // Add event listeners for farm name and type changes
+    document.getElementById('farmName').addEventListener('input', function() {
+        const farmName = this.value;
+        const farmType = document.getElementById('farmType').value;
+        updateMetersDisplay(farmName, farmType);
+    });
+
+    document.getElementById('farmType').addEventListener('change', function() {
+        const farmName = document.getElementById('farmName').value;
+        const farmType = this.value;
+        updateMetersDisplay(farmName, farmType);
+    });
+
     // Load temp sources when modal opens
     $('#createFarmModal').on('show.bs.modal', async function() {
         try {
@@ -244,5 +307,6 @@ document.addEventListener('DOMContentLoaded', function() {
             el.classList.remove('is-invalid');
             el.nextElementSibling.nextElementSibling.textContent = '';
         });
+        updateMetersDisplay('', ''); // Reset meters display
     });
 }); 

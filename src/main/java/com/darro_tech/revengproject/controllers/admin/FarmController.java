@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.UUID;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.Map;
+import java.util.HashMap;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -73,6 +75,15 @@ public class FarmController extends BaseController {
             List<Farm> farms = farmService.getFarmsByCompanyId(selectedCompanyId);
             model.addAttribute("farms", farms);
 
+            // Create a map of temp source IDs to their names
+            Map<String, String> tempSourceNames = new HashMap<>();
+            farms.forEach(farm -> {
+                if (farm.getIsTempSource()) {
+                    tempSourceNames.put(farm.getId(), farm.getName());
+                }
+            });
+            model.addAttribute("tempSourceNames", tempSourceNames);
+
             // Add company info to model
             companyService.getCompanyById(selectedCompanyId).ifPresent(company -> {
                 model.addAttribute("selectedCompany", company);
@@ -100,6 +111,11 @@ public class FarmController extends BaseController {
         if (selectedCompanyId != null) {
             companyService.getCompanyById(selectedCompanyId).ifPresent(company -> {
                 model.addAttribute("selectedCompany", company);
+
+                // Get temperature source farms for the company
+                List<Farm> tempSourceFarms = farmService.getTempSourceFarms(selectedCompanyId);
+                model.addAttribute("tempSourceFarms", tempSourceFarms);
+                logger.info(String.format("🌡️ Found %d temperature source farms", tempSourceFarms.size()));
             });
         }
 
@@ -127,6 +143,38 @@ public class FarmController extends BaseController {
             // Assign the farm to the company if a company ID was provided
             if (companyId != null && !companyId.isEmpty()) {
                 farmService.assignFarmToCompany(savedFarm.getId(), companyId);
+            }
+
+            // Create meters based on farm type
+            if (farm.getFarmType() != null) {
+                if (farm.getFarmType().equals("direct-injection")) {
+                    // Create direct injection meter
+                    farmService.addMeterToFarm(
+                            savedFarm.getId(),
+                            farm.getName() + "-DI",
+                            farm.getName() + "-DI",
+                            true // includeWebsite (production)
+                    );
+                    logger.info("📊 Created direct injection meter for farm");
+                } else if (farm.getFarmType().equals("loading-unloading")) {
+                    // Create loading meter
+                    farmService.addMeterToFarm(
+                            savedFarm.getId(),
+                            farm.getName() + "-LOAD",
+                            farm.getName() + "-LOAD",
+                            false // includeWebsite (not production)
+                    );
+                    logger.info("📊 Created loading meter for farm");
+
+                    // Create unloading meter
+                    farmService.addMeterToFarm(
+                            savedFarm.getId(),
+                            farm.getName() + "-UNLOAD",
+                            farm.getName() + "-UNLOAD",
+                            true // includeWebsite (production)
+                    );
+                    logger.info("📊 Created unloading meter for farm");
+                }
             }
 
             redirectAttributes.addFlashAttribute("message", "Farm created successfully!");

@@ -53,7 +53,7 @@
                             </td>
                             <td th:text="${farm.displayName}">Example Display Name</td>
                             <td th:text="${farm.farmType != null ? farm.farmType : '(None Selected)'}">Standard</td>
-                            <td th:text="${farm.tempSourceId != null ? farm.tempSourceId : ''}">Source</td>
+                            <td th:text="${farm.tempSourceId != null ? tempSourceNames[farm.tempSourceId] : ''}">Source</td>
                             <td th:text="${farm.isTempSource ? 'YES' : ''}">No</td>
                             <td>
                                 <a th:href="@{/admin/farms/edit/{id}(id=${farm.id})}" class="btn btn-primary btn-sm">
