@@ -15,7 +15,7 @@
             font-weight: bold;
             font-size: 0.875rem;
         }
-        
+
         /* Hide admin menu items by default until JavaScript loads */
         .admin-only, .super-admin-only {
             display: none;
@@ -137,7 +137,7 @@
                         Website Alerts
                     </a>
                     <!-- Available to all users -->
-                    <a class="dropdown-item" th:href="@{/account/change-password}">
+                    <a class="dropdown-item" href="#" data-toggle="modal" data-target="#changePasswordModal">
                         <i class="fas fa-key fa-sm fa-fw mr-2 text-gray-400"></i>
                         Change Password
                     </a>
@@ -149,7 +149,7 @@
                 </div>
             </li>
         </ul>
-        
+
         <!-- Script to handle dynamic role-based visibility -->
         <script>
             document.addEventListener('DOMContentLoaded', function() {
@@ -160,21 +160,21 @@
                 document.querySelectorAll('.super-admin-only').forEach(function(el) {
                     el.style.display = 'none';
                 });
-                
+
                 // Fetch user role information
                 fetch('/debug/roles-api')
                     .then(response => response.json())
                     .then(data => {
                         if (data.success) {
                             console.log('User roles:', data);
-                            
+
                             // Show admin menu items if user is an admin
                             if (data.isAdmin === true) {
                                 document.querySelectorAll('.admin-only').forEach(function(el) {
                                     el.style.display = 'block';
                                 });
                             }
-                            
+
                             // Show super admin menu items if user is a super admin
                             if (data.isSuperAdmin === true) {
                                 document.querySelectorAll('.super-admin-only').forEach(function(el) {

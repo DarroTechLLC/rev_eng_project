@@ -60,6 +60,10 @@
 
     <!-- Logout Modal-->
     <th:block th:replace="~{fragments/logout-modal :: logout-modal}"></th:block>
+
+    <!-- Change Password Modal -->
+    <th:block th:replace="~{fragments/change-password-modal :: change-password-modal}"></th:block>
+    <script th:replace="~{fragments/change-password-modal :: change-password-script}"></script>
 </body>
 </html>
 
@@ -107,7 +111,7 @@
             <a href="/admin/companies" class="btn btn-secondary">Cancel</a>
         </div>
     </form>
-    
+
     <style>
         .border-dashed {
             border-style: dashed !important;
