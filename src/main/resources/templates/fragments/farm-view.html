@@ -46,6 +46,7 @@
                                     <th>Farm Name</th>
                                     <th>Display Name</th>
                                     <th>Farm Type</th>
+                                    <th>Temperature Source</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
@@ -76,6 +77,7 @@
                 // Current state
                 let selectedCompanyId = null;
                 let farms = [];
+                let tempSourceFarms = new Map(); // Map to store temp source farm names
                 
                 // Function to load farms for the selected company
                 function loadFarms() {
@@ -88,8 +90,16 @@
                     emptyFarms.classList.add('d-none');
                     farmsTableContainer.classList.add('d-none');
                     
-                    // Fetch farms from API
-                    fetch('/api/farms')
+                    // First load temp source farms
+                    fetch('/api/admin/farms/temp-sources')
+                        .then(response => response.json())
+                        .then(data => {
+                            // Create a map of temp source IDs to names
+                            tempSourceFarms = new Map(data.map(farm => [farm.id, farm.name]));
+                            
+                            // Now fetch the farms list
+                            return fetch('/api/farms');
+                        })
                         .then(response => {
                             console.log('Farm API response status:', response.status);
                             if (!response.ok) {
@@ -169,6 +179,14 @@
                         const typeCell = document.createElement('td');
                         typeCell.textContent = farm.farmType || 'N/A';
                         
+                        // Create temp source cell
+                        const tempSourceCell = document.createElement('td');
+                        if (farm.tempSourceId) {
+                            tempSourceCell.textContent = tempSourceFarms.get(farm.tempSourceId) || 'Unknown Source';
+                        } else {
+                            tempSourceCell.textContent = 'None';
+                        }
+                        
                         // Create actions cell
                         const actionsCell = document.createElement('td');
                         
@@ -191,6 +209,7 @@
                         row.appendChild(nameCell);
                         row.appendChild(displayNameCell);
                         row.appendChild(typeCell);
+                        row.appendChild(tempSourceCell);
                         row.appendChild(actionsCell);
                         
                         // Add row to table

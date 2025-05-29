@@ -28,6 +28,45 @@
                 border-radius: 8px;
                 box-shadow: 0 0 10px rgba(0,0,0,0.1);
             }
+            .meters-section {
+                border: solid 1px #999;
+                border-radius: 2px;
+                padding: 8px;
+                font-size: .75em;
+                min-height: 115px;
+                color: #036;
+                background-color: #eee;
+                margin-top: 10px;
+            }
+            .meter-row {
+                border-bottom: solid 1px #999;
+                display: flex;
+                padding: 6px 3px 9px;
+            }
+            .meter-row:last-child {
+                border-bottom: none;
+            }
+            .meter-name {
+                flex: 1;
+            }
+            .meter-flag {
+                padding: 3px 9px;
+                border-radius: 12px;
+                font-size: .75em;
+                color: #fff;
+            }
+            .production-flag {
+                background-color: #083;
+            }
+            .archived-flag {
+                background-color: #666;
+            }
+            .section-label {
+                color: #333;
+                font-size: 0.75em;
+                font-weight: 800;
+                margin-bottom: 2px;
+            }
         </style>
 
         <!-- Page Header -->
@@ -52,37 +91,57 @@
             <form th:action="@{/admin/farms/create}" method="post" th:object="${farm}">
                 <input type="hidden" name="companyId" th:value="${selectedCompany != null ? selectedCompany.id : ''}">
                 
-                <div class="form-group">
-                    <label for="name">Farm Name*</label>
-                    <input type="text" class="form-control" id="name" name="name" required 
-                           th:field="*{name}" placeholder="Enter farm name">
-                </div>
-                
-                <div class="form-group">
-                    <label for="displayName">Display Name</label>
-                    <input type="text" class="form-control" id="displayName" name="displayName"
-                           th:field="*{displayName}" placeholder="Enter display name">
-                </div>
-                
-                <div class="form-group">
-                    <label for="farmType">Farm Type</label>
-                    <select class="form-control" id="farmType" name="farmType" th:field="*{farmType}">
-                        <option value="">- Please Select -</option>
-                        <option value="direct-injection">Direct Injection</option>
-                        <option value="loading-unloading">Loading/Unloading Site</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label for="tempSourceId">Temp Source ID</label>
-                    <input type="text" class="form-control" id="tempSourceId" name="tempSourceId"
-                           th:field="*{tempSourceId}" placeholder="Enter temp source ID">
-                </div>
-                
-                <div class="form-check mb-3">
-                    <input type="checkbox" class="form-check-input" id="isTempSource" name="isTempSource" 
-                           th:field="*{isTempSource}">
-                    <label class="form-check-label" for="isTempSource">Is Temp Source</label>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="name">Farm Name*</label>
+                            <input type="text" class="form-control" id="name" name="name" required 
+                                   th:field="*{name}" placeholder="Enter farm name">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="displayName">Display Name</label>
+                            <input type="text" class="form-control" id="displayName" name="displayName"
+                                   th:field="*{displayName}" placeholder="Enter display name">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="tempSourceId">Temperature Source</label>
+                            <select class="form-control" id="tempSourceId" name="tempSourceId" th:field="*{tempSourceId}">
+                                <option value="">- None -</option>
+                                <option th:each="tempFarm : ${tempSourceFarms}"
+                                        th:value="${tempFarm.id}"
+                                        th:text="${tempFarm.name}">Farm Name</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-check mb-3">
+                            <input type="checkbox" class="form-check-input" id="isTempSource" name="isTempSource"
+                                   th:field="*{isTempSource}">
+                            <label class="form-check-label" for="isTempSource">Use as Temperature Source</label>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="farmType">Farm Type</label>
+                            <select class="form-control" id="farmType" name="farmType" th:field="*{farmType}">
+                                <option value="">- Please Select -</option>
+                                <option value="direct-injection">Direct Injection</option>
+                                <option value="loading-unloading">Loading/Unloading Site</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Meters Section -->
+                        <div>
+                            <label class="section-label">Meters</label>
+                            <div class="meters-section" id="metersSection">
+                                <div class="meter-row">
+                                    <div class="meter-name">None Specified</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 
                 <button type="submit" class="btn btn-primary">Create Farm</button>
@@ -91,15 +150,63 @@
         </div>
 
         <script>
-            // Log logo loading
             document.addEventListener('DOMContentLoaded', function() {
+                const farmNameInput = document.getElementById('name');
+                const farmTypeSelect = document.getElementById('farmType');
+                const metersSection = document.getElementById('metersSection');
+
+                function updateMeters() {
+                    const farmName = farmNameInput.value;
+                    const farmType = farmTypeSelect.value;
+                    let metersHtml = '';
+
+                    if (!farmName || !farmType) {
+                        metersHtml = `
+                            <div class="meter-row">
+                                <div class="meter-name">None Specified</div>
+                            </div>
+                        `;
+                    } else if (farmType === 'direct-injection') {
+                        metersHtml = `
+                            <div class="meter-row">
+                                <div class="meter-name">${farmName}-DI</div>
+                                <div>
+                                    <span class="meter-flag production-flag">Production</span>
+                                </div>
+                            </div>
+                        `;
+                    } else if (farmType === 'loading-unloading') {
+                        metersHtml = `
+                            <div class="meter-row">
+                                <div class="meter-name">${farmName}-LOAD</div>
+                                <div>
+                                    <span class="meter-flag archived-flag">Archived</span>
+                                </div>
+                            </div>
+                            <div class="meter-row">
+                                <div class="meter-name">${farmName}-UNLOAD</div>
+                                <div>
+                                    <span class="meter-flag production-flag">Production</span>
+                                </div>
+                            </div>
+                        `;
+                    }
+
+                    metersSection.innerHTML = metersHtml;
+                }
+
+                // Update meters when farm name or type changes
+                farmNameInput.addEventListener('input', updateMeters);
+                farmTypeSelect.addEventListener('change', updateMeters);
+
+                // Log logo loading
                 const currentCompanyLogo = document.getElementById('currentCompanyLogo');
                 if (currentCompanyLogo) {
                     currentCompanyLogo.onload = function() {
-                        console.log('Current company logo loaded successfully in Create Farm page');
+                        console.log('📷 Current company logo loaded successfully in Create Farm page');
                     };
                     currentCompanyLogo.onerror = function() {
-                        console.error('Failed to load current company logo in Create Farm page');
+                        console.error('❌ Failed to load current company logo in Create Farm page');
                     };
                 }
             });
