@@ -61,10 +61,24 @@ public class ApiErrorController implements ErrorController {
             // Handle web errors
             logger.warning("🌐 Web error occurred for " + requestUri + ": " + statusCode + " - " + errorMessage);
 
+            // Get the exception that caused this error
+            Throwable exception = (Throwable) request.getAttribute("javax.servlet.error.exception");
+
             // Add error details to model
             model.addAttribute("status", statusCode);
             model.addAttribute("error", HttpStatus.valueOf(statusCode).getReasonPhrase());
-            model.addAttribute("message", errorMessage);
+
+            // Pass the full exception object to the template for detailed error information
+            if (exception != null) {
+                model.addAttribute("exception", exception);
+                // Use the exception's message if available, otherwise use the generic error message
+                String detailedMessage = exception.getMessage() != null ? exception.getMessage() : errorMessage;
+                model.addAttribute("message", detailedMessage);
+                logger.warning("Exception details: " + exception.toString());
+            } else {
+                model.addAttribute("message", errorMessage);
+            }
+
             model.addAttribute("path", requestUri);
 
             // Return the error view
