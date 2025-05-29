@@ -4,6 +4,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -20,6 +21,7 @@ import com.darro_tech.revengproject.controllers.BaseController;
 import com.darro_tech.revengproject.models.Company;
 import com.darro_tech.revengproject.models.CompanyFarm;
 import com.darro_tech.revengproject.models.Farm;
+import com.darro_tech.revengproject.models.Meter;
 import com.darro_tech.revengproject.services.CompanyService;
 import com.darro_tech.revengproject.services.FarmService;
 
@@ -148,11 +150,25 @@ public class FarmController extends BaseController {
         if (selectedCompanyId != null) {
             companyService.getCompanyById(selectedCompanyId).ifPresent(company -> {
                 model.addAttribute("selectedCompany", company);
+
+                // Get all farms that can be temperature sources
+                List<Farm> tempSourceFarms = farmService.getFarmsByCompanyId(selectedCompanyId)
+                        .stream()
+                        .filter(f -> !f.getId().equals(id)) // Exclude current farm
+                        .sorted(Comparator.comparing(Farm::getName))
+                        .collect(Collectors.toList());
+                model.addAttribute("tempSourceFarms", tempSourceFarms);
+                logger.info(String.format("🌡️ Found %d potential temperature source farms", tempSourceFarms.size()));
             });
         }
 
         farmService.getFarmById(id).ifPresent(farm -> {
             model.addAttribute("farm", farm);
+
+            // Get farm's meters
+            List<Meter> meters = farmService.getFarmMeters(id);
+            model.addAttribute("meters", meters);
+            logger.info(String.format("📊 Found %d meters for farm", meters.size()));
         });
 
         return view("admin/farms/edit", model);

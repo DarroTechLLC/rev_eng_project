@@ -2,6 +2,9 @@ package com.darro_tech.revengproject.models;
 
 import java.time.Instant;
 
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -27,6 +30,7 @@ public class CompanyFarm {
 
     @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(name = "farm_id", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private Farm farm;
 
     @Column(name = "timestamp", nullable = false)
