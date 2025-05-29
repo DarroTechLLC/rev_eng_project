@@ -12,87 +12,87 @@
             <h1 class="h3 mb-0 text-gray-800">Farms Management</h1>
         </div>
         <div>
+            <a href="/admin/farms/create" class="d-sm-inline-block btn btn-sm btn-primary shadow-sm" 
+               th:if="${selectedCompany != null}">
+                <i class="fas fa-plus fa-sm text-white-50"></i> Create Farm
+            </a>
             <a th:href="@{/}" class="btn btn-secondary">
                 <i class="fas fa-arrow-left"></i> Return to Dashboard
             </a>
         </div>
     </div>
 
-    <!-- Table Navigation -->
-    <div class="table-nav">
-        <input type="text" id="farmSearchInput" class="search-input" placeholder="Search farms...">
-        <a href="#" class="create-button" data-toggle="modal" data-target="#createFarmModal">
-            Create Farm
-        </a>
+    <!-- Success/Error Messages -->
+    <div class="alert alert-success alert-dismissible fade show" th:if="${message != null}" role="alert">
+        <span th:text="${message}"></span>
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+    <div class="alert alert-danger alert-dismissible fade show" th:if="${error != null}" role="alert">
+        <span th:text="${error}"></span>
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
     </div>
 
     <!-- Farms Table -->
     <div class="card shadow mb-4" th:if="${selectedCompany != null}">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary" th:text="${selectedCompany.name + ' Farms'}">Company Farms</h6>
+        </div>
         <div class="card-body">
             <div class="alert alert-info" th:if="${farms == null || farms.isEmpty()}">
                 <p>No farms found for this company. Click the "Create Farm" button above to add a new farm.</p>
             </div>
-            <div class="table-responsive" th:if="${farms != null && !farms.isEmpty()}">
-                <table class="table table-bordered" id="farmsTable" width="100%" cellspacing="0">
-                    <thead>
-                        <tr>
-                            <th>Farm Name</th>
-                            <th>Display Name</th>
-                            <th>Farm Type</th>
-                            <th>Temp Source</th>
-                            <th>Is Source</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr th:each="farm : ${farms}">
-                            <td>
-                                <a th:href="@{/admin/farms/edit/{id}(id=${farm.id})}" th:text="${farm.name}" class="farm-link">
-                                    Example Farm
-                                </a>
-                            </td>
-                            <td th:text="${farm.displayName}">Example Display Name</td>
-                            <td th:text="${farm.farmType != null ? farm.farmType : '(None Selected)'}">Standard</td>
-                            <td th:text="${farm.tempSourceId != null ? tempSourceNames[farm.tempSourceId] : ''}">Source</td>
-                            <td th:text="${farm.isTempSource ? 'YES' : ''}">No</td>
-                            <td>
-                                <a th:href="@{/admin/farms/edit/{id}(id=${farm.id})}" class="btn btn-primary btn-sm">
-                                    <i class="fas fa-edit"></i> Edit
-                                </a>
-                                <button type="button" class="btn btn-danger btn-sm" 
-                                        data-toggle="modal" 
-                                        th:data-target="'#deleteFarmModal' + ${farm.id}">
-                                    <i class="fas fa-trash"></i> Delete
-                                </button>
-                                
-                                <!-- Delete Farm Modal -->
-                                <div class="modal fade" th:id="'deleteFarmModal' + ${farm.id}" tabindex="-1" role="dialog" aria-hidden="true">
-                                    <div class="modal-dialog" role="document">
-                                        <div class="modal-content">
-                                            <div class="modal-header">
-                                                <h5 class="modal-title">Confirm Delete</h5>
-                                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                                    <span aria-hidden="true">&times;</span>
-                                                </button>
-                                            </div>
-                                            <div class="modal-body">
-                                                Are you sure you want to delete the farm <strong th:text="${farm.name}"></strong>?
-                                                This action cannot be undone.
-                                            </div>
-                                            <div class="modal-footer">
-                                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                                                <form th:action="@{/admin/farms/delete/{id}(id=${farm.id})}" method="POST">
-                                                    <input type="hidden" name="companyId" th:value="${selectedCompany.id}">
-                                                    <button type="submit" class="btn btn-danger">Delete</button>
-                                                </form>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+            <div th:if="${farms != null && !farms.isEmpty()}">
+                <!-- Search Box -->
+                <div class="mb-3">
+                    <div class="input-group">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text"><i class="fas fa-search"></i></span>
+                        </div>
+                        <input type="text" id="tableSearch" class="form-control" placeholder="Search farms..." aria-label="Search">
+                    </div>
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="table table-bordered" id="farmsTable" width="100%" cellspacing="0">
+                        <thead>
+                            <tr>
+                                <th class="sortable" data-sort="name">Farm Name <i class="fas fa-sort"></i></th>
+                                <th class="sortable" data-sort="displayName">Display Name <i class="fas fa-sort"></i></th>
+                                <th class="sortable" data-sort="farmType">Farm Type <i class="fas fa-sort"></i></th>
+                                <th class="sortable" data-sort="tempSource">Temp Source <i class="fas fa-sort"></i></th>
+                                <th class="sortable" data-sort="isSource">Is Source <i class="fas fa-sort"></i></th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="farm : ${farms}" class="farm-row">
+                                <td>
+                                    <a th:href="@{/admin/farms/edit/{id}(id=${farm.id})}" th:text="${farm.name}" class="farm-name farm-link">
+                                        Example Farm
+                                    </a>
+                                </td>
+                                <td th:text="${farm.displayName}" class="farm-display-name">Example Display Name</td>
+                                <td th:text="${farm.farmType != null ? farm.farmType : '(None Selected)'}" class="farm-type">Standard</td>
+                                <td th:text="${farm.tempSourceId != null ? tempSourceNames[farm.tempSourceId] : ''}" class="farm-temp-source">Source</td>
+                                <td th:text="${farm.isTempSource ? 'YES' : ''}" class="farm-is-source">No</td>
+                                <td>
+                                    <a th:href="@{/admin/farms/edit/{id}(id=${farm.id})}" class="btn btn-primary btn-sm">
+                                        <i class="fas fa-edit"></i> Edit
+                                    </a>
+                                    <button type="button" class="btn btn-danger btn-sm delete-farm-btn" 
+                                            th:data-id="${farm.id}"
+                                            th:data-name="${farm.name}">
+                                        <i class="fas fa-trash"></i> Delete
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
@@ -109,43 +109,41 @@
         </div>
     </div>
 
-    <!-- Success/Error Messages -->
-    <div class="alert alert-success" th:if="${message != null}" th:text="${message}">
-        Operation successful!
-    </div>
-    <div class="alert alert-danger" th:if="${error != null}" th:text="${error}">
-        An error occurred!
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteFarmModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Confirm Delete</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    Are you sure you want to delete the farm <strong id="farmNameToDelete"></strong>?
+                    This action cannot be undone.
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <form id="deleteFarmForm" method="POST">
+                        <input type="hidden" name="companyId" th:value="${selectedCompany != null ? selectedCompany.id : ''}">
+                        <button type="submit" class="btn btn-danger">Delete</button>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Create Farm Modal -->
     <th:block th:replace="~{fragments/modals/create-farm-modal :: create-farm-modal}"></th:block>
 
+    <!-- Add custom styles for sortable columns and other elements -->
     <style>
-        .table-nav {
-            display: flex;
-            margin: 2px 0 16px 8px;
+        .sortable {
+            cursor: pointer;
         }
-        .table-nav > * {
-            margin-right: 8px;
-        }
-        .search-input {
-            border: solid 1px #445566;
-            border-radius: 4px;
-            padding: 4px;
-            flex: 1;
-        }
-        .create-button {
-            display: inline-table;
-            background-color: darkcyan;
-            color: white;
-            padding: 8px 17px;
-            border-radius: 6px;
-            text-decoration: none;
-        }
-        .create-button:hover {
-            background-color: #006666;
-            color: white;
-            text-decoration: none;
+        .sortable i.fa-sort-up, .sortable i.fa-sort-down {
+            color: #4e73df;
         }
         .page-header {
             display: flex;
@@ -169,30 +167,148 @@
     </style>
 
     <script>
-        // Simple client-side search functionality
         document.addEventListener('DOMContentLoaded', function() {
-            const searchInput = document.getElementById('farmSearchInput');
-            const table = document.getElementById('farmsTable');
+            console.log("🚜 Farm management page script starting...");
             
-            if (searchInput && table) {
-                searchInput.addEventListener('keyup', function() {
-                    const searchText = searchInput.value.toLowerCase();
-                    const rows = table.getElementsByTagName('tr');
+            // Variables for sorting and filtering
+            let currentSortColumn = 'name';
+            let currentSortDirection = 'asc';
+            
+            // Setup search functionality
+            const searchInput = document.getElementById('tableSearch');
+            if (searchInput) {
+                searchInput.addEventListener('input', function() {
+                    filterFarms(this.value);
+                });
+            }
+            
+            // Setup sorting
+            document.querySelectorAll('.sortable').forEach(header => {
+                header.addEventListener('click', function() {
+                    const column = this.getAttribute('data-sort');
+                    sortFarms(column);
+                });
+            });
+            
+            // Setup delete buttons
+            document.querySelectorAll('.delete-farm-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const farmId = this.getAttribute('data-id');
+                    const farmName = this.getAttribute('data-name');
                     
-                    for (let i = 1; i < rows.length; i++) { // Skip header row
-                        const row = rows[i];
-                        const cells = row.getElementsByTagName('td');
-                        let found = false;
-                        
-                        for (let j = 0; j < 3; j++) { // Search in first 3 columns
-                            if (cells[j].textContent.toLowerCase().indexOf(searchText) > -1) {
-                                found = true;
-                                break;
-                            }
-                        }
-                        
-                        row.style.display = found ? '' : 'none';
+                    // Set the farm name in the modal
+                    document.getElementById('farmNameToDelete').textContent = farmName;
+                    
+                    // Set the form action
+                    const form = document.getElementById('deleteFarmForm');
+                    form.action = `/admin/farms/delete/${farmId}`;
+                    
+                    // Show the modal
+                    $('#deleteFarmModal').modal('show');
+                });
+            });
+            
+            // Filter farms based on search text
+            function filterFarms(searchText) {
+                const rows = document.querySelectorAll('.farm-row');
+                searchText = searchText.toLowerCase();
+                
+                rows.forEach(row => {
+                    const name = row.querySelector('.farm-name').textContent.toLowerCase();
+                    const displayName = row.querySelector('.farm-display-name').textContent.toLowerCase();
+                    const farmType = row.querySelector('.farm-type').textContent.toLowerCase();
+                    
+                    if (name.includes(searchText) || 
+                        displayName.includes(searchText) || 
+                        farmType.includes(searchText)) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
                     }
+                });
+            }
+            
+            // Sort farms by the specified column
+            function sortFarms(column) {
+                if (currentSortColumn === column) {
+                    // If already sorting by this column, toggle direction
+                    currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+                } else {
+                    // New column, default to ascending order
+                    currentSortColumn = column;
+                    currentSortDirection = 'asc';
+                }
+                
+                // Update sort icons in header
+                updateSortIcons();
+                
+                // Sort the table rows
+                sortTableRows();
+            }
+            
+            // Update sort icons in table headers
+            function updateSortIcons() {
+                document.querySelectorAll('.sortable i').forEach(icon => {
+                    icon.className = 'fas fa-sort';
+                });
+                
+                const currentHeader = document.querySelector(`.sortable[data-sort="${currentSortColumn}"] i`);
+                if (currentHeader) {
+                    currentHeader.className = `fas fa-sort-${currentSortDirection === 'asc' ? 'up' : 'down'}`;
+                }
+            }
+            
+            // Sort the table rows
+            function sortTableRows() {
+                const table = document.getElementById('farmsTable');
+                if (!table) return;
+                
+                const tbody = table.querySelector('tbody');
+                const rows = Array.from(tbody.querySelectorAll('tr.farm-row'));
+                
+                // Sort the rows
+                rows.sort((rowA, rowB) => {
+                    let valueA, valueB;
+                    
+                    switch (currentSortColumn) {
+                        case 'name':
+                            valueA = rowA.querySelector('.farm-name').textContent.trim();
+                            valueB = rowB.querySelector('.farm-name').textContent.trim();
+                            break;
+                        case 'displayName':
+                            valueA = rowA.querySelector('.farm-display-name').textContent.trim();
+                            valueB = rowB.querySelector('.farm-display-name').textContent.trim();
+                            break;
+                        case 'farmType':
+                            valueA = rowA.querySelector('.farm-type').textContent.trim();
+                            valueB = rowB.querySelector('.farm-type').textContent.trim();
+                            break;
+                        case 'tempSource':
+                            valueA = rowA.querySelector('.farm-temp-source').textContent.trim();
+                            valueB = rowB.querySelector('.farm-temp-source').textContent.trim();
+                            break;
+                        case 'isSource':
+                            valueA = rowA.querySelector('.farm-is-source').textContent.trim();
+                            valueB = rowB.querySelector('.farm-is-source').textContent.trim();
+                            break;
+                        default:
+                            valueA = '';
+                            valueB = '';
+                    }
+                    
+                    // String comparison
+                    const result = valueA.localeCompare(valueB);
+                    return currentSortDirection === 'asc' ? result : -result;
+                });
+                
+                // Remove existing rows
+                rows.forEach(row => {
+                    tbody.removeChild(row);
+                });
+                
+                // Append sorted rows
+                rows.forEach(row => {
+                    tbody.appendChild(row);
                 });
             }
             
@@ -209,4 +325,4 @@
         });
     </script>
 </body>
-</html> 
+</html>

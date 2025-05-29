@@ -1,6 +1,6 @@
 <!-- Page Heading -->
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800">Companies Management-Real Page</h1>
+    <h1 class="h3 mb-0 text-gray-800">Companies Management</h1>
     <a href="/admin/companies/create" class="d-sm-inline-block btn btn-sm btn-primary shadow-sm">
         <i class="fas fa-plus fa-sm text-white-50"></i> Create Company
     </a>
@@ -29,13 +29,22 @@
                 <h6 class="m-0 font-weight-bold text-primary">Companies List</h6>
             </div>
             <div class="card-body">
+                <!-- Search Box -->
+                <div class="mb-3">
+                    <div class="input-group">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text"><i class="fas fa-search"></i></span>
+                        </div>
+                        <input type="text" id="tableSearch" class="form-control" placeholder="Search companies..." aria-label="Search">
+                    </div>
+                </div>
+                
                 <div class="table-responsive">
                     <table class="table table-bordered" id="companiesTable" width="100%" cellspacing="0">
                         <thead>
                             <tr>
-                                <th>ID</th>
-                                <th>Name</th>
-                                <th>Display Name</th>
+                                <th class="sortable" data-sort="name">Name <i class="fas fa-sort"></i></th>
+                                <th class="sortable" data-sort="displayName">Display Name <i class="fas fa-sort"></i></th>
                                 <th>Logo</th>
                                 <th>Actions</th>
                             </tr>
@@ -44,10 +53,9 @@
                             <tr th:if="${companies.empty}">
                                 <td colspan="5" class="text-center">No Companies Available</td>
                             </tr>
-                            <tr th:each="company : ${companies}">
-                                <td th:text="${company.id}"></td>
-                                <td th:text="${company.name}"></td>
-                                <td th:text="${company.displayName}"></td>
+                            <tr th:each="company : ${companies}" class="company-row">
+                                <td th:text="${company.name}" class="company-name"></td>
+                                <td th:text="${company.displayName}" class="company-display-name"></td>
                                 <td>
                                     <img th:if="${company.logoUrl}" th:src="${company.logoUrl}" alt="Company Logo" style="max-height: 40px;">
                                     <span th:unless="${company.logoUrl}" class="text-muted">No Logo</span>
@@ -92,6 +100,16 @@
     </div>
 </div>
 
+<!-- Add custom styles for sortable columns -->
+<style>
+    .sortable {
+        cursor: pointer;
+    }
+    .sortable i.fa-sort-up, .sortable i.fa-sort-down {
+        color: #4e73df;
+    }
+</style>
+
 <!-- Custom JavaScript for this page -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -104,5 +122,102 @@ document.addEventListener('DOMContentLoaded', function() {
             $('#deleteConfirmModal').modal('show');
         });
     });
+    
+    // Setup search functionality
+    document.getElementById('tableSearch').addEventListener('input', function() {
+        filterCompanies(this.value);
+    });
+    
+    // Setup sorting
+    document.querySelectorAll('.sortable').forEach(header => {
+        header.addEventListener('click', function() {
+            const column = this.getAttribute('data-sort');
+            sortCompanies(column);
+        });
+    });
+    
+    let currentSortColumn = 'name';
+    let currentSortDirection = 'asc';
+    
+    // Filter companies based on search text
+    function filterCompanies(searchText) {
+        const rows = document.querySelectorAll('.company-row');
+        searchText = searchText.toLowerCase();
+        
+        rows.forEach(row => {
+            const name = row.querySelector('.company-name').textContent.toLowerCase();
+            const displayName = row.querySelector('.company-display-name').textContent.toLowerCase();
+            
+            if (name.includes(searchText) || displayName.includes(searchText)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+    
+    // Sort companies by the specified column
+    function sortCompanies(column) {
+        if (currentSortColumn === column) {
+            // If already sorting by this column, toggle direction
+            currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            // New column, default to ascending order
+            currentSortColumn = column;
+            currentSortDirection = 'asc';
+        }
+        
+        // Update sort icons in header
+        updateSortIcons();
+        
+        // Sort the table rows
+        sortTableRows();
+    }
+    
+    // Update sort icons in table headers
+    function updateSortIcons() {
+        document.querySelectorAll('.sortable i').forEach(icon => {
+            icon.className = 'fas fa-sort';
+        });
+        
+        const currentHeader = document.querySelector(`.sortable[data-sort="${currentSortColumn}"] i`);
+        if (currentHeader) {
+            currentHeader.className = `fas fa-sort-${currentSortDirection === 'asc' ? 'up' : 'down'}`;
+        }
+    }
+    
+    // Sort the table rows
+    function sortTableRows() {
+        const table = document.getElementById('companiesTable');
+        const tbody = table.querySelector('tbody');
+        const rows = Array.from(tbody.querySelectorAll('tr.company-row'));
+        
+        // Sort the rows
+        rows.sort((rowA, rowB) => {
+            let valueA, valueB;
+            
+            if (currentSortColumn === 'name') {
+                valueA = rowA.querySelector('.company-name').textContent.trim();
+                valueB = rowB.querySelector('.company-name').textContent.trim();
+            } else if (currentSortColumn === 'displayName') {
+                valueA = rowA.querySelector('.company-display-name').textContent.trim();
+                valueB = rowB.querySelector('.company-display-name').textContent.trim();
+            }
+            
+            // String comparison
+            const result = valueA.localeCompare(valueB);
+            return currentSortDirection === 'asc' ? result : -result;
+        });
+        
+        // Remove existing rows
+        rows.forEach(row => {
+            tbody.removeChild(row);
+        });
+        
+        // Append sorted rows
+        rows.forEach(row => {
+            tbody.appendChild(row);
+        });
+    }
 });
-</script> 
+</script>
