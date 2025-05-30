@@ -489,8 +489,8 @@ public class UserManagementServiceImpl implements UserManagementServiceInterface
                 return false;
             }
 
-            // Hash the password and save it
-            user.setPassword(passwordEncoder.encode(newPassword));
+            // Set the password (User.setPassword already handles hashing)
+            user.setPassword(newPassword);
             userRepository.save(user);
 
             logger.info("🔐 Updated password for user: " + userId);
