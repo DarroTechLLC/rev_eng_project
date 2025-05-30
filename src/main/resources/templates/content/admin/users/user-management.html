@@ -1,7 +1,7 @@
 <!-- Page Heading -->
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800">User Management</h1>
-    <a href="#" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#registerModal">
+    <h1 class="h3 mb-0 text-gray-800">Real-User Management</h1>
+    <a href="#" class="d-sm-inline-block btn btn-sm btn-primary shadow-sm" data-toggle="modal" data-target="#registerModal">
         <i class="fas fa-user-plus fa-sm text-white-50"></i> Create New User
     </a>
 </div>
@@ -101,10 +101,12 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="registerModalLabel">Add New User</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
             </div>
             <div class="modal-body">
-                <form class="user" method="post" th:action="@{/register}" th:object="${registerFormDTO}">
+                <form class="user" method="post" th:action="@{/admin/users/create}" th:object="${registerFormDTO}">
                     <div class="form-group">
                         <input type="text" class="form-control form-control-user" 
                                id="username" th:field="*{username}"
@@ -137,14 +139,32 @@
                                placeholder="Phone Number (Optional)">
                         <p class="text-danger" th:errors="*{phone}"></p>
                     </div>
-                    <div class="mb-3">
-                        <label for="roles" class="form-label">User Roles</label>
-                        <select class="form-select form-control-user" id="roles" th:field="*{roleIds}" size="3" multiple>
-                            <option th:each="role : ${roles}"
-                                    th:value="${role.id}"
-                                    th:text="${role.name}">Role Name</option>
-                        </select>
-                        <small class="form-text text-muted">Hold Ctrl/Cmd to select multiple roles. If none selected, 'User' role will be assigned by default.</small>
+                    <div class="form-group mb-3">
+                        <label class="form-label font-weight-bold">User Roles</label>
+                        <div class="role-checkbox-group border rounded p-3" style="max-height: 200px; overflow-y: auto;">
+                            <div th:each="role : ${roles}" class="custom-control custom-checkbox mb-2">
+                                <input type="checkbox" class="custom-control-input" 
+                                       th:id="${'role-' + role.id}" 
+                                       th:name="roleIds" 
+                                       th:value="${role.id}">
+                                <label class="custom-control-label" th:for="${'role-' + role.id}" th:text="${role.name}">Role Name</label>
+                            </div>
+                        </div>
+                        <small class="form-text text-muted">Select one or more roles. If none selected, 'User' role will be assigned by default.</small>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label class="form-label font-weight-bold">User Companies</label>
+                        <div class="company-checkbox-group border rounded p-3" style="max-height: 200px; overflow-y: auto;">
+                            <div th:each="company : ${companies}" class="custom-control custom-checkbox mb-2">
+                                <input type="checkbox" class="custom-control-input" 
+                                       th:id="${'company-' + company.id}" 
+                                       th:name="companyIds" 
+                                       th:value="${company.id}">
+                                <label class="custom-control-label" th:for="${'company-' + company.id}" th:text="${company.name}">Company Name</label>
+                            </div>
+                        </div>
+                        <small class="form-text text-muted">Select one or more companies. Companies are required unless Super Admin role is selected.</small>
                     </div>
                     <div class="form-group row">
                         <div class="col-sm-6 mb-3 mb-sm-0">
@@ -161,7 +181,7 @@
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
                         <button type="submit" class="btn btn-primary">Save</button>
                     </div>
                 </form>
@@ -170,7 +190,7 @@
     </div>
 </div>
 
-<!-- Add CSS for username links -->
+<!-- Add CSS for username links and checkboxes -->
 <style>
     .username-link {
         text-decoration: underline;
@@ -178,29 +198,135 @@
         color: #008b8b;
         font-weight: bold;
     }
+
+    /* Checkbox styling */
+    .role-checkbox-group, .company-checkbox-group {
+        background-color: #f8f9fc;
+    }
+
+    .custom-control-input:checked ~ .custom-control-label::before {
+        background-color: #4e73df;
+        border-color: #4e73df;
+    }
+
+    .custom-checkbox .custom-control-label {
+        cursor: pointer;
+    }
+
+    /* Custom checkbox styling */
+    .custom-control {
+        position: relative;
+        display: block;
+        min-height: 1.5rem;
+        padding-left: 1.5rem;
+    }
+
+    .custom-control-input {
+        position: absolute;
+        z-index: -1;
+        opacity: 0;
+    }
+
+    .custom-control-label {
+        position: relative;
+        margin-bottom: 0;
+        vertical-align: top;
+    }
+
+    .custom-control-label::before {
+        position: absolute;
+        top: 0.25rem;
+        left: -1.5rem;
+        display: block;
+        width: 1rem;
+        height: 1rem;
+        pointer-events: none;
+        content: "";
+        background-color: #fff;
+        border: 1px solid #adb5bd;
+        border-radius: 0.25rem;
+    }
+
+    .custom-control-label::after {
+        position: absolute;
+        top: 0.25rem;
+        left: -1.5rem;
+        display: block;
+        width: 1rem;
+        height: 1rem;
+        content: "";
+        background: no-repeat 50% / 50% 50%;
+    }
+
+    .custom-control-input:checked ~ .custom-control-label::before {
+        color: #fff;
+        border-color: #4e73df;
+        background-color: #4e73df;
+    }
+
+    .custom-control-input:checked ~ .custom-control-label::after {
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3e%3cpath fill='%23fff' d='M6.564.75l-3.59 3.612-1.538-1.55L0 4.26 2.974 7.25 8 2.193z'/%3e%3c/svg%3e");
+    }
 </style>
 
-<!-- Add JavaScript for search functionality -->
+<!-- Add JavaScript for search functionality and form validation -->
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         console.log("🔍 User management page loaded - Initializing search functionality");
         const searchInput = document.getElementById('searchInput');
-        
+
+        // Search functionality
         searchInput.addEventListener('keyup', function() {
             const searchText = this.value.toLowerCase();
             console.log("🔎 Searching for: " + searchText);
-            
+
             const rows = document.querySelectorAll('#usersTable tbody tr');
             let matchCount = 0;
-            
+
             rows.forEach(row => {
                 const text = row.textContent.toLowerCase();
                 const isMatch = text.includes(searchText);
                 row.style.display = isMatch ? '' : 'none';
                 if (isMatch) matchCount++;
             });
-            
+
             console.log("✅ Found " + matchCount + " matching users");
         });
+
+        // Form validation for the register modal
+        const registerForm = document.querySelector('#registerModal form');
+        if (registerForm) {
+            registerForm.addEventListener('submit', function(event) {
+                // Check if at least one role is selected
+                const roleCheckboxes = document.querySelectorAll('input[name="roleIds"]:checked');
+                if (roleCheckboxes.length === 0) {
+                    alert('Please select at least one role');
+                    event.preventDefault();
+                    return false;
+                }
+
+                // Check if Super Admin role is selected
+                let isSuperAdmin = false;
+                roleCheckboxes.forEach(checkbox => {
+                    const roleLabel = document.querySelector(`label[for="${checkbox.id}"]`);
+                    if (roleLabel && roleLabel.textContent.trim() === 'Super Admin') {
+                        isSuperAdmin = true;
+                    }
+                });
+
+                // If not Super Admin, check if at least one company is selected
+                if (!isSuperAdmin) {
+                    const companyCheckboxes = document.querySelectorAll('input[name="companyIds"]:checked');
+                    if (companyCheckboxes.length === 0) {
+                        alert('Please select at least one company (required unless Super Admin role is selected)');
+                        event.preventDefault();
+                        return false;
+                    }
+                }
+
+                console.log("✅ Form validation passed - submitting");
+                return true;
+            });
+        }
     });
 </script> 

@@ -4,6 +4,8 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
+import java.util.List;
+
 /**
  * Created by Chris Bay
  */
@@ -24,6 +26,8 @@ public class RegisterFormDTO extends LoginFormDTO {
     private String phone;  // Optional
 
     private String[] roleIds;  // Array of role IDs selected during registration
+
+    private List<String> companyIds;  // List of company IDs selected during registration
 
     @NotBlank(message = "Verify password is required")
     @Size(min = 3, message = "Password must be at least 3 characters long")
@@ -75,5 +79,13 @@ public class RegisterFormDTO extends LoginFormDTO {
 
     public void setVerifyPassword(String verifyPassword) {
         this.verifyPassword = verifyPassword;
+    }
+
+    public List<String> getCompanyIds() {
+        return companyIds;
+    }
+
+    public void setCompanyIds(List<String> companyIds) {
+        this.companyIds = companyIds;
     }
 }
