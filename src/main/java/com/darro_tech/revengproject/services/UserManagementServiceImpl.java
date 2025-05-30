@@ -1,6 +1,8 @@
 package com.darro_tech.revengproject.services;
 
 import java.lang.reflect.Field;
+import java.security.SecureRandom;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -239,8 +241,8 @@ public class UserManagementServiceImpl implements UserManagementServiceInterface
             if (companyIds != null && !companyIds.isEmpty()) {
                 for (String companyId : companyIds) {
                     jdbcTemplate.update(
-                            "INSERT INTO company_users (id, user_id, company_id) VALUES (?, ?, ?)",
-                            java.util.UUID.randomUUID().toString(), userId, companyId);
+                            "INSERT INTO company_users (user_id, company_id, timestamp) VALUES (?, ?, ?)",
+                            userId, companyId, java.time.Instant.now());
                 }
                 logger.info("✅ Added " + companyIds.size() + " companies for user: " + userId);
             }
@@ -395,6 +397,7 @@ public class UserManagementServiceImpl implements UserManagementServiceInterface
      * @return true if the link was sent successfully
      */
     @Override
+    @Transactional
     public boolean sendPasswordResetLink(String userId) {
         try {
             // Get user email
@@ -404,14 +407,69 @@ public class UserManagementServiceImpl implements UserManagementServiceInterface
                 return false;
             }
 
-            // In a real implementation, this would generate a token and send an email
-            logger.info("📧 Password reset link would be sent to: " + email + " for user: " + userId);
+            // Get the user
+            User user = userRepository.findById(userId).orElse(null);
+            if (user == null) {
+                logger.warning("⚠️ Cannot send password reset link - user not found: " + userId);
+                return false;
+            }
+
+            // Generate a reset key
+            String resetKey = generateResetKey();
+
+            // Set expiration date (7 days from now)
+            Instant expirationDate = Instant.now().plusSeconds(604800); // 7 days in seconds
+
+            // Update user record
+            user.setResetPassKey(resetKey);
+            user.setResetPassExpires(expirationDate);
+            user.setResetPswd((byte) 1); // Flag that password reset is required
+            userRepository.save(user);
+
+            // Create email content with mailto link
+            String subject = "Reset Your Password";
+            String body = "Hello " + user.getUsername() + ",\n\n" +
+                    "A password reset has been requested for your account.\n\n" +
+                    "Your reset key is: " + resetKey + "\n\n" +
+                    "Please use this key to reset your password.\n\n" +
+                    "This key will expire on: " + expirationDate + "\n\n" +
+                    "If you did not request this reset, please ignore this email.";
+
+            // Create mailto link
+            String mailtoLink = "mailto:" + email + "?subject=" + 
+                    java.net.URLEncoder.encode(subject, "UTF-8") + 
+                    "&body=" + java.net.URLEncoder.encode(body, "UTF-8");
+
+            logger.info("📧 Password reset link generated for user: " + userId);
+            logger.info("📧 Reset key: " + resetKey);
+            logger.info("📧 Expiration date: " + expirationDate);
+            logger.info("📧 Mailto link: " + mailtoLink);
 
             return true;
         } catch (Exception e) {
             logger.severe("❌ Error sending password reset link for user " + userId + ": " + e.getMessage());
+            e.printStackTrace();
             return false;
         }
+    }
+
+    /**
+     * Generates a random reset key
+     * 
+     * @return a 6-character reset key
+     */
+    private String generateResetKey() {
+        // Characters to use (excluding 1, 0, O to avoid ambiguity)
+        String chars = "23456789ABCDEFGHIJKLMNPQRSTUVWXYZ";
+        SecureRandom random = new SecureRandom();
+        StringBuilder sb = new StringBuilder(6);
+
+        for (int i = 0; i < 6; i++) {
+            int randomIndex = random.nextInt(chars.length());
+            sb.append(chars.charAt(randomIndex));
+        }
+
+        return sb.toString();
     }
 
     /**
@@ -627,8 +685,8 @@ public class UserManagementServiceImpl implements UserManagementServiceInterface
 
             // Insert new email
             jdbcTemplate.update(
-                    "INSERT INTO user_contact_info (id, user_id, type_id, value, timestamp) VALUES (?, ?, ?, ?, ?)",
-                    java.util.UUID.randomUUID().toString(), userId, emailTypeId, email, java.time.Instant.now());
+                    "INSERT INTO user_contact_info (user_id, type_id, value, timestamp) VALUES (?, ?, ?, ?)",
+                    userId, emailTypeId, email, java.time.Instant.now());
 
             logger.info("✅ Added new email for user: " + userId + " - " + email);
         } catch (Exception e) {
@@ -667,8 +725,8 @@ public class UserManagementServiceImpl implements UserManagementServiceInterface
 
             // Insert new phone
             jdbcTemplate.update(
-                    "INSERT INTO user_contact_info (id, user_id, type_id, value, timestamp) VALUES (?, ?, ?, ?, ?)",
-                    java.util.UUID.randomUUID().toString(), userId, smsTypeId, phone, java.time.Instant.now());
+                    "INSERT INTO user_contact_info (user_id, type_id, value, timestamp) VALUES (?, ?, ?, ?)",
+                    userId, smsTypeId, phone, java.time.Instant.now());
 
             logger.info("✅ Added new phone for user: " + userId + " - " + phone);
         } catch (Exception e) {

@@ -36,16 +36,16 @@
     <div class="card-body">
         <div class="edit-user-container">
             <h3 class="form-title">Edit User:</h3>
-            
+
             <div id="confirmCloseWrapper" style="display: none;" class="confirm-close-wrapper">
                 You have pending edits
                 <button id="confirmCloseBtn" class="btn-sm btn-danger">Confirm Close</button>
             </div>
-            
+
             <form id="editUserForm" th:action="@{/admin/users/update}" method="post" th:object="${editUser}">
                 <input type="hidden" th:field="*{id}" th:attr="data-original-id=*{id}" id="userId">
                 <div class="small text-muted text-right mb-2" th:text="'User ID: ' + *{id}"></div>
-                
+
                 <div class="row-panel">
                     <div class="column-panel">
                         <!-- Left column: Basic info -->
@@ -58,7 +58,7 @@
                                 <div class="invalid-feedback" th:if="${#fields.hasErrors('username')}" th:errors="*{username}"></div>
                             </div>
                         </div>
-                        
+
                         <div class="form-group float-row">
                             <div class="floating-input">
                                 <input id="firstName" th:field="*{firstName}" class="form-control" required
@@ -67,7 +67,7 @@
                                 <div class="invalid-feedback" th:if="${#fields.hasErrors('firstName')}" th:errors="*{firstName}"></div>
                             </div>
                         </div>
-                        
+
                         <div class="form-group float-row">
                             <div class="floating-input">
                                 <input id="lastName" th:field="*{lastName}" class="form-control" required
@@ -76,7 +76,7 @@
                                 <div class="invalid-feedback" th:if="${#fields.hasErrors('lastName')}" th:errors="*{lastName}"></div>
                             </div>
                         </div>
-                        
+
                         <div class="form-group float-row">
                             <div class="floating-input">
                                 <input id="email" th:field="*{email}" class="form-control" 
@@ -85,7 +85,7 @@
                                 <div class="invalid-feedback" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></div>
                             </div>
                         </div>
-                        
+
                         <div class="form-group float-row">
                             <div class="floating-input">
                                 <input id="phone" th:field="*{phone}" class="form-control">
@@ -94,7 +94,7 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="column-panel">
                         <!-- Right column: Roles, Companies, Password -->
                         <div class="form-group mb-3">
@@ -111,7 +111,7 @@
                             </div>
                             <div class="invalid-feedback" id="roleError">At least one role is required</div>
                         </div>
-                        
+
                         <div class="form-group mb-3">
                             <label class="form-label font-weight-bold">User Companies</label>
                             <div class="company-checkbox-group border rounded p-3" style="max-height: 200px; overflow-y: auto;">
@@ -126,7 +126,7 @@
                             </div>
                             <div class="invalid-feedback" id="companyError">Companies required unless Super Admin is selected</div>
                         </div>
-                        
+
                         <!-- Password section -->
                         <div class="password-section">
                             <div class="form-group">
@@ -140,7 +140,15 @@
                                     <label for="manual">Set Manual Password</label>
                                 </div>
                             </div>
-                            
+
+                            <div id="passlinkFields">
+                                <div class="form-group">
+                                    <p class="password-info">An email with a password reset link will be sent to the user.</p>
+                                    <button type="button" id="sendPasslinkBtn" class="btn btn-primary btn-sm">Send Password Reset Link</button>
+                                    <div id="passlinkResult" class="mt-2" style="display: none;"></div>
+                                </div>
+                            </div>
+
                             <div id="manualPasswordFields" style="display: none;">
                                 <div class="form-group float-row">
                                     <div class="floating-input">
@@ -158,22 +166,22 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="form-footer">
                     <div class="button-row">
                         <div class="pending-status-wrapper">
                             <div id="editFormStatus" style="display: none;"><b>Pending:</b> Edit User Details</div>
                             <div id="passFormStatus" style="display: none;"><b>Pending:</b> Set Manual Password</div>
                         </div>
-                        
+
                         <div style="flex: 1;"></div>
-                        
+
                         <button type="submit" class="btn btn-primary">Save</button>
                         <a th:href="@{/admin/users}" class="btn btn-secondary">Cancel</a>
                         <span class="btn-sep"></span>
                         <button type="button" id="deleteBtn" class="btn btn-danger">Delete</button>
                     </div>
-                    
+
                     <div id="confirmDelete" class="confirm-delete-wrapper" style="display: none;">
                         Permanently delete this user?
                         <form th:action="@{/admin/users/delete}" method="post" style="display: inline;">
@@ -193,7 +201,7 @@
         position: relative;
         padding: 20px;
     }
-    
+
     .form-title {
         font-size: 1.2em;
         color: #369;
@@ -201,35 +209,35 @@
         top: 8px;
         font-weight: bold;
     }
-    
+
     .row-panel {
         display: flex;
         flex-direction: row;
         margin-top: 30px;
     }
-    
+
     .column-panel {
         flex: 1;
         display: flex;
         flex-direction: column;
         padding: 8px;
     }
-    
+
     .float-row {
         margin-bottom: 15px;
     }
-    
+
     .floating-input {
         position: relative;
     }
-    
+
     .floating-input input {
         width: 100%;
         padding: 10px;
         border: 1px solid #ddd;
         border-radius: 4px;
     }
-    
+
     .floating-input label {
         position: absolute;
         top: -7px;
@@ -239,29 +247,29 @@
         font-size: 12px;
         color: #666;
     }
-    
+
     .password-section {
         margin-top: 20px;
         border: 1px solid #eee;
         padding: 15px;
         border-radius: 4px;
     }
-    
+
     .radio-group {
         margin-bottom: 10px;
     }
-    
+
     .form-footer {
         margin-top: 20px;
         border-top: 1px solid #eee;
         padding-top: 15px;
     }
-    
+
     .button-row {
         display: flex;
         align-items: center;
     }
-    
+
     .btn-sep {
         display: inline-block;
         width: 1px;
@@ -269,7 +277,7 @@
         background: #ddd;
         margin: 0 10px;
     }
-    
+
     .confirm-close-wrapper {
         position: absolute;
         top: 8px;
@@ -279,45 +287,45 @@
         color: #f00;
         font-size: .75em;
     }
-    
+
     .confirm-delete-wrapper {
         text-align: right;
         padding-top: 16px;
         color: #f00;
         font-size: .75em;
     }
-    
+
     .pending-status-wrapper {
         flex: 1;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
     }
-    
+
     .pending-status-wrapper > div {
         font-size: .75em;
         color: red;
     }
-    
+
     /* Checkbox styling */
     .role-checkbox-group, .company-checkbox-group {
         background-color: #f8f9fc;
     }
-    
+
     .custom-control-input:checked ~ .custom-control-label::before {
         background-color: #4e73df;
         border-color: #4e73df;
     }
-    
+
     .custom-checkbox .custom-control-label {
         cursor: pointer;
     }
-    
+
     /* Add visual indication for invalid status */
     .is-invalid {
         border-color: #e74a3b !important;
     }
-    
+
     #roleError, #companyError {
         display: none;
         color: #e74a3b;
@@ -344,19 +352,19 @@
         const roleCheckboxGroup = document.querySelector('.role-checkbox-group');
         const companyCheckboxGroup = document.querySelector('.company-checkbox-group');
         const userIdField = document.getElementById('userId');
-        
+
         // Display error notification to console for debugging
         const errorMessageElement = document.querySelector('.alert-danger');
         if (errorMessageElement) {
             console.error('❌ Error: ' + errorMessageElement.textContent.trim());
         }
-        
+
         // Log user ID information
         if (userIdField) {
             console.log("🆔 User ID field value: " + userIdField.value);
             console.log("🆔 User ID data attribute: " + userIdField.getAttribute('data-original-id'));
         }
-        
+
         // Log selected form values for debugging
         console.log("📝 Form Data Debug:");
         console.log("🔍 User ID: " + (document.querySelector('input[name="id"]') ? document.querySelector('input[name="id"]').value : 'Not found'));
@@ -364,16 +372,16 @@
         console.log("🔍 First Name: " + (document.querySelector('#firstName') ? document.querySelector('#firstName').value : 'Not found'));
         console.log("🔍 Last Name: " + (document.querySelector('#lastName') ? document.querySelector('#lastName').value : 'Not found'));
         console.log("🔍 Email: " + (document.querySelector('#email') ? document.querySelector('#email').value : 'Not found'));
-        
+
         // Log initial state for debugging
         console.log("🔍 Initial form state - roles: " + roleCheckboxes.length + ", companies: " + companyCheckboxes.length);
         console.log("🔍 Selected roles: " + Array.from(roleCheckboxes).filter(cb => cb.checked).length);
         console.log("🔍 Selected companies: " + Array.from(companyCheckboxes).filter(cb => cb.checked).length);
-        
+
         // Track form changes
         let formDirty = false;
         let passFormDirty = false;
-        
+
         // Initialize username field focus
         const usernameField = document.getElementById('username');
         if (usernameField) {
@@ -381,7 +389,7 @@
                 usernameField.select();
             }, 10);
         }
-        
+
         // Form change tracking
         form.addEventListener('change', function(e) {
             if (e.target.name === 'password' || e.target.name === 'confirmPassword' || e.target.name === 'passOption') {
@@ -392,25 +400,77 @@
                 editFormStatus.style.display = 'block';
             }
         });
-        
+
         // Password option toggle
+        const passlinkFields = document.getElementById('passlinkFields');
         passOptions.forEach(option => {
             option.addEventListener('change', function() {
                 if (this.value === 'manual') {
                     manualPasswordFields.style.display = 'block';
+                    passlinkFields.style.display = 'none';
                 } else {
                     manualPasswordFields.style.display = 'none';
+                    passlinkFields.style.display = 'block';
                 }
                 passFormDirty = true;
                 passFormStatus.style.display = 'block';
             });
         });
-        
+
+        // Send password reset link button
+        const sendPasslinkBtn = document.getElementById('sendPasslinkBtn');
+        const passlinkResult = document.getElementById('passlinkResult');
+
+        sendPasslinkBtn.addEventListener('click', function() {
+            const userId = document.querySelector('input[name="id"]').value;
+
+            // Disable button and show loading state
+            sendPasslinkBtn.disabled = true;
+            sendPasslinkBtn.textContent = 'Sending...';
+            passlinkResult.style.display = 'none';
+
+            // Call the API to send password reset link
+            fetch('/api/users/send-password-link?userId=' + encodeURIComponent(userId), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Re-enable button
+                sendPasslinkBtn.disabled = false;
+                sendPasslinkBtn.textContent = 'Send Password Reset Link';
+
+                // Show result
+                passlinkResult.style.display = 'block';
+
+                if (data.success) {
+                    passlinkResult.className = 'mt-2 alert alert-success';
+                    passlinkResult.textContent = data.message || 'Password reset link sent successfully';
+                } else {
+                    passlinkResult.className = 'mt-2 alert alert-danger';
+                    passlinkResult.textContent = data.error || 'Failed to send password reset link';
+                }
+            })
+            .catch(error => {
+                // Re-enable button
+                sendPasslinkBtn.disabled = false;
+                sendPasslinkBtn.textContent = 'Send Password Reset Link';
+
+                // Show error
+                passlinkResult.style.display = 'block';
+                passlinkResult.className = 'mt-2 alert alert-danger';
+                passlinkResult.textContent = 'Error: ' + error.message;
+                console.error('Error sending password reset link:', error);
+            });
+        });
+
         // Delete confirmation
         deleteBtn.addEventListener('click', function() {
             confirmDeleteDiv.style.display = 'block';
         });
-        
+
         // Check if user has selected Super Admin role
         function hasSuperAdminRole() {
             const superAdminCheckbox = Array.from(roleCheckboxes).find(checkbox => 
@@ -418,11 +478,11 @@
             );
             return !!superAdminCheckbox;
         }
-        
+
         // Validation for roles and companies
         function validateSelections() {
             let isValid = true;
-            
+
             // Validate roles (at least one required)
             const hasRoleSelected = Array.from(roleCheckboxes).some(checkbox => checkbox.checked);
             if (!hasRoleSelected) {
@@ -433,11 +493,11 @@
                 roleCheckboxGroup.classList.remove('is-invalid');
                 roleError.style.display = 'none';
             }
-            
+
             // Validate companies (required unless Super Admin is selected)
             const hasCompanySelected = Array.from(companyCheckboxes).some(checkbox => checkbox.checked);
             const isSuperAdmin = hasSuperAdminRole();
-            
+
             if (!isSuperAdmin && !hasCompanySelected) {
                 companyCheckboxGroup.classList.add('is-invalid');
                 companyError.style.display = 'block';
@@ -446,15 +506,15 @@
                 companyCheckboxGroup.classList.remove('is-invalid');
                 companyError.style.display = 'none';
             }
-            
+
             return isValid;
         }
-        
+
         // Monitor role selection changes to update company validation
         roleCheckboxes.forEach(checkbox => {
             checkbox.addEventListener('change', function() {
                 console.log("🔄 Role changed: " + this.value + " - checked: " + this.checked);
-                
+
                 // If Super Admin is selected, companies are optional
                 if (hasSuperAdminRole()) {
                     companyCheckboxGroup.classList.remove('is-invalid');
@@ -467,26 +527,26 @@
                 }
             });
         });
-        
+
         // Form validation before submit
         form.addEventListener('submit', function(event) {
             // Log form data before submission
             console.log("📝 Form submission - roles: " + document.querySelectorAll('input[name="roleIds"]:checked').length);
             console.log("📝 Form submission - companies: " + document.querySelectorAll('input[name="companyIds"]:checked').length);
-            
+
             form.classList.add('was-validated');
             if (!validateSelections()) {
                 event.preventDefault();
                 console.log("⚠️ Form validation failed");
             }
-            
+
             // Log the form data just before submission
             console.log("📤 Form submission data:");
             const formData = new FormData(form);
             for (let pair of formData.entries()) {
                 console.log(pair[0] + ': ' + pair[1]);
             }
-            
+
             // Clean the user ID if it contains a comma
             const userIdValue = userIdField.value;
             if (userIdValue && userIdValue.includes(',')) {

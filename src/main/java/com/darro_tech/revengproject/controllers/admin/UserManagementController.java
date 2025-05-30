@@ -1,14 +1,18 @@
 package com.darro_tech.revengproject.controllers.admin;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Logger;
 
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -26,6 +30,7 @@ import com.darro_tech.revengproject.repositories.CompanyRepository;
 import com.darro_tech.revengproject.repositories.RoleRepository;
 import com.darro_tech.revengproject.repositories.UserRepository;
 import com.darro_tech.revengproject.services.UserManagementService;
+import com.darro_tech.revengproject.services.UserManagementServiceInterface;
 
 @Controller
 @RequestMapping("/admin/users")
@@ -40,7 +45,7 @@ public class UserManagementController extends BaseController {
     private CompanyRepository companyRepository;
 
     @Autowired
-    private UserManagementService userManagementService;
+    private UserManagementServiceInterface userManagementService;
 
     @Autowired
     private UserRepository userRepository;
@@ -61,6 +66,11 @@ public class UserManagementController extends BaseController {
             var roles = roleRepository.findAll();
             model.addAttribute("roles", roles);
             logger.info("🔑 Added " + roles.size() + " roles to model for registration form");
+
+            // Get companies for registration form
+            var companies = companyRepository.findAll();
+            model.addAttribute("companies", companies);
+            logger.info("🏢 Added " + companies.size() + " companies to model for registration form");
 
             // Get all users with their roles and companies
             logger.info("🔍 Fetching users with roles and companies");
@@ -230,23 +240,16 @@ public class UserManagementController extends BaseController {
             }
 
             // Proceed with updating the user
-            UserManagementService.UpdateResult result = userManagementService.updateUser(userUpdateDTO);
+            boolean updateSuccess = userManagementService.updateUser(userUpdateDTO);
 
-            if (result.isSuccess()) {
+            if (updateSuccess) {
                 logger.info("✅ Successfully updated user with ID: " + userUpdateDTO.getId());
                 redirectAttributes.addFlashAttribute("successMessage", "User updated successfully");
             } else {
-                logger.warning("⚠️ Failed to update user with ID: " + userUpdateDTO.getId() + ". Error: " + result.getErrorMessage());
+                logger.warning("⚠️ Failed to update user with ID: " + userUpdateDTO.getId());
 
-                // Check if this is a "User not found" error
-                if (result.getErrorMessage() != null && result.getErrorMessage().contains("User not found")) {
-                    // This is a more serious error - the user ID might be invalid
-                    logger.severe("❌ Critical error: Attempt to update non-existent user: " + userUpdateDTO.getId());
-                    redirectAttributes.addFlashAttribute("errorMessage", "Critical error: The user ID appears to be invalid. Please return to the user list and try again.");
-                } else {
-                    // Regular update error
-                    redirectAttributes.addFlashAttribute("errorMessage", "Failed to update user: " + result.getErrorMessage());
-                }
+                // Generic error message
+                redirectAttributes.addFlashAttribute("errorMessage", "Failed to update user. Please try again.");
             }
 
             return "redirect:/admin/users";
@@ -254,6 +257,134 @@ public class UserManagementController extends BaseController {
             logger.severe("❌ Error updating user: " + e.getMessage());
             e.printStackTrace();
             redirectAttributes.addFlashAttribute("errorMessage", "An error occurred while updating user: " + e.getMessage());
+            return "redirect:/admin/users";
+        }
+    }
+
+    @PostMapping("/create")
+    public String createUser(@ModelAttribute @Valid RegisterFormDTO registerFormDTO,
+                             Errors errors, Model model, RedirectAttributes redirectAttributes) {
+        logger.info("🔄 Processing user creation for username: " + registerFormDTO.getUsername());
+
+        try {
+            if (errors.hasErrors()) {
+                logger.warning("⚠️ Validation errors in user creation form");
+
+                // Add roles back to the model for the form
+                model.addAttribute("roles", roleRepository.findAll());
+
+                // Add error message
+                model.addAttribute("errorMessage", "Please correct the errors in the form");
+
+                // Get all users with their roles and companies
+                logger.info("🔍 Fetching users with roles and companies");
+                List<UserManagementDTO> users = userManagementService.getAllUsersWithRolesAndCompanies();
+                logger.info("✅ Retrieved " + users.size() + " users for management page");
+                model.addAttribute("users", users);
+
+                // Add the form DTO back to the model
+                model.addAttribute("registerFormDTO", registerFormDTO);
+
+                return view("admin/users/user-management", model);
+            }
+
+            // Check if username already exists
+            User existingUser = userRepository.findByUsername(registerFormDTO.getUsername());
+            if (existingUser != null) {
+                logger.warning("⚠️ User creation attempted with existing username: " + registerFormDTO.getUsername());
+                errors.rejectValue("username", "username.alreadyexists", "A user with that username already exists");
+
+                // Add roles back to the model for the form
+                model.addAttribute("roles", roleRepository.findAll());
+
+                // Add error message
+                model.addAttribute("errorMessage", "A user with that username already exists");
+
+                // Get all users with their roles and companies
+                logger.info("🔍 Fetching users with roles and companies");
+                List<UserManagementDTO> users = userManagementService.getAllUsersWithRolesAndCompanies();
+                logger.info("✅ Retrieved " + users.size() + " users for management page");
+                model.addAttribute("users", users);
+
+                // Add the form DTO back to the model
+                model.addAttribute("registerFormDTO", registerFormDTO);
+
+                return view("admin/users/user-management", model);
+            }
+
+            // Verify passwords match
+            String password = registerFormDTO.getPassword();
+            String verifyPassword = registerFormDTO.getVerifyPassword();
+            if (!password.equals(verifyPassword)) {
+                logger.warning("⚠️ User creation attempted with mismatched passwords");
+                errors.rejectValue("password", "passwords.mismatch", "Passwords do not match");
+
+                // Add roles back to the model for the form
+                model.addAttribute("roles", roleRepository.findAll());
+
+                // Add error message
+                model.addAttribute("errorMessage", "Passwords do not match");
+
+                // Get all users with their roles and companies
+                logger.info("🔍 Fetching users with roles and companies");
+                List<UserManagementDTO> users = userManagementService.getAllUsersWithRolesAndCompanies();
+                logger.info("✅ Retrieved " + users.size() + " users for management page");
+                model.addAttribute("users", users);
+
+                // Add the form DTO back to the model
+                model.addAttribute("registerFormDTO", registerFormDTO);
+
+                return view("admin/users/user-management", model);
+            }
+
+            // Create new user
+            User newUser = new User(registerFormDTO.getUsername(), password);
+            newUser.setFirstName(registerFormDTO.getFirstName());
+            newUser.setLastName(registerFormDTO.getLastName());
+
+            // Convert role IDs from array to list
+            List<String> roleIds = registerFormDTO.getRoleIds() != null ? 
+                Arrays.asList(registerFormDTO.getRoleIds()) : new ArrayList<>();
+
+            // Get company IDs from form
+            List<String> companyIds = registerFormDTO.getCompanyIds() != null ?
+                registerFormDTO.getCompanyIds() : new ArrayList<>();
+
+            // Create user with roles and companies
+            User savedUser = userManagementService.createUser(newUser, roleIds, companyIds);
+
+            if (savedUser != null) {
+                // Update email and phone if provided
+                String userId = savedUser.getId();
+
+                // Update email
+                if (registerFormDTO.getEmail() != null && !registerFormDTO.getEmail().isEmpty()) {
+                    userManagementService.updateUser(Map.of(
+                        "id", userId,
+                        "email", registerFormDTO.getEmail()
+                    ));
+                }
+
+                // Update phone
+                if (registerFormDTO.getPhone() != null && !registerFormDTO.getPhone().isEmpty()) {
+                    userManagementService.updateUser(Map.of(
+                        "id", userId,
+                        "phone", registerFormDTO.getPhone()
+                    ));
+                }
+
+                logger.info("✅ Successfully created user: " + savedUser.getUsername());
+                redirectAttributes.addFlashAttribute("successMessage", "User created successfully");
+            } else {
+                logger.severe("❌ Failed to create user");
+                redirectAttributes.addFlashAttribute("errorMessage", "Failed to create user");
+            }
+
+            return "redirect:/admin/users";
+        } catch (Exception e) {
+            logger.severe("❌ Error creating user: " + e.getMessage());
+            e.printStackTrace();
+            redirectAttributes.addFlashAttribute("errorMessage", "An error occurred while creating user: " + e.getMessage());
             return "redirect:/admin/users";
         }
     }
