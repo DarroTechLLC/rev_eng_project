@@ -1,0 +1,122 @@
+/* Dashboard Container Styles */
+.dashboard-container {
+    padding: 1rem 0;
+}
+
+.dashboard-title {
+    color: #4e73df;
+    font-weight: 500;
+    margin-bottom: 1rem;
+}
+
+/* Controls Section Styles */
+.controls-section {
+    background: #fff;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    box-shadow: 0 0.15rem 1.75rem rgba(0, 0, 0, 0.15);
+    margin-bottom: 1.5rem;
+}
+
+.gap-3 {
+    gap: 1rem;
+}
+
+/* Chart Section Styles */
+.chart-section {
+    margin-top: 1.5rem;
+}
+
+/* Legend Controls Styles */
+.legend-controls {
+    border-bottom: 1px solid #e3e6f0;
+    padding-bottom: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.farm-toggles {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.farm-toggle {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid;
+}
+
+.farm-toggle:hover {
+    opacity: 0.8;
+}
+
+.farm-toggle.active {
+    font-weight: 600;
+}
+
+.farm-toggle:not(.active) {
+    opacity: 0.5;
+    background-color: #f8f9fc !important;
+}
+
+/* Loading and Error States */
+.chart-loading-state,
+.chart-error-state {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.8);
+    z-index: 10;
+}
+
+/* Debug Log Styles */
+.debug-log-container {
+    background-color: #f8f9fc;
+    border: 1px solid #e3e6f0;
+    border-radius: 0.25rem;
+    padding: 0.5rem;
+}
+
+.debug-log-container div {
+    padding: 0.25rem 0.5rem;
+    margin-bottom: 0.25rem;
+    border-radius: 0.25rem;
+}
+
+.debug-log-container .info-log {
+    background-color: #e8f4ff;
+    color: #1a56db;
+    border-left: 3px solid #1a56db;
+}
+
+.debug-log-container .error-log {
+    background-color: #fde8e8;
+    color: #e02424;
+    border-left: 3px solid #e02424;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .d-flex {
+        flex-direction: column;
+    }
+
+    .gap-3 {
+        gap: 0.5rem;
+    }
+
+    .farm-toggles {
+        justify-content: center;
+    }
+}

@@ -1,0 +1,11 @@
+{
+  "name": "reveng-frontend",
+  "version": "1.0.0",
+  "description": "Frontend for RevEng Project",
+  "scripts": {
+    "start": "npx browser-sync start --proxy 'localhost:8080' --files 'src/main/resources/templates/**/*.html, src/main/resources/static/**/*' --no-open"
+  },
+  "devDependencies": {
+    "browser-sync": "^2.29.3"
+  }
+}
