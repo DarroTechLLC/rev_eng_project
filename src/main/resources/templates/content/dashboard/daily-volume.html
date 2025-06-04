@@ -140,12 +140,18 @@
             console.log('✓ Data points present:', chartData.datasets[0].data.length);
             console.log('✓ Total volume calculated:', totalVolume);
 
+            // Get the selected chart type
+            const chartType = chartTypeSelector.value;
+            console.log('📊 Creating chart with type:', chartType);
+
             chart = new Chart(ctx, {
-                type: chartTypeSelector.value === 'column' ? 'bar' : chartTypeSelector.value,
+                // For column type, we use 'bar' type in Chart.js but with horizontal: false
+                type: chartType === 'column' ? 'bar' : chartType,
                 data: chartData,
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    indexAxis: chartType === 'bar' ? 'y' : 'x', // Use horizontal bars for 'bar' type
                     plugins: {
                         title: {
                             display: true,
@@ -171,10 +177,8 @@
         // Event listeners
         dateSelector.addEventListener('change', updateChart);
         chartTypeSelector.addEventListener('change', () => {
-            if (chart) {
-                chart.config.type = chartTypeSelector.value === 'column' ? 'bar' : chartTypeSelector.value;
-                chart.update();
-            }
+            // When chart type changes, we need to recreate the chart with the new type
+            updateChart();
         });
 
         // Initialize chart on page load
