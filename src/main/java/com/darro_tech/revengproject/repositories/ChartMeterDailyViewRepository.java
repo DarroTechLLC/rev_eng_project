@@ -35,4 +35,24 @@ public interface ChartMeterDailyViewRepository extends JpaRepository<ChartMeterD
     List<Object[]> findTotalVolumeByFarmForDateIgnoringIncludeWebsite(
         @Param("companyId") String companyId, 
         @Param("date") LocalDate date);
+
+    /**
+     * Custom query that bypasses the chart_meter_daily_view and directly queries the underlying tables
+     * for a date range without filtering by include_website flag
+     */
+    @Query(value = 
+        "SELECT m.farm_id as farmId, SUM(md.value) as totalValue " +
+        "FROM meter_daily md " +
+        "JOIN meters m ON md.meter_id = m.id " +
+        "JOIN farms f ON m.farm_id = f.id " +
+        "JOIN company_meters cm ON m.id = cm.meter_id " +
+        "WHERE cm.company_id = :companyId " +
+        "AND DATE(md.timestamp) >= :fromDate " +
+        "AND DATE(md.timestamp) <= :toDate " +
+        "GROUP BY m.farm_id", 
+        nativeQuery = true)
+    List<Object[]> findTotalVolumeByFarmForDateRangeIgnoringIncludeWebsite(
+        @Param("companyId") String companyId, 
+        @Param("fromDate") LocalDate fromDate,
+        @Param("toDate") LocalDate toDate);
 }

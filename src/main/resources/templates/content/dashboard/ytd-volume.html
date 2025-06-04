@@ -1,23 +1,238 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/main}">
 <head>
     <title>YTD Volume Dashboard</title>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
+<div layout:fragment="content">
     <div class="container-fluid">
-        <h1 class="h3 mb-4 text-gray-800">Year-to-Date Volume Dashboard</h1>
         <div class="row">
             <div class="col-12">
                 <div class="card shadow mb-4">
                     <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                        <h6 class="m-0 font-weight-bold text-primary">YTD Volume</h6>
+                        <h6 class="m-0 font-weight-bold text-primary">Year-to-Date Volume</h6>
+                        <div class="chart-controls">
+                            <!-- Date Selector -->
+                            <input type="date" id="dateSelector" class="form-control d-inline-block w-auto mr-2"
+                                   th:value="${#dates.format(selectedDate, 'yyyy-MM-dd')}" />
+                            <!-- Chart Type Selector -->
+                            <select id="chartType" class="form-control d-inline-block w-auto">
+                                <option value="bar">Bar</option>
+                                <option value="column">Column</option>
+                            </select>
+                        </div>
                     </div>
                     <div class="card-body">
-                        <p>Year-to-date volume dashboard content will be implemented here.</p>
+                        <div id="loadingIndicator" style="display: none;">Loading...</div>
+                        <div id="errorMessage" class="alert alert-danger" style="display: none;"></div>
+                        <canvas id="ytdVolumeChart"></canvas>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+</div>
+
+<!-- Chart Initialization Script -->
+<th:block layout:fragment="scripts">
+    <script th:inline="javascript">
+        // Get company ID from Thymeleaf model
+        const selectedCompanyId = /*[[${selectedCompanyId}]]*/ '';
+        const dateSelector = document.getElementById('dateSelector');
+        const chartTypeSelector = document.getElementById('chartType');
+        const ctx = document.getElementById('ytdVolumeChart').getContext('2d');
+        let chart;
+
+        // Log initial data presence
+        console.log('🔍 Chart Configuration Verification:');
+        console.log('✓ Chart container present:', !!document.getElementById('ytdVolumeChart'));
+        console.log('✓ Date selector present:', !!dateSelector);
+        console.log('✓ Chart type selector present:', !!chartTypeSelector);
+        console.log('✓ Company ID present:', !!selectedCompanyId);
+
+        function showLoading() {
+            document.getElementById('loadingIndicator').style.display = 'block';
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingIndicator').style.display = 'none';
+        }
+
+        function showError(message) {
+            const errorElement = document.getElementById('errorMessage');
+            errorElement.textContent = message;
+            errorElement.style.display = 'block';
+        }
+
+        function hideError() {
+            document.getElementById('errorMessage').style.display = 'none';
+        }
+
+        function updateChart() {
+            // Check if date is valid, use current date as fallback
+            let selectedDate = new Date(dateSelector.value);
+
+            // Check if the date is valid (not NaN)
+            if (isNaN(selectedDate.getTime())) {
+                console.warn('⚠️ Invalid date detected, using current date as fallback');
+                selectedDate = new Date(); // Use current date as fallback
+                dateSelector.value = selectedDate.toISOString().split('T')[0]; // Update the input field
+            }
+
+            // Double-check that the date is valid after potential correction
+            if (isNaN(selectedDate.getTime())) {
+                console.error('❌ Date is still invalid after correction attempt');
+                showError('Invalid date. Please select a valid date.');
+                return;
+            }
+
+            const year = selectedDate.getFullYear();
+            const month = selectedDate.getMonth() + 1;
+            const day = selectedDate.getDate();
+
+            // Ensure year, month, and day are valid numbers
+            if (isNaN(year) || isNaN(month) || isNaN(day)) {
+                console.error('❌ Invalid date components detected');
+                showError('Invalid date components. Please select a valid date.');
+                return;
+            }
+
+            // Format dates as YYYY-MM-DD
+            const fromDate = `${year.toString().padStart(4, '0')}-01-01`;
+            const toDate = `${year.toString().padStart(4, '0')}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+
+            console.log('📅 Selected date:', dateSelector.value);
+            console.log('📊 Date range:', fromDate, 'to', toDate);
+            console.log('🏢 Company ID:', selectedCompanyId);
+
+            showLoading();
+            hideError();
+
+            fetch('/api/charts/multi-farm/farm-volumes-for-range', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    company_id: selectedCompanyId,
+                    from: fromDate,
+                    to: toDate
+                })
+            })
+                .then(response => {
+                    console.log('📡 API Response status:', response.status);
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch chart data');
+                    }
+                    return response.json();
+                })
+                .then(response => {
+                    console.log('📊 Received data:', response);
+                    console.log('✓ Data structure valid:', !!response.data);
+                    console.log('✓ Farm records:', response.data.length);
+
+                    const data = response.data;
+                    data.forEach(item => {
+                        console.log(`✓ Farm ${item.farm_name || item.farm_id} (ID: ${item.farm_id}): Volume = ${item.volume}`);
+                    });
+
+                    if (chart) {
+                        chart.destroy();
+                    }
+
+                    // Create chart with verified data
+                    createChart(data);
+                })
+                .catch(error => {
+                    console.error('❌ Error:', error);
+                    showError('Failed to load chart data. Please try again.');
+                    hideLoading();
+                });
+        }
+
+        function createChart(data) {
+            const chartData = {
+                labels: data.map(item => item.farm_name || item.farm_id),
+                datasets: [{
+                    label: 'Volume (MMBTUs)',
+                    data: data.map(item => item.volume),
+                    backgroundColor: 'rgba(54, 162, 235, 0.8)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }]
+            };
+
+            const totalVolume = data.reduce((sum, item) => sum + (item.volume || 0), 0);
+
+            console.log('📈 Chart Data Verification:');
+            console.log('✓ Labels present:', chartData.labels.length);
+            console.log('✓ Data points present:', chartData.datasets[0].data.length);
+            console.log('✓ Total volume calculated:', totalVolume);
+
+            // Get the selected chart type
+            const chartType = chartTypeSelector.value;
+            console.log('📊 Creating chart with type:', chartType);
+
+            // Get year for title
+            let selectedDate = new Date(dateSelector.value);
+            // Ensure date is valid
+            if (isNaN(selectedDate.getTime())) {
+                selectedDate = new Date(); // Use current date as fallback
+            }
+            const year = selectedDate.getFullYear();
+
+            chart = new Chart(ctx, {
+                // For column type, we use 'bar' type in Chart.js but with horizontal: false
+                type: chartType === 'column' ? 'bar' : chartType,
+                data: chartData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: chartType === 'bar' ? 'y' : 'x', // Use horizontal bars for 'bar' type
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: `${year} YTD Production: ${Math.round(totalVolume).toLocaleString()} MMBTUs`
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'MMBTUs'
+                            }
+                        }
+                    }
+                }
+            });
+
+            hideLoading();
+            console.log('✅ Chart successfully rendered');
+        }
+
+        // Event listeners
+        dateSelector.addEventListener('change', updateChart);
+        chartTypeSelector.addEventListener('change', () => {
+            // When chart type changes, we need to recreate the chart with the new type
+            updateChart();
+        });
+
+        // Initialize chart on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Ensure date selector has a valid value
+            if (!dateSelector.value || isNaN(new Date(dateSelector.value).getTime())) {
+                const today = new Date();
+                dateSelector.value = today.toISOString().split('T')[0];
+                console.log('📅 Date selector initialized with current date:', dateSelector.value);
+            }
+            updateChart();
+        });
+    </script>
+</th:block>
 </body>
-</html> 
+</html>
