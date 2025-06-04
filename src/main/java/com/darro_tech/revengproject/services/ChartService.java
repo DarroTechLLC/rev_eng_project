@@ -13,6 +13,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -161,6 +162,60 @@ public class ChartService {
             return farmVolumeDataList;
         } catch (Exception e) {
             logger.error("❌ Error in getVolumeByFarmForDateRange: {}", e.getMessage(), e);
+            return new ArrayList<>();
+        }
+    }
+
+    /**
+     * Get production population timeline data for all farms in a company for a date range
+     */
+    public List<Map<String, Object>> getProductionPopulationTimeline(String companyId, LocalDate fromDate, LocalDate toDate) {
+        logger.info("🔍 Fetching production population timeline for company: {} from {} to {}", companyId, fromDate, toDate);
+
+        try {
+            // Create a map of farm IDs to their names
+            logger.debug("Loading farm names from database...");
+            List<Farm> allFarms = farmRepository.findAll();
+            logger.debug("Found {} farms in database", allFarms.size());
+
+            Map<String, String> farmNames = allFarms.stream()
+                .collect(Collectors.toMap(Farm::getId, Farm::getName));
+
+            // In a real implementation, we would query the database for production population data
+            // For now, we'll generate sample data for demonstration purposes
+            List<Map<String, Object>> populationDataList = new ArrayList<>();
+
+            // For demo purposes, we'll use all farms instead of filtering by company ID
+            logger.info("Using {} farms for sample data generation", allFarms.size());
+
+            // Generate sample data points for each farm
+            for (Farm farm : allFarms) {
+                // Generate data points from fromDate to toDate
+                LocalDate currentDate = fromDate;
+                while (!currentDate.isAfter(toDate)) {
+                    Map<String, Object> dataPoint = new HashMap<>();
+                    dataPoint.put("farm_id", farm.getId());
+                    dataPoint.put("farm_name", farmNames.getOrDefault(farm.getId(), farm.getId()));
+                    dataPoint.put("timestamp", currentDate.toString());
+
+                    // Generate a random value between 0.5 and 5.0 for population
+                    double population = 0.5 + Math.random() * 4.5;
+                    dataPoint.put("population", population);
+
+                    populationDataList.add(dataPoint);
+
+                    // Move to next month
+                    currentDate = currentDate.plusMonths(1);
+                }
+            }
+
+            // Log data presence verification
+            logger.info("📊 Data verification:");
+            logger.info("✓ Total records: {}", populationDataList.size());
+
+            return populationDataList;
+        } catch (Exception e) {
+            logger.error("❌ Error in getProductionPopulationTimeline: {}", e.getMessage(), e);
             return new ArrayList<>();
         }
     }

@@ -109,4 +109,35 @@ public class ChartApiController extends BaseController {
             return ResponseEntity.ok(errorResponse);
         }
     }
+
+    @PostMapping("/multi-farm/production-population-52week-timeline")
+    public ResponseEntity<Map<String, Object>> getProductionPopulationTimeline(@RequestBody CompanyDateRangeRequest request) {
+        logger.info("📊 Processing production population timeline request - companyId: {}, from: {}, to: {}", 
+            request.getCompany_id(), request.getFrom(), request.getTo());
+
+        try {
+            List<Map<String, Object>> populationData = chartService.getProductionPopulationTimeline(
+                request.getCompany_id(), 
+                request.getFrom(),
+                request.getTo()
+            );
+
+            logger.info("📈 Found {} production population records", populationData.size());
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("data", populationData);
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("❌ Error processing request: {}", e.getMessage(), e);
+
+            // Return empty data with error flag for frontend debugging
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("data", new ArrayList<>());
+            errorResponse.put("error", true);
+            errorResponse.put("errorMessage", e.getMessage());
+
+            return ResponseEntity.ok(errorResponse);
+        }
+    }
 }
