@@ -138,8 +138,9 @@ public class RoutingController extends BaseController {
         // Set dashboard type in model
         model.addAttribute("dashboardType", dashboardType);
         model.addAttribute("selectedCompany", company);
+        model.addAttribute("selectedCompanyId", company.getId());
         model.addAttribute("currentUser", user);
-        logger.debug("🧩 Added company and dashboard type to model");
+        logger.debug("🧩 Added company, company ID, and dashboard type to model");
 
         // Load other dashboard data
         loadCommonData(model, company.getId(), user);
@@ -535,9 +536,10 @@ public class RoutingController extends BaseController {
 
         // Update model
         model.addAttribute("selectedCompany", company);
+        model.addAttribute("selectedCompanyId", company.getId());
         model.addAttribute("dashboardType", dashboardType);
         model.addAttribute("currentUser", user);
-        logger.debug("🧩 Added company and dashboard type to model");
+        logger.debug("🧩 Added company, company ID, and dashboard type to model");
 
         // Load common data
         loadCommonData(model, company.getId(), user);
@@ -557,6 +559,7 @@ public class RoutingController extends BaseController {
         if (companyOpt.isPresent()) {
             Company company = companyOpt.get();
             model.addAttribute("selectedCompany", company);
+            model.addAttribute("selectedCompanyId", company.getId());
             logger.debug("✅ Loaded company data: {}", company.getName());
 
             // Load farms for company

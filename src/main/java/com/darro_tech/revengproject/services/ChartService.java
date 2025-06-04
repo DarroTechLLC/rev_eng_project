@@ -35,21 +35,10 @@ public class ChartService {
         logger.info("🔍 Fetching daily volume data for company: {} on date: {}", companyId, date);
 
         try {
-            // Convert LocalDate to Instant at start of day
-            Instant instantTimestamp = date.atStartOfDay(ZoneId.systemDefault()).toInstant();
-            logger.debug("Converted date to instant: {}", instantTimestamp);
-
-            // Convert String companyId to Integer
-            Integer companyIdInt = Integer.parseInt(companyId);
-            logger.debug("Converted companyId to integer: {}", companyIdInt);
-
-            // Convert Instant to Integer timestamp (seconds since epoch)
-            Integer timestamp = (int) instantTimestamp.getEpochSecond();
-            logger.debug("Converted instant to epoch seconds: {}", timestamp);
-
-            // Get volume data grouped by farm
+            // Get volume data grouped by farm using the method that ignores include_website flag
+            logger.info("🔍 Using custom query that ignores include_website flag");
             logger.debug("Querying database for farm volumes...");
-            List<Object[]> results = chartMeterDailyViewRepository.findTotalVolumeByFarmForDate(companyIdInt, timestamp);
+            List<Object[]> results = chartMeterDailyViewRepository.findTotalVolumeByFarmForDateIgnoringIncludeWebsite(companyId, date);
             logger.info("Query returned {} results", results != null ? results.size() : 0);
 
             if (results == null || results.isEmpty()) {
@@ -70,8 +59,7 @@ public class ChartService {
             logger.debug("Converting query results to DTOs...");
 
             for (Object[] result : results) {
-                Integer farmIdInt = (Integer) result[0];
-                String farmId = farmIdInt.toString(); // Convert to String for DTO
+                String farmId = (String) result[0]; // Now directly a String
                 Double volume = ((Number) result[1]).doubleValue();
 
                 logger.debug("Processing farm: ID={}, volume={}", farmId, volume);

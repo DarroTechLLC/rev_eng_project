@@ -363,6 +363,7 @@ public class DashboardController extends BaseController {
             Company company = companyOpt.get();
             model.addAttribute("companyName", company.getName());
             model.addAttribute("currentCompanyId", company.getId());
+            model.addAttribute("selectedCompanyId", company.getId());
             model.addAttribute("companyLogoUrl", company.getLogoUrl());
             logger.debug("📊 Added company details to model: {}", company.getName());
 
