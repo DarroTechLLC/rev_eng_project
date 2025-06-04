@@ -1,23 +1,224 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/main}">
 <head>
     <title>Production Headcount Dashboard</title>
+    <!-- Chart.js and required dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/luxon@3.0.1/build/global/luxon.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1.2.0/dist/chartjs-adapter-luxon.min.js"></script>
 </head>
 <body>
+<div layout:fragment="content">
     <div class="container-fluid">
-        <h1 class="h3 mb-4 text-gray-800">Production Headcount Dashboard</h1>
         <div class="row">
             <div class="col-12">
                 <div class="card shadow mb-4">
                     <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                        <h6 class="m-0 font-weight-bold text-primary">Production Headcount</h6>
+                        <h6 class="m-0 font-weight-bold text-primary">Historic 52-Week Production per 52-Week Inventory Population</h6>
+                        <div class="chart-controls">
+                            <!-- Chart Type Selector -->
+                            <select id="chartType" class="form-control d-inline-block w-auto">
+                                <option value="line">Line</option>
+                                <option value="column">Column</option>
+                                <option value="bar">Bar</option>
+                            </select>
+                        </div>
                     </div>
                     <div class="card-body">
-                        <p>Production headcount dashboard content will be implemented here.</p>
+                        <div id="loadingIndicator" style="display: none;">Loading...</div>
+                        <div id="errorMessage" class="alert alert-danger" style="display: none;"></div>
+                        <canvas id="productionHeadcountChart"></canvas>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+</div>
+
+<!-- Chart Initialization Script -->
+<th:block layout:fragment="scripts">
+    <script th:inline="javascript">
+        // Get company ID from Thymeleaf model
+        const selectedCompanyId = /*[[${selectedCompanyId}]]*/ '';
+        const chartTypeSelector = document.getElementById('chartType');
+        const ctx = document.getElementById('productionHeadcountChart').getContext('2d');
+        let chart;
+
+        // Log initial data presence
+        console.log('🔍 Chart Configuration Verification:');
+        console.log('✓ Chart container present:', !!document.getElementById('productionHeadcountChart'));
+        console.log('✓ Chart type selector present:', !!chartTypeSelector);
+        console.log('✓ Company ID present:', !!selectedCompanyId);
+
+        function showLoading() {
+            document.getElementById('loadingIndicator').style.display = 'block';
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingIndicator').style.display = 'none';
+        }
+
+        function showError(message) {
+            const errorElement = document.getElementById('errorMessage');
+            errorElement.textContent = message;
+            errorElement.style.display = 'block';
+        }
+
+        function hideError() {
+            document.getElementById('errorMessage').style.display = 'none';
+        }
+
+        function updateChart() {
+            console.log('🏢 Company ID:', selectedCompanyId);
+
+            showLoading();
+            hideError();
+
+            // Calculate date range (from 2022 to current date)
+            const from = new Date(2022, 0, 1).toISOString().split('T')[0]; // 2022-01-01
+            const to = new Date().toISOString().split('T')[0]; // Current date
+
+            fetch('/api/charts/multi-farm/production-population-52week-timeline', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    company_id: selectedCompanyId,
+                    from: from,
+                    to: to
+                })
+            })
+            .then(response => {
+                console.log('📡 API Response status:', response.status);
+                if (!response.ok) {
+                    throw new Error('Failed to fetch chart data');
+                }
+                return response.json();
+            })
+            .then(response => {
+                console.log('📊 Received data:', response);
+                console.log('✓ Data structure valid:', !!response.data);
+
+                const data = response.data;
+
+                if (chart) {
+                    chart.destroy();
+                }
+
+                // Create chart with verified data
+                createChart(data);
+            })
+            .catch(error => {
+                console.error('❌ Error:', error);
+                showError('Failed to load chart data. Please try again.');
+                hideLoading();
+            });
+        }
+
+        function createChart(data) {
+            // Group data by farm
+            const farmData = {};
+
+            data.forEach(item => {
+                if (!farmData[item.farm_id]) {
+                    farmData[item.farm_id] = {
+                        name: item.farm_name || item.farm_id,
+                        data: []
+                    };
+                }
+
+                // Parse the timestamp string to a Luxon DateTime object
+                const timestamp = luxon.DateTime.fromISO(item.timestamp);
+                farmData[item.farm_id].data.push({
+                    x: timestamp.toJSDate(), // Convert to JS Date for Chart.js
+                    y: item.population
+                });
+            });
+
+            // Create datasets for each farm
+            const datasets = Object.values(farmData).map((farm, index) => {
+                // Generate a color based on index
+                const hue = (index * 137) % 360; // Use golden ratio for color distribution
+                const color = `hsl(${hue}, 70%, 60%)`;
+
+                return {
+                    label: farm.name,
+                    data: farm.data,
+                    backgroundColor: color,
+                    borderColor: color,
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.1
+                };
+            });
+
+            // Get the selected chart type
+            const chartType = chartTypeSelector.value;
+            console.log('📊 Creating chart with type:', chartType);
+
+            chart = new Chart(ctx, {
+                type: chartType === 'column' ? 'bar' : chartType,
+                data: {
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: chartType === 'bar' ? 'y' : 'x',
+                    scales: {
+                        x: {
+                            type: 'time',
+                            time: {
+                                unit: 'month',
+                                displayFormats: {
+                                    month: 'MMM yyyy'
+                                }
+                            },
+                            title: {
+                                display: true,
+                                text: 'Date'
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'MMBTUs/stocked space/year'
+                            }
+                        }
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Historic 52-Week Production per 52-Week Inventory Population'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.dataset.label}: ${context.parsed.y.toFixed(2)} MMBTUs/stocked space/year`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            hideLoading();
+            console.log('✅ Chart successfully rendered');
+        }
+
+        // Event listeners
+        chartTypeSelector.addEventListener('change', () => {
+            // When chart type changes, we need to recreate the chart with the new type
+            updateChart();
+        });
+
+        // Initialize chart on page load
+        document.addEventListener('DOMContentLoaded', updateChart);
+    </script>
+</th:block>
 </body>
-</html> 
+</html>
