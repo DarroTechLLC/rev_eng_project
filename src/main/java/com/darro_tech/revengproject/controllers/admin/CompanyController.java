@@ -205,8 +205,8 @@ public class CompanyController extends BaseController {
         return "redirect:/admin/companies";
     }
 
-    // REST API endpoints for logo operations and AJAX
-    @PostMapping("/api/{id}/logo")
+    // Update API endpoints to use consistent naming
+    @PostMapping("/api/logo/{id}")
     @ResponseBody
     public ResponseEntity<?> updateLogoUrl(@PathVariable String id, @RequestBody Map<String, String> payload) {
         try {
@@ -218,7 +218,7 @@ public class CompanyController extends BaseController {
         }
     }
 
-    @DeleteMapping("/api/{id}/logo")
+    @DeleteMapping("/api/logo/{id}")
     @ResponseBody
     public ResponseEntity<?> removeLogoUrl(@PathVariable String id) {
         try {
@@ -229,7 +229,6 @@ public class CompanyController extends BaseController {
         }
     }
 
-    // API endpoint to get all companies (for AJAX)
     @GetMapping("/api/list")
     @ResponseBody
     public List<Company> getCompanies() {

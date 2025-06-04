@@ -29,7 +29,7 @@ import jakarta.servlet.http.HttpSession;
  * controller handles all company-related operations including listing available
  * companies and selecting the current company.
  */
-@RestController
+@RestController("apiCompanySelectorController")
 @RequestMapping("/api/companies")
 public class CompanySelectorController {
 
@@ -225,9 +225,9 @@ public class CompanySelectorController {
     public ResponseEntity<Map<String, Object>> selectCompanyAlternative(
             @PathVariable("companyId") String companyId,
             HttpSession session) {
-        
+
         logger.info("🔄 Alternative endpoint: Attempting to select company: " + companyId);
-        
+
         // Simply delegate to the main endpoint method
         return selectCompany(companyId, session);
     }

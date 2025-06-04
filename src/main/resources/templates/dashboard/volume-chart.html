@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/main}">
+<head>
+    <title>Volume Chart</title>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Our custom chart configuration -->
+    <script th:src="@{/js/chart-config.js}"></script>
+</head>
+<body>
+    <div layout:fragment="content">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Daily Volume Chart</h3>
+                        </div>
+                        <div class="card-body">
+                            <!-- Chart container with fixed height -->
+                            <div style="height: 400px;">
+                                <canvas id="volumeChart"></canvas>
+                            </div>
+                            
+                            <!-- Debug section to display raw data -->
+                            <div class="mt-4" th:if="${@environment.getProperty('app.debug')}">
+                                <h4>Debug Information</h4>
+                                <div>
+                                    <strong>Labels:</strong>
+                                    <span th:text="${chartLabels}"></span>
+                                </div>
+                                <div>
+                                    <strong>Data:</strong>
+                                    <span th:text="${chartData}"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Script to populate chart data -->
+        <script th:inline="javascript">
+            /*<![CDATA[*/
+            document.addEventListener('DOMContentLoaded', function() {
+                // Get data from Thymeleaf
+                var labels = /*[[${chartLabels}]]*/ [];
+                var data = /*[[${chartData}]]*/ [];
+                
+                // Update chart with the data
+                if (window.updateChartData) {
+                    window.updateChartData(labels, data);
+                } else {
+                    console.error('Chart update function not found');
+                }
+            });
+            /*]]>*/
+        </script>
+    </div>
+</body>
+</html> 
