@@ -5,6 +5,9 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import org.hibernate.annotations.Immutable;
 import jakarta.persistence.Id;
+
+import java.time.Instant;
+
 /**
  * Mapping for DB view
  */
@@ -17,41 +20,41 @@ public class ChartMeterDailyView {
     private Integer id;
 
     @Column(name = "meter_id", nullable = false)
-    private Integer meterId;
+    private String meterId;
 
     @Column(name = "value", nullable = false)
-    private Integer value;
+    private Double value;
 
     @Column(name = "timestamp", nullable = false)
-    private Integer timestamp;
+    private Instant timestamp;
 
     @Column(name = "farm_id", nullable = false)
-    private Integer farmId;
+    private String farmId;
 
     @Column(name = "company_id", nullable = false)
-    private Integer companyId;
+    private String companyId;
 
     public Integer getId() {
         return id;
     }
 
-    public Integer getMeterId() {
+    public String getMeterId() {
         return meterId;
     }
 
-    public Integer getValue() {
+    public Double getValue() {
         return value;
     }
 
-    public Integer getTimestamp() {
+    public Instant getTimestamp() {
         return timestamp;
     }
 
-    public Integer getFarmId() {
+    public String getFarmId() {
         return farmId;
     }
 
-    public Integer getCompanyId() {
+    public String getCompanyId() {
         return companyId;
     }
 
