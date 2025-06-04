@@ -22,9 +22,9 @@ import com.darro_tech.revengproject.services.UserService;
 
 import jakarta.servlet.http.HttpSession;
 
-@Controller
+@Controller("companySelectorController")
 @RequestMapping("/api/company-selector")
-public class CompanyController extends BaseController {
+public class CompanySelectorController extends BaseController {
 
     @Autowired
     private CompanyService companyService;

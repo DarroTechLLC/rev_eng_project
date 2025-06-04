@@ -1,14 +1,15 @@
 package com.darro_tech.revengproject.controllers.api;
 
 import com.darro_tech.revengproject.controllers.BaseController;
+import com.darro_tech.revengproject.dto.CompanyDateRequest;
 import com.darro_tech.revengproject.dto.FarmVolumeData;
 import com.darro_tech.revengproject.services.ChartService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -18,34 +19,41 @@ import java.util.Map;
 @RequestMapping("/api/charts")
 public class ChartApiController extends BaseController {
 
+    private static final Logger logger = LoggerFactory.getLogger(ChartApiController.class);
+
     @Autowired
     private ChartService chartService;
 
     @PostMapping("/multi-farm/farm-volumes-for-date")
-    public ResponseEntity<Map<String, Object>> getFarmVolumesForDate(
-            @RequestParam("company_id") String companyId,
-            @RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-
-        System.out.println("=== ChartApiController: getFarmVolumesForDate ===");
-        System.out.println("Request parameters: companyId=" + companyId + ", date=" + date);
+    public ResponseEntity<Map<String, Object>> getFarmVolumesForDate(@RequestBody CompanyDateRequest request) {
+        logger.info("📊 Processing farm volumes request - companyId: {}, date: {}", 
+            request.getCompany_id(), request.getDate());
 
         try {
-            List<FarmVolumeData> data = chartService.getDailyVolumeByFarmForDate(companyId, date);
+            List<FarmVolumeData> volumeData = chartService.getDailyVolumeByFarmForDate(
+                request.getCompany_id(), 
+                request.getDate()
+            );
 
-            System.out.println("Data retrieved successfully: " + (data != null ? data.size() : 0) + " farm records");
-            if (data != null && !data.isEmpty()) {
-                System.out.println("Sample data: " + data.get(0).getFarmName() + " - " + data.get(0).getVolume());
-            } else {
-                System.out.println("WARNING: No data returned from service");
+            logger.info("📈 Found {} farm volume records", volumeData.size());
+
+            // Convert the existing data to the format expected by NextJS
+            List<Map<String, Object>> formattedData = new ArrayList<>();
+            for (FarmVolumeData data : volumeData) {
+                Map<String, Object> formatted = new HashMap<>();
+                formatted.put("farm_id", data.getFarm_id());
+                formatted.put("volume", data.getVolume());
+                formattedData.add(formatted);
+
+                logger.info("🏠 Farm: {}, Volume: {}", data.getFarm_id(), data.getVolume());
             }
 
             Map<String, Object> response = new HashMap<>();
-            response.put("data", data);
+            response.put("data", formattedData);
 
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            System.out.println("ERROR in getFarmVolumesForDate: " + e.getMessage());
-            e.printStackTrace();
+            logger.error("❌ Error processing request: {}", e.getMessage(), e);
 
             // Return empty data with error flag for frontend debugging
             Map<String, Object> errorResponse = new HashMap<>();

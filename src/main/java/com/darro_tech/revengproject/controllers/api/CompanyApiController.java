@@ -30,7 +30,7 @@ import com.darro_tech.revengproject.services.UserRoleService;
 import jakarta.servlet.http.HttpSession;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/companies")
 public class CompanyApiController {
 
     private static final Logger logger = LoggerFactory.getLogger(CompanyApiController.class);
@@ -47,7 +47,7 @@ public class CompanyApiController {
     @Autowired
     private UserRoleService userRoleService;
 
-    @PostMapping("/companies/list")
+    @PostMapping("/list-all")
     public ResponseEntity<?> listCompanies() {
         logger.info("🏢 API request for company list");
         try {
@@ -74,7 +74,7 @@ public class CompanyApiController {
         }
     }
 
-    @GetMapping("/companies-all")
+    @GetMapping("/list-with-access")
     public ResponseEntity<?> getCompanies(HttpSession session) {
         logger.info("🏢 Fetching all companies");
         try {
@@ -153,7 +153,7 @@ public class CompanyApiController {
         }
     }
 
-    @PostMapping("/companies-all/select/{id}")
+    @PostMapping("/select/{id}")
     public ResponseEntity<?> selectCompany(@PathVariable String id, HttpSession session) {
         logger.info("🔄 Selecting company: {}", id);
         try {
@@ -200,7 +200,7 @@ public class CompanyApiController {
         }
     }
 
-    @PostMapping("/admin/companies/{id}/logo-upload")
+    @PostMapping("/logo-upload/{id}")
     public ResponseEntity<?> uploadLogo(@PathVariable String id, @RequestParam("file") MultipartFile file) {
         logger.info("🖼️ Uploading logo for company: {}", id);
         try {

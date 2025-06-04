@@ -4,6 +4,8 @@ import com.darro_tech.revengproject.dto.FarmVolumeData;
 import com.darro_tech.revengproject.models.Farm;
 import com.darro_tech.revengproject.repositories.ChartMeterDailyViewRepository;
 import com.darro_tech.revengproject.repositories.FarmRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -18,6 +20,8 @@ import java.util.stream.Collectors;
 @Service
 public class ChartService {
 
+    private static final Logger logger = LoggerFactory.getLogger(ChartService.class);
+
     @Autowired
     private ChartMeterDailyViewRepository chartMeterDailyViewRepository;
 
@@ -28,68 +32,78 @@ public class ChartService {
      * Get daily volume data for all farms in a company for a specific date
      */
     public List<FarmVolumeData> getDailyVolumeByFarmForDate(String companyId, LocalDate date) {
-        System.out.println("=== ChartService: getDailyVolumeByFarmForDate ===");
-        System.out.println("Input parameters: companyId=" + companyId + ", date=" + date);
+        logger.info("🔍 Fetching daily volume data for company: {} on date: {}", companyId, date);
 
         try {
             // Convert LocalDate to Instant at start of day
             Instant instantTimestamp = date.atStartOfDay(ZoneId.systemDefault()).toInstant();
-            System.out.println("Converted date to instant: " + instantTimestamp);
+            logger.debug("Converted date to instant: {}", instantTimestamp);
 
             // Convert String companyId to Integer
             Integer companyIdInt = Integer.parseInt(companyId);
-            System.out.println("Converted companyId to integer: " + companyIdInt);
+            logger.debug("Converted companyId to integer: {}", companyIdInt);
 
             // Convert Instant to Integer timestamp (seconds since epoch)
             Integer timestamp = (int) instantTimestamp.getEpochSecond();
-            System.out.println("Converted instant to epoch seconds: " + timestamp);
+            logger.debug("Converted instant to epoch seconds: {}", timestamp);
 
             // Get volume data grouped by farm
-            System.out.println("Querying database for farm volumes...");
+            logger.debug("Querying database for farm volumes...");
             List<Object[]> results = chartMeterDailyViewRepository.findTotalVolumeByFarmForDate(companyIdInt, timestamp);
-            System.out.println("Query returned " + (results != null ? results.size() : 0) + " results");
+            logger.info("Query returned {} results", results != null ? results.size() : 0);
 
             if (results == null || results.isEmpty()) {
-                System.out.println("WARNING: No data found in database for the given parameters");
+                logger.warn("No data found in database for the given parameters");
                 return new ArrayList<>();
             }
 
             // Create a map of farm IDs to their names
-            System.out.println("Loading farm names from database...");
+            logger.debug("Loading farm names from database...");
             List<Farm> allFarms = farmRepository.findAll();
-            System.out.println("Found " + allFarms.size() + " farms in database");
+            logger.debug("Found {} farms in database", allFarms.size());
 
             Map<String, String> farmNames = allFarms.stream()
                 .collect(Collectors.toMap(Farm::getId, Farm::getName));
 
             // Convert results to DTOs
             List<FarmVolumeData> farmVolumeDataList = new ArrayList<>();
-            System.out.println("Converting query results to DTOs...");
+            logger.debug("Converting query results to DTOs...");
 
             for (Object[] result : results) {
                 Integer farmIdInt = (Integer) result[0];
                 String farmId = farmIdInt.toString(); // Convert to String for DTO
                 Double volume = ((Number) result[1]).doubleValue();
 
-                System.out.println("Processing farm: ID=" + farmId + ", volume=" + volume);
+                logger.debug("Processing farm: ID={}, volume={}", farmId, volume);
 
                 FarmVolumeData farmVolumeData = new FarmVolumeData();
-                farmVolumeData.setFarmId(farmId);
+                farmVolumeData.setFarm_id(farmId);
                 farmVolumeData.setFarmName(farmNames.getOrDefault(farmId, farmId));
                 farmVolumeData.setVolume(volume);
 
-                System.out.println("Created DTO: farmId=" + farmVolumeData.getFarmId() + 
-                                   ", farmName=" + farmVolumeData.getFarmName() + 
-                                   ", volume=" + farmVolumeData.getVolume());
+                logger.debug("Created DTO: farm_id={}, farmName={}, volume={}", 
+                           farmVolumeData.getFarm_id(), 
+                           farmVolumeData.getFarmName(), 
+                           farmVolumeData.getVolume());
 
                 farmVolumeDataList.add(farmVolumeData);
             }
 
-            System.out.println("Returning " + farmVolumeDataList.size() + " farm volume records");
+            // Log data presence verification
+            logger.info("📊 Data verification:");
+            logger.info("✓ Total records: {}", farmVolumeDataList.size());
+            logger.info("✓ Total volume: {}", 
+                farmVolumeDataList.stream().mapToDouble(FarmVolumeData::getVolume).sum());
+
+            farmVolumeDataList.forEach(data -> {
+                logger.info("✓ Farm {} data present: {}", 
+                    data.getFarm_id(), 
+                    data.getVolume() != null);
+            });
+
             return farmVolumeDataList;
         } catch (Exception e) {
-            System.out.println("ERROR in getDailyVolumeByFarmForDate: " + e.getMessage());
-            e.printStackTrace();
+            logger.error("❌ Error in getDailyVolumeByFarmForDate: {}", e.getMessage(), e);
             return new ArrayList<>();
         }
     }
