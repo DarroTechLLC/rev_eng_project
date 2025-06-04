@@ -539,7 +539,9 @@ public class RoutingController extends BaseController {
         model.addAttribute("selectedCompanyId", company.getId());
         model.addAttribute("dashboardType", dashboardType);
         model.addAttribute("currentUser", user);
-        logger.debug("🧩 Added company, company ID, and dashboard type to model");
+        // Add current date to model for date selectors
+        model.addAttribute("selectedDate", java.time.LocalDate.now());
+        logger.debug("🧩 Added company, company ID, dashboard type, and current date to model");
 
         // Load common data
         loadCommonData(model, company.getId(), user);

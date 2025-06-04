@@ -95,4 +95,73 @@ public class ChartService {
             return new ArrayList<>();
         }
     }
+
+    /**
+     * Get volume data for all farms in a company for a date range
+     */
+    public List<FarmVolumeData> getVolumeByFarmForDateRange(String companyId, LocalDate fromDate, LocalDate toDate) {
+        logger.info("🔍 Fetching volume data for company: {} from {} to {}", companyId, fromDate, toDate);
+
+        try {
+            // Get volume data grouped by farm using the method that ignores include_website flag
+            logger.info("🔍 Using custom query that ignores include_website flag");
+            logger.debug("Querying database for farm volumes...");
+            List<Object[]> results = chartMeterDailyViewRepository.findTotalVolumeByFarmForDateRangeIgnoringIncludeWebsite(
+                companyId, fromDate, toDate);
+            logger.info("Query returned {} results", results != null ? results.size() : 0);
+
+            if (results == null || results.isEmpty()) {
+                logger.warn("No data found in database for the given parameters");
+                return new ArrayList<>();
+            }
+
+            // Create a map of farm IDs to their names
+            logger.debug("Loading farm names from database...");
+            List<Farm> allFarms = farmRepository.findAll();
+            logger.debug("Found {} farms in database", allFarms.size());
+
+            Map<String, String> farmNames = allFarms.stream()
+                .collect(Collectors.toMap(Farm::getId, Farm::getName));
+
+            // Convert results to DTOs
+            List<FarmVolumeData> farmVolumeDataList = new ArrayList<>();
+            logger.debug("Converting query results to DTOs...");
+
+            for (Object[] result : results) {
+                String farmId = (String) result[0];
+                Double volume = ((Number) result[1]).doubleValue();
+
+                logger.debug("Processing farm: ID={}, volume={}", farmId, volume);
+
+                FarmVolumeData farmVolumeData = new FarmVolumeData();
+                farmVolumeData.setFarm_id(farmId);
+                farmVolumeData.setFarmName(farmNames.getOrDefault(farmId, farmId));
+                farmVolumeData.setVolume(volume);
+
+                logger.debug("Created DTO: farm_id={}, farmName={}, volume={}", 
+                           farmVolumeData.getFarm_id(), 
+                           farmVolumeData.getFarmName(), 
+                           farmVolumeData.getVolume());
+
+                farmVolumeDataList.add(farmVolumeData);
+            }
+
+            // Log data presence verification
+            logger.info("📊 Data verification:");
+            logger.info("✓ Total records: {}", farmVolumeDataList.size());
+            logger.info("✓ Total volume: {}", 
+                farmVolumeDataList.stream().mapToDouble(FarmVolumeData::getVolume).sum());
+
+            farmVolumeDataList.forEach(data -> {
+                logger.info("✓ Farm {} data present: {}", 
+                    data.getFarm_id(), 
+                    data.getVolume() != null);
+            });
+
+            return farmVolumeDataList;
+        } catch (Exception e) {
+            logger.error("❌ Error in getVolumeByFarmForDateRange: {}", e.getMessage(), e);
+            return new ArrayList<>();
+        }
+    }
 }

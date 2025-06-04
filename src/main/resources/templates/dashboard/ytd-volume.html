@@ -73,22 +73,45 @@
         }
 
         function updateChart() {
-            const selectedDate = new Date(dateSelector.value);
+            // Check if date is valid, use current date as fallback
+            let selectedDate = new Date(dateSelector.value);
+
+            // Check if the date is valid (not NaN)
+            if (isNaN(selectedDate.getTime())) {
+                console.warn('⚠️ Invalid date detected, using current date as fallback');
+                selectedDate = new Date(); // Use current date as fallback
+                dateSelector.value = selectedDate.toISOString().split('T')[0]; // Update the input field
+            }
+
+            // Double-check that the date is valid after potential correction
+            if (isNaN(selectedDate.getTime())) {
+                console.error('❌ Date is still invalid after correction attempt');
+                showError('Invalid date. Please select a valid date.');
+                return;
+            }
+
             const year = selectedDate.getFullYear();
             const month = selectedDate.getMonth() + 1;
             const day = selectedDate.getDate();
-            
+
+            // Ensure year, month, and day are valid numbers
+            if (isNaN(year) || isNaN(month) || isNaN(day)) {
+                console.error('❌ Invalid date components detected');
+                showError('Invalid date components. Please select a valid date.');
+                return;
+            }
+
             // Format dates as YYYY-MM-DD
             const fromDate = `${year}-01-01`;
             const toDate = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
-            
+
             console.log('📅 Selected date:', dateSelector.value);
             console.log('📊 Date range:', fromDate, 'to', toDate);
             console.log('🏢 Company ID:', selectedCompanyId);
-            
+
             showLoading();
             hideError();
-            
+
             fetch('/api/charts/multi-farm/farm-volumes-for-range', {
                 method: 'POST',
                 headers: {
@@ -111,7 +134,7 @@
                 console.log('📊 Received data:', response);
                 console.log('✓ Data structure valid:', !!response.data);
                 console.log('✓ Farm records:', response.data.length);
-                
+
                 const data = response.data;
                 data.forEach(item => {
                     console.log(`✓ Farm ${item.farm_name || item.farm_id} (ID: ${item.farm_id}): Volume = ${item.volume}`);
@@ -144,7 +167,7 @@
             };
 
             const totalVolume = data.reduce((sum, item) => sum + (item.volume || 0), 0);
-            
+
             console.log('📈 Chart Data Verification:');
             console.log('✓ Labels present:', chartData.labels.length);
             console.log('✓ Data points present:', chartData.datasets[0].data.length);
@@ -155,7 +178,11 @@
             console.log('📊 Creating chart with type:', chartType);
 
             // Get year for title
-            const selectedDate = new Date(dateSelector.value);
+            let selectedDate = new Date(dateSelector.value);
+            // Ensure date is valid
+            if (isNaN(selectedDate.getTime())) {
+                selectedDate = new Date(); // Use current date as fallback
+            }
             const year = selectedDate.getFullYear();
 
             chart = new Chart(ctx, {
@@ -183,7 +210,7 @@
                     }
                 }
             });
-            
+
             hideLoading();
             console.log('✅ Chart successfully rendered');
         }
@@ -196,7 +223,15 @@
         });
 
         // Initialize chart on page load
-        document.addEventListener('DOMContentLoaded', updateChart);
+        document.addEventListener('DOMContentLoaded', function() {
+            // Ensure date selector has a valid value
+            if (!dateSelector.value || isNaN(new Date(dateSelector.value).getTime())) {
+                const today = new Date();
+                dateSelector.value = today.toISOString().split('T')[0];
+                console.log('📅 Date selector initialized with current date:', dateSelector.value);
+            }
+            updateChart();
+        });
     </script>
 </th:block>
 </body>
