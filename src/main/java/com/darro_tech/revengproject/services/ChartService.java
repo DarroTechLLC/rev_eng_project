@@ -1,8 +1,10 @@
 package com.darro_tech.revengproject.services;
 
 import com.darro_tech.revengproject.dto.FarmVolumeData;
+import com.darro_tech.revengproject.models.CompanyFarm;
 import com.darro_tech.revengproject.models.Farm;
 import com.darro_tech.revengproject.repositories.ChartMeterDailyViewRepository;
+import com.darro_tech.revengproject.repositories.CompanyFarmRepository;
 import com.darro_tech.revengproject.repositories.FarmRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,6 +30,9 @@ public class ChartService {
 
     @Autowired
     private FarmRepository farmRepository;
+
+    @Autowired
+    private CompanyFarmRepository companyFarmRepository;
 
     /**
      * Get daily volume data for all farms in a company for a specific date
@@ -173,23 +178,26 @@ public class ChartService {
         logger.info("🔍 Fetching production population timeline for company: {} from {} to {}", companyId, fromDate, toDate);
 
         try {
-            // Create a map of farm IDs to their names
-            logger.debug("Loading farm names from database...");
-            List<Farm> allFarms = farmRepository.findAll();
-            logger.debug("Found {} farms in database", allFarms.size());
+            // Get farms for the specified company
+            logger.debug("Loading farms for company ID: {}", companyId);
+            List<CompanyFarm> companyFarms = companyFarmRepository.findByCompanyId(companyId);
+            List<Farm> companyFarmsList = companyFarms.stream()
+                .map(CompanyFarm::getFarm)
+                .collect(Collectors.toList());
+            logger.debug("Found {} farms for company ID: {}", companyFarmsList.size(), companyId);
 
-            Map<String, String> farmNames = allFarms.stream()
+            // Create a map of farm IDs to their names
+            Map<String, String> farmNames = companyFarmsList.stream()
                 .collect(Collectors.toMap(Farm::getId, Farm::getName));
 
             // In a real implementation, we would query the database for production population data
             // For now, we'll generate sample data for demonstration purposes
             List<Map<String, Object>> populationDataList = new ArrayList<>();
 
-            // For demo purposes, we'll use all farms instead of filtering by company ID
-            logger.info("Using {} farms for sample data generation", allFarms.size());
+            logger.info("Using {} farms for sample data generation", companyFarmsList.size());
 
             // Generate sample data points for each farm
-            for (Farm farm : allFarms) {
+            for (Farm farm : companyFarmsList) {
                 // Generate data points from fromDate to toDate
                 LocalDate currentDate = fromDate;
                 while (!currentDate.isAfter(toDate)) {
