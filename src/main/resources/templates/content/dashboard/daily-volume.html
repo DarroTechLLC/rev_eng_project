@@ -104,7 +104,7 @@
 
                 const data = response.data;
                 data.forEach(item => {
-                    console.log(`✓ Farm ${item.farm_id}: Volume = ${item.volume}`);
+                    console.log(`✓ Farm ${item.farm_name || item.farm_id} (ID: ${item.farm_id}): Volume = ${item.volume}`);
                 });
 
                 if (chart) {
@@ -123,7 +123,7 @@
 
         function createChart(data) {
             const chartData = {
-                labels: data.map(item => item.farm_id),
+                labels: data.map(item => item.farm_name || item.farm_id),
                 datasets: [{
                     label: 'Volume (MMBTUs)',
                     data: data.map(item => item.volume),

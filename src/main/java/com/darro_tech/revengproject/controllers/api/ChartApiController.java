@@ -42,10 +42,11 @@ public class ChartApiController extends BaseController {
             for (FarmVolumeData data : volumeData) {
                 Map<String, Object> formatted = new HashMap<>();
                 formatted.put("farm_id", data.getFarm_id());
+                formatted.put("farm_name", data.getFarmName());
                 formatted.put("volume", data.getVolume());
                 formattedData.add(formatted);
 
-                logger.info("🏠 Farm: {}, Volume: {}", data.getFarm_id(), data.getVolume());
+                logger.info("🏠 Farm: {} ({}), Volume: {}", data.getFarmName(), data.getFarm_id(), data.getVolume());
             }
 
             Map<String, Object> response = new HashMap<>();
