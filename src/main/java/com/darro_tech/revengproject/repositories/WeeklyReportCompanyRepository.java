@@ -14,16 +14,16 @@ import java.util.Optional;
  */
 @Repository
 public interface WeeklyReportCompanyRepository extends JpaRepository<WeeklyReportCompany, Integer> {
-    
+
     /**
      * Find the most recent weekly report for a company
      * 
      * @param companyId The ID of the company
      * @return The most recent weekly report, if any
      */
-    @Query("SELECT w FROM WeeklyReportCompany w WHERE w.companyId = :companyId ORDER BY w.timestamp DESC")
+    @Query("SELECT DISTINCT w FROM WeeklyReportCompany w JOIN FETCH w.company c WHERE c.id = :companyId ORDER BY w.timestamp DESC")
     Optional<WeeklyReportCompany> findLatestByCompanyId(@Param("companyId") String companyId);
-    
+
     /**
      * Find the weekly report for a company closest to the given date
      * 
@@ -31,6 +31,6 @@ public interface WeeklyReportCompanyRepository extends JpaRepository<WeeklyRepor
      * @param date The date to find the report for
      * @return The weekly report closest to the given date, if any
      */
-    @Query("SELECT w FROM WeeklyReportCompany w WHERE w.companyId = :companyId AND w.timestamp <= :date ORDER BY w.timestamp DESC")
+    @Query("SELECT DISTINCT w FROM WeeklyReportCompany w JOIN FETCH w.company c WHERE c.id = :companyId AND w.timestamp <= :date ORDER BY w.timestamp DESC")
     Optional<WeeklyReportCompany> findByCompanyIdAndDate(@Param("companyId") String companyId, @Param("date") Instant date);
 }

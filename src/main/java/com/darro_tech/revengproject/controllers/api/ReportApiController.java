@@ -76,7 +76,10 @@ public class ReportApiController extends BaseController {
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             logger.error("❌ Error processing request: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("error", true);
+            errorResponse.put("message", "An error occurred while processing the request");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }
 
@@ -124,7 +127,11 @@ public class ReportApiController extends BaseController {
             }
         } catch (Exception e) {
             logger.error("❌ Error processing request: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+            // Return a ByteArrayResource with a JSON error message
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(new ByteArrayResource(
+                            ("{\"error\":true,\"message\":\"An error occurred while processing the request\"}").getBytes()));
         }
     }
 
@@ -163,7 +170,10 @@ public class ReportApiController extends BaseController {
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             logger.error("❌ Error processing request: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("error", true);
+            errorResponse.put("message", "An error occurred while processing the request");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }
 
@@ -211,7 +221,11 @@ public class ReportApiController extends BaseController {
             }
         } catch (Exception e) {
             logger.error("❌ Error processing request: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+            // Return a ByteArrayResource with a JSON error message
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(new ByteArrayResource(
+                            ("{\"error\":true,\"message\":\"An error occurred while processing the request\"}").getBytes()));
         }
     }
 }
