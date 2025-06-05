@@ -214,4 +214,199 @@ class ChartApiControllerTest {
                 .andExpect(jsonPath("$.data").isArray())
                 .andExpect(jsonPath("$.data.length()").value(0));
     }
+
+    @Test
+    void getCompanyPopulationTimeline_ShouldReturnPopulationData() throws Exception {
+        // Given
+        List<Map<String, Object>> mockData = new ArrayList<>();
+
+        // Create sample data
+        Map<String, Object> data1 = new java.util.HashMap<>();
+        data1.put("timestamp", "2023-01-01");
+        data1.put("value", 1500.0);
+        mockData.add(data1);
+
+        Map<String, Object> data2 = new java.util.HashMap<>();
+        data2.put("timestamp", "2023-02-01");
+        data2.put("value", 1600.0);
+        mockData.add(data2);
+
+        when(chartService.getCompanyPopulationTimeline(anyString(), any(LocalDate.class), any(LocalDate.class)))
+                .thenReturn(mockData);
+
+        // When & Then
+        mockMvc.perform(post("/api/charts/company/population-timeline")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"company_id\":\"1\",\"from\":\"2023-01-01\",\"to\":\"2023-12-31\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data").isArray())
+                .andExpect(jsonPath("$.data.length()").value(2))
+                .andExpect(jsonPath("$.data[0].timestamp").value("2023-01-01"))
+                .andExpect(jsonPath("$.data[0].value").value(1500.0))
+                .andExpect(jsonPath("$.data[1].timestamp").value("2023-02-01"))
+                .andExpect(jsonPath("$.data[1].value").value(1600.0));
+    }
+
+    @Test
+    void getCompanyPopulationTimeline_WhenServiceThrowsException_ShouldReturnErrorResponse() throws Exception {
+        // Given
+        when(chartService.getCompanyPopulationTimeline(anyString(), any(LocalDate.class), any(LocalDate.class)))
+                .thenThrow(new RuntimeException("Test exception"));
+
+        // When & Then
+        mockMvc.perform(post("/api/charts/company/population-timeline")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"company_id\":\"1\",\"from\":\"2023-01-01\",\"to\":\"2023-12-31\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data").isArray())
+                .andExpect(jsonPath("$.data.length()").value(0))
+                .andExpect(jsonPath("$.error").value(true))
+                .andExpect(jsonPath("$.errorMessage").value("Test exception"));
+    }
+
+    @Test
+    void getCompanyPopulationForecastTimeline_ShouldReturnForecastData() throws Exception {
+        // Given
+        List<Map<String, Object>> mockData = new ArrayList<>();
+
+        // Create sample data
+        Map<String, Object> data1 = new java.util.HashMap<>();
+        data1.put("timestamp", "2023-06-01");
+        data1.put("value", 1700.0);
+        mockData.add(data1);
+
+        Map<String, Object> data2 = new java.util.HashMap<>();
+        data2.put("timestamp", "2023-07-01");
+        data2.put("value", 1800.0);
+        mockData.add(data2);
+
+        when(chartService.getCompanyPopulationForecastTimeline(anyString(), any(LocalDate.class), any(LocalDate.class)))
+                .thenReturn(mockData);
+
+        // When & Then
+        mockMvc.perform(post("/api/charts/company/population-forecast-timeline")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"company_id\":\"1\",\"from\":\"2023-06-01\",\"to\":\"2023-12-31\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data").isArray())
+                .andExpect(jsonPath("$.data.length()").value(2))
+                .andExpect(jsonPath("$.data[0].timestamp").value("2023-06-01"))
+                .andExpect(jsonPath("$.data[0].value").value(1700.0))
+                .andExpect(jsonPath("$.data[1].timestamp").value("2023-07-01"))
+                .andExpect(jsonPath("$.data[1].value").value(1800.0));
+    }
+
+    @Test
+    void getCompanyPopulationBudgetTimeline_ShouldReturnBudgetData() throws Exception {
+        // Given
+        List<Map<String, Object>> mockData = new ArrayList<>();
+
+        // Create sample data
+        Map<String, Object> data1 = new java.util.HashMap<>();
+        data1.put("timestamp", "2023-01-01");
+        data1.put("value", 1600.0);
+        mockData.add(data1);
+
+        Map<String, Object> data2 = new java.util.HashMap<>();
+        data2.put("timestamp", "2023-02-01");
+        data2.put("value", 1650.0);
+        mockData.add(data2);
+
+        when(chartService.getCompanyPopulationBudgetTimeline(anyString(), any(LocalDate.class), any(LocalDate.class)))
+                .thenReturn(mockData);
+
+        // When & Then
+        mockMvc.perform(post("/api/charts/company/population-budget-timeline")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"company_id\":\"1\",\"from\":\"2023-01-01\",\"to\":\"2023-12-31\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data").isArray())
+                .andExpect(jsonPath("$.data.length()").value(2))
+                .andExpect(jsonPath("$.data[0].timestamp").value("2023-01-01"))
+                .andExpect(jsonPath("$.data[0].value").value(1600.0))
+                .andExpect(jsonPath("$.data[1].timestamp").value("2023-02-01"))
+                .andExpect(jsonPath("$.data[1].value").value(1650.0));
+    }
+
+    @Test
+    void getMarketPricesMonthlyTimeline_ShouldReturnPricesData() throws Exception {
+        // Given
+        List<Map<String, Object>> mockData = new ArrayList<>();
+
+        // Create sample data
+        Map<String, Object> data1 = new java.util.HashMap<>();
+        data1.put("timestamp", "2023-01-01T00:00:00Z");
+        data1.put("lcfs", 150.0);
+        data1.put("d3", 1.5);
+        data1.put("d5", 1.2);
+        data1.put("natural_gas", 3.5);
+        mockData.add(data1);
+
+        Map<String, Object> data2 = new java.util.HashMap<>();
+        data2.put("timestamp", "2023-02-01T00:00:00Z");
+        data2.put("lcfs", 155.0);
+        data2.put("d3", 1.6);
+        data2.put("d5", 1.3);
+        data2.put("natural_gas", 3.6);
+        mockData.add(data2);
+
+        when(chartService.getMarketPricesMonthlyTimeline(any(LocalDate.class), any(LocalDate.class)))
+                .thenReturn(mockData);
+
+        // When & Then
+        mockMvc.perform(post("/api/charts/market/market-prices-monthly-timeline")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"from\":\"2023-01-01\",\"to\":\"2023-12-31\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data").isArray())
+                .andExpect(jsonPath("$.data.length()").value(2))
+                .andExpect(jsonPath("$.data[0].timestamp").value("2023-01-01T00:00:00Z"))
+                .andExpect(jsonPath("$.data[0].lcfs").value(150.0))
+                .andExpect(jsonPath("$.data[0].d3").value(1.5))
+                .andExpect(jsonPath("$.data[0].d5").value(1.2))
+                .andExpect(jsonPath("$.data[0].natural_gas").value(3.5))
+                .andExpect(jsonPath("$.data[1].timestamp").value("2023-02-01T00:00:00Z"))
+                .andExpect(jsonPath("$.data[1].lcfs").value(155.0));
+    }
+
+    @Test
+    void getMarketPricesDailyTimeline_ShouldReturnPricesData() throws Exception {
+        // Given
+        List<Map<String, Object>> mockData = new ArrayList<>();
+
+        // Create sample data
+        Map<String, Object> data1 = new java.util.HashMap<>();
+        data1.put("timestamp", "2023-01-01T00:00:00Z");
+        data1.put("lcfs", 150.0);
+        data1.put("d3", 1.5);
+        data1.put("d5", 1.2);
+        data1.put("natural_gas", 3.5);
+        mockData.add(data1);
+
+        Map<String, Object> data2 = new java.util.HashMap<>();
+        data2.put("timestamp", "2023-01-02T00:00:00Z");
+        data2.put("lcfs", 151.0);
+        data2.put("d3", 1.55);
+        data2.put("d5", 1.25);
+        data2.put("natural_gas", 3.55);
+        mockData.add(data2);
+
+        when(chartService.getMarketPricesDailyTimeline(any(LocalDate.class), any(LocalDate.class)))
+                .thenReturn(mockData);
+
+        // When & Then
+        mockMvc.perform(post("/api/charts/market/market-prices-daily-timeline")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"from\":\"2023-01-01\",\"to\":\"2023-01-31\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data").isArray())
+                .andExpect(jsonPath("$.data.length()").value(2))
+                .andExpect(jsonPath("$.data[0].timestamp").value("2023-01-01T00:00:00Z"))
+                .andExpect(jsonPath("$.data[0].lcfs").value(150.0))
+                .andExpect(jsonPath("$.data[0].d3").value(1.5))
+                .andExpect(jsonPath("$.data[0].d5").value(1.2))
+                .andExpect(jsonPath("$.data[0].natural_gas").value(3.5))
+                .andExpect(jsonPath("$.data[1].timestamp").value("2023-01-02T00:00:00Z"))
+                .andExpect(jsonPath("$.data[1].lcfs").value(151.0));
+    }
 }

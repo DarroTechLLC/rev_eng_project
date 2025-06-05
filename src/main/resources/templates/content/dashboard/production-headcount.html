@@ -138,22 +138,24 @@
                 });
             });
 
-            // Create datasets for each farm
-            const datasets = Object.values(farmData).map((farm, index) => {
-                // Generate a color based on index
-                const hue = (index * 137) % 360; // Use golden ratio for color distribution
-                const color = `hsl(${hue}, 70%, 60%)`;
+            // Create datasets for each farm, sorted alphabetically by farm name
+            const datasets = Object.values(farmData)
+                .sort((a, b) => a.name.localeCompare(b.name)) // Sort alphabetically by farm name
+                .map((farm, index) => {
+                    // Generate a color based on index
+                    const hue = (index * 137) % 360; // Use golden ratio for color distribution
+                    const color = `hsl(${hue}, 70%, 60%)`;
 
-                return {
-                    label: farm.name,
-                    data: farm.data,
-                    backgroundColor: color,
-                    borderColor: color,
-                    borderWidth: 2,
-                    fill: false,
-                    tension: 0.1
-                };
-            });
+                    return {
+                        label: farm.name,
+                        data: farm.data,
+                        backgroundColor: color,
+                        borderColor: color,
+                        borderWidth: 2,
+                        fill: false,
+                        tension: 0.1
+                    };
+                });
 
             // Get the selected chart type
             const chartType = chartTypeSelector.value;

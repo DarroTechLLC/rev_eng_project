@@ -1,23 +1,1091 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/main}">
 <head>
     <title>Market Data Dashboard</title>
+    <!-- Chart.js and required dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/luxon@3.0.1/build/global/luxon.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1.2.0/dist/chartjs-adapter-luxon.min.js"></script>
 </head>
 <body>
+<div layout:fragment="content">
     <div class="container-fluid">
-        <h1 class="h3 mb-4 text-gray-800">Market Data Dashboard</h1>
-        <div class="row">
+        <!-- LCFS Historic and Current Month Charts -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                        <h6 class="m-0 font-weight-bold text-primary">Historic OPIS California LCFS Prices</h6>
+                        <div class="chart-controls">
+                            <select id="lcfsHistoricChartType" class="form-control d-inline-block w-auto">
+                                <option value="line">Line</option>
+                                <option value="column">Column</option>
+                                <option value="bar">Bar</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="loadingLcfsHistoric" style="display: none;">Loading...</div>
+                        <div id="errorLcfsHistoric" class="alert alert-danger" style="display: none;"></div>
+                        <canvas id="lcfsHistoricChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                        <h6 class="m-0 font-weight-bold text-primary">Current Month OPIS California LCFS Prices</h6>
+                        <div class="chart-controls">
+                            <input type="date" id="lcfsCurrentMonthDate" class="form-control d-inline-block w-auto mr-2" />
+                            <select id="lcfsCurrentMonthChartType" class="form-control d-inline-block w-auto">
+                                <option value="line">Line</option>
+                                <option value="column">Column</option>
+                                <option value="bar">Bar</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="loadingLcfsCurrentMonth" style="display: none;">Loading...</div>
+                        <div id="errorLcfsCurrentMonth" class="alert alert-danger" style="display: none;"></div>
+                        <canvas id="lcfsCurrentMonthChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- LCFS Future Chart -->
+        <div class="row mb-4">
             <div class="col-12">
                 <div class="card shadow mb-4">
                     <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                        <h6 class="m-0 font-weight-bold text-primary">Market Data</h6>
+                        <h6 class="m-0 font-weight-bold text-primary">California ICE LCFS Futures</h6>
+                        <div class="chart-controls">
+                            <select id="lcfsFutureChartType" class="form-control d-inline-block w-auto">
+                                <option value="line">Line</option>
+                                <option value="column">Column</option>
+                                <option value="bar">Bar</option>
+                            </select>
+                        </div>
                     </div>
                     <div class="card-body">
-                        <p>Market data dashboard content will be implemented here.</p>
+                        <div id="loadingLcfsFuture" style="display: none;">Loading...</div>
+                        <div id="errorLcfsFuture" class="alert alert-danger" style="display: none;"></div>
+                        <canvas id="lcfsFutureChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIN Historic and Current Month Charts -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                        <h6 class="m-0 font-weight-bold text-primary">Historic OPIS RIN Prices</h6>
+                        <div class="chart-controls">
+                            <select id="rinHistoricChartType" class="form-control d-inline-block w-auto">
+                                <option value="line">Line</option>
+                                <option value="column">Column</option>
+                                <option value="bar">Bar</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="loadingRinHistoric" style="display: none;">Loading...</div>
+                        <div id="errorRinHistoric" class="alert alert-danger" style="display: none;"></div>
+                        <canvas id="rinHistoricChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                        <h6 class="m-0 font-weight-bold text-primary">Current Month OPIS RIN Prices</h6>
+                        <div class="chart-controls">
+                            <input type="date" id="rinCurrentMonthDate" class="form-control d-inline-block w-auto mr-2" />
+                            <select id="rinCurrentMonthChartType" class="form-control d-inline-block w-auto">
+                                <option value="line">Line</option>
+                                <option value="column">Column</option>
+                                <option value="bar">Bar</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="loadingRinCurrentMonth" style="display: none;">Loading...</div>
+                        <div id="errorRinCurrentMonth" class="alert alert-danger" style="display: none;"></div>
+                        <canvas id="rinCurrentMonthChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Natural Gas Historic and Current Month Charts -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                        <h6 class="m-0 font-weight-bold text-primary">Historic Henry Hub Natural Gas Prices</h6>
+                        <div class="chart-controls">
+                            <select id="natGasHistoricChartType" class="form-control d-inline-block w-auto">
+                                <option value="line">Line</option>
+                                <option value="column">Column</option>
+                                <option value="bar">Bar</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="loadingNatGasHistoric" style="display: none;">Loading...</div>
+                        <div id="errorNatGasHistoric" class="alert alert-danger" style="display: none;"></div>
+                        <canvas id="natGasHistoricChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                        <h6 class="m-0 font-weight-bold text-primary">Current Month Henry Hub Natural Gas Prices</h6>
+                        <div class="chart-controls">
+                            <input type="date" id="natGasCurrentMonthDate" class="form-control d-inline-block w-auto mr-2" />
+                            <select id="natGasCurrentMonthChartType" class="form-control d-inline-block w-auto">
+                                <option value="line">Line</option>
+                                <option value="column">Column</option>
+                                <option value="bar">Bar</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="loadingNatGasCurrentMonth" style="display: none;">Loading...</div>
+                        <div id="errorNatGasCurrentMonth" class="alert alert-danger" style="display: none;"></div>
+                        <canvas id="natGasCurrentMonthChart"></canvas>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+</div>
+
+<!-- Chart Initialization Script -->
+<th:block layout:fragment="scripts">
+    <script th:inline="javascript">
+        // Helper functions
+        function showLoading(id) {
+            document.getElementById('loading' + id).style.display = 'block';
+        }
+
+        function hideLoading(id) {
+            document.getElementById('loading' + id).style.display = 'none';
+        }
+
+        function showError(id, message, errorCode) {
+            const errorElement = document.getElementById('error' + id);
+            if (errorCode) {
+                errorElement.textContent = `Error (${errorCode}): ${message}`;
+            } else {
+                errorElement.textContent = message;
+            }
+            errorElement.style.display = 'block';
+        }
+
+        function showNoDataMessage(id) {
+            const errorElement = document.getElementById('error' + id);
+            errorElement.textContent = 'No data available';
+            errorElement.className = 'alert alert-info';
+            errorElement.style.display = 'block';
+        }
+
+        function hideError(id) {
+            document.getElementById('error' + id).style.display = 'none';
+        }
+
+        // Date helper functions
+        function getFirstDayOfYear(year) {
+            return `${year}-01-01`;
+        }
+
+        function getLastDayOfYear(year) {
+            return `${year}-12-31`;
+        }
+
+        function getYesterdaysDate() {
+            const date = new Date();
+            date.setDate(date.getDate() - 1);
+            return date.toISOString().split('T')[0];
+        }
+
+        function getFirstDayOfMonth(date) {
+            return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-01`;
+        }
+
+        function getNextMonthFirstDay() {
+            const date = new Date();
+            date.setMonth(date.getMonth() + 1);
+            date.setDate(1);
+            return date.toISOString().split('T')[0];
+        }
+
+        // Initialize date pickers with yesterday's date
+        const yesterday = getYesterdaysDate();
+        document.getElementById('lcfsCurrentMonthDate').value = yesterday;
+        document.getElementById('rinCurrentMonthDate').value = yesterday;
+        document.getElementById('natGasCurrentMonthDate').value = yesterday;
+
+        // LCFS Historic Chart
+        let lcfsHistoricChart;
+        const lcfsHistoricChartType = document.getElementById('lcfsHistoricChartType');
+        const lcfsHistoricCtx = document.getElementById('lcfsHistoricChart').getContext('2d');
+
+        function updateLcfsHistoricChart() {
+            showLoading('LcfsHistoric');
+            hideError('LcfsHistoric');
+
+            const from = getFirstDayOfYear(2022);
+            const to = getYesterdaysDate();
+
+            fetch('/api/charts/market/market-prices-monthly-timeline', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    from: from,
+                    to: to
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch LCFS historic data (${response.status})`);
+                }
+                return response.json();
+            })
+            .then(response => {
+                const data = response.data;
+                hideLoading('LcfsHistoric');
+
+                // Check if data is empty
+                if (!data || data.length === 0) {
+                    showNoDataMessage('LcfsHistoric');
+                    return;
+                }
+
+                if (lcfsHistoricChart) {
+                    lcfsHistoricChart.destroy();
+                }
+
+                // Process data for chart
+                const chartData = data.map(item => ({
+                    x: luxon.DateTime.fromISO(item.timestamp).toJSDate(),
+                    y: item.lcfs
+                }));
+
+                // Create chart
+                const chartType = lcfsHistoricChartType.value;
+                lcfsHistoricChart = new Chart(lcfsHistoricCtx, {
+                    type: chartType === 'column' ? 'bar' : chartType,
+                    data: {
+                        datasets: [{
+                            label: 'LCFS Price',
+                            data: chartData,
+                            backgroundColor: 'rgba(54, 162, 235, 0.8)',
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            borderWidth: 2,
+                            tension: 0.1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        indexAxis: chartType === 'bar' ? 'y' : 'x',
+                        scales: {
+                            x: {
+                                type: 'time',
+                                time: {
+                                    unit: 'month',
+                                    displayFormats: {
+                                        month: 'MMM yyyy'
+                                    }
+                                },
+                                title: {
+                                    display: true,
+                                    text: 'Date'
+                                }
+                            },
+                            y: {
+                                beginAtZero: false,
+                                title: {
+                                    display: true,
+                                    text: '$/metric ton'
+                                }
+                            }
+                        },
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Historic OPIS California LCFS Prices'
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return `LCFS: $${context.parsed.y.toFixed(2)}/metric ton`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            })
+            .catch(error => {
+                console.error('❌ Error:', error);
+                const errorMessage = error.message || 'Failed to load chart data. Please try again.';
+                const errorCode = errorMessage.match(/\((\d+)\)/) ? errorMessage.match(/\((\d+)\)/)[1] : null;
+                showError('LcfsHistoric', errorMessage, errorCode);
+                hideLoading('LcfsHistoric');
+            });
+        }
+
+        // LCFS Current Month Chart
+        let lcfsCurrentMonthChart;
+        const lcfsCurrentMonthChartType = document.getElementById('lcfsCurrentMonthChartType');
+        const lcfsCurrentMonthDate = document.getElementById('lcfsCurrentMonthDate');
+        const lcfsCurrentMonthCtx = document.getElementById('lcfsCurrentMonthChart').getContext('2d');
+
+        function updateLcfsCurrentMonthChart() {
+            showLoading('LcfsCurrentMonth');
+            hideError('LcfsCurrentMonth');
+
+            const selectedDate = new Date(lcfsCurrentMonthDate.value);
+            const from = getFirstDayOfMonth(selectedDate);
+            const to = lcfsCurrentMonthDate.value;
+
+            fetch('/api/charts/market/market-prices-daily-timeline', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    from: from,
+                    to: to
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch LCFS current month data (${response.status})`);
+                }
+                return response.json();
+            })
+            .then(response => {
+                const data = response.data;
+                hideLoading('LcfsCurrentMonth');
+
+                // Check if data is empty
+                if (!data || data.length === 0) {
+                    showNoDataMessage('LcfsCurrentMonth');
+                    return;
+                }
+
+                if (lcfsCurrentMonthChart) {
+                    lcfsCurrentMonthChart.destroy();
+                }
+
+                // Process data for chart
+                const chartData = data.map(item => ({
+                    x: luxon.DateTime.fromISO(item.timestamp).toJSDate(),
+                    y: item.lcfs
+                }));
+
+                // Create chart
+                const chartType = lcfsCurrentMonthChartType.value;
+                lcfsCurrentMonthChart = new Chart(lcfsCurrentMonthCtx, {
+                    type: chartType === 'column' ? 'bar' : chartType,
+                    data: {
+                        datasets: [{
+                            label: 'LCFS Price',
+                            data: chartData,
+                            backgroundColor: 'rgba(54, 162, 235, 0.8)',
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            borderWidth: 2,
+                            tension: 0.1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        indexAxis: chartType === 'bar' ? 'y' : 'x',
+                        scales: {
+                            x: {
+                                type: 'time',
+                                time: {
+                                    unit: 'day',
+                                    displayFormats: {
+                                        day: 'MMM d'
+                                    }
+                                },
+                                title: {
+                                    display: true,
+                                    text: 'Date'
+                                }
+                            },
+                            y: {
+                                beginAtZero: false,
+                                title: {
+                                    display: true,
+                                    text: '$/metric ton'
+                                }
+                            }
+                        },
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Current Month OPIS California LCFS Prices'
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return `LCFS: $${context.parsed.y.toFixed(2)}/metric ton`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            })
+            .catch(error => {
+                console.error('❌ Error:', error);
+                const errorMessage = error.message || 'Failed to load chart data. Please try again.';
+                const errorCode = errorMessage.match(/\((\d+)\)/) ? errorMessage.match(/\((\d+)\)/)[1] : null;
+                showError('LcfsCurrentMonth', errorMessage, errorCode);
+                hideLoading('LcfsCurrentMonth');
+            });
+        }
+
+        // LCFS Future Chart
+        let lcfsFutureChart;
+        const lcfsFutureChartType = document.getElementById('lcfsFutureChartType');
+        const lcfsFutureCtx = document.getElementById('lcfsFutureChart').getContext('2d');
+
+        function updateLcfsFutureChart() {
+            showLoading('LcfsFuture');
+            hideError('LcfsFuture');
+
+            const currentDate = new Date();
+            const currentMonth = currentDate.getMonth();
+            const currentYear = currentDate.getFullYear();
+            const nextMonth = (currentMonth === 11) ? 0 : currentMonth + 1;
+            const nextMonthYear = (currentMonth === 11) ? currentYear + 1 : currentYear;
+            const from = `${nextMonthYear}-${(nextMonth + 1).toString().padStart(2, '0')}-01`;
+            const to = getLastDayOfYear(currentYear + 10);
+
+            fetch('/api/charts/market/market-prices-monthly-timeline', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    from: from,
+                    to: to
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch LCFS future data (${response.status})`);
+                }
+                return response.json();
+            })
+            .then(response => {
+                const data = response.data;
+                hideLoading('LcfsFuture');
+
+                // Check if data is empty
+                if (!data || data.length === 0) {
+                    showNoDataMessage('LcfsFuture');
+                    return;
+                }
+
+                if (lcfsFutureChart) {
+                    lcfsFutureChart.destroy();
+                }
+
+                // Process data for chart
+                const chartData = data.map(item => ({
+                    x: luxon.DateTime.fromISO(item.timestamp).toJSDate(),
+                    y: item.lcfs
+                }));
+
+                // Create chart
+                const chartType = lcfsFutureChartType.value;
+                lcfsFutureChart = new Chart(lcfsFutureCtx, {
+                    type: chartType === 'column' ? 'bar' : chartType,
+                    data: {
+                        datasets: [{
+                            label: 'LCFS Future Price',
+                            data: chartData,
+                            backgroundColor: 'rgba(75, 192, 192, 0.8)',
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            borderWidth: 2,
+                            tension: 0.1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        indexAxis: chartType === 'bar' ? 'y' : 'x',
+                        scales: {
+                            x: {
+                                type: 'time',
+                                time: {
+                                    unit: 'month',
+                                    displayFormats: {
+                                        month: 'MMM yyyy'
+                                    }
+                                },
+                                title: {
+                                    display: true,
+                                    text: 'Date'
+                                }
+                            },
+                            y: {
+                                beginAtZero: false,
+                                title: {
+                                    display: true,
+                                    text: '$/metric ton'
+                                }
+                            }
+                        },
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'California ICE LCFS Futures'
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return `LCFS Future: $${context.parsed.y.toFixed(2)}/metric ton`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            })
+            .catch(error => {
+                console.error('❌ Error:', error);
+                const errorMessage = error.message || 'Failed to load chart data. Please try again.';
+                const errorCode = errorMessage.match(/\((\d+)\)/) ? errorMessage.match(/\((\d+)\)/)[1] : null;
+                showError('LcfsFuture', errorMessage, errorCode);
+                hideLoading('LcfsFuture');
+            });
+        }
+
+        // RIN Historic Chart
+        let rinHistoricChart;
+        const rinHistoricChartType = document.getElementById('rinHistoricChartType');
+        const rinHistoricCtx = document.getElementById('rinHistoricChart').getContext('2d');
+
+        function updateRinHistoricChart() {
+            showLoading('RinHistoric');
+            hideError('RinHistoric');
+
+            const from = getFirstDayOfYear(2022);
+            const to = getYesterdaysDate();
+
+            fetch('/api/charts/market/market-prices-monthly-timeline', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    from: from,
+                    to: to
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch RIN historic data (${response.status})`);
+                }
+                return response.json();
+            })
+            .then(response => {
+                const data = response.data;
+                hideLoading('RinHistoric');
+
+                // Check if data is empty
+                if (!data || data.length === 0) {
+                    showNoDataMessage('RinHistoric');
+                    return;
+                }
+
+                if (rinHistoricChart) {
+                    rinHistoricChart.destroy();
+                }
+
+                // Process data for chart - create separate datasets for D3 and D5
+                const d3Data = data.map(item => ({
+                    x: luxon.DateTime.fromISO(item.timestamp).toJSDate(),
+                    y: item.d3
+                }));
+
+                const d5Data = data.map(item => ({
+                    x: luxon.DateTime.fromISO(item.timestamp).toJSDate(),
+                    y: item.d5
+                }));
+
+                // Create chart
+                const chartType = rinHistoricChartType.value;
+                rinHistoricChart = new Chart(rinHistoricCtx, {
+                    type: chartType === 'column' ? 'bar' : chartType,
+                    data: {
+                        datasets: [
+                            {
+                                label: 'D3 RIN',
+                                data: d3Data,
+                                backgroundColor: 'rgba(255, 99, 132, 0.8)',
+                                borderColor: 'rgba(255, 99, 132, 1)',
+                                borderWidth: 2,
+                                tension: 0.1
+                            },
+                            {
+                                label: 'D5 RIN',
+                                data: d5Data,
+                                backgroundColor: 'rgba(153, 102, 255, 0.8)',
+                                borderColor: 'rgba(153, 102, 255, 1)',
+                                borderWidth: 2,
+                                tension: 0.1
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        indexAxis: chartType === 'bar' ? 'y' : 'x',
+                        scales: {
+                            x: {
+                                type: 'time',
+                                time: {
+                                    unit: 'month',
+                                    displayFormats: {
+                                        month: 'MMM yyyy'
+                                    }
+                                },
+                                title: {
+                                    display: true,
+                                    text: 'Date'
+                                }
+                            },
+                            y: {
+                                beginAtZero: false,
+                                title: {
+                                    display: true,
+                                    text: 'US c/RIN'
+                                }
+                            }
+                        },
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Historic OPIS RIN Prices'
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return `${context.dataset.label}: ${context.parsed.y.toFixed(2)} c/RIN`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            })
+            .catch(error => {
+                console.error('❌ Error:', error);
+                const errorMessage = error.message || 'Failed to load chart data. Please try again.';
+                const errorCode = errorMessage.match(/\((\d+)\)/) ? errorMessage.match(/\((\d+)\)/)[1] : null;
+                showError('RinHistoric', errorMessage, errorCode);
+                hideLoading('RinHistoric');
+            });
+        }
+
+        // RIN Current Month Chart
+        let rinCurrentMonthChart;
+        const rinCurrentMonthChartType = document.getElementById('rinCurrentMonthChartType');
+        const rinCurrentMonthDate = document.getElementById('rinCurrentMonthDate');
+        const rinCurrentMonthCtx = document.getElementById('rinCurrentMonthChart').getContext('2d');
+
+        function updateRinCurrentMonthChart() {
+            showLoading('RinCurrentMonth');
+            hideError('RinCurrentMonth');
+
+            const selectedDate = new Date(rinCurrentMonthDate.value);
+            const from = getFirstDayOfMonth(selectedDate);
+            const to = rinCurrentMonthDate.value;
+
+            fetch('/api/charts/market/market-prices-daily-timeline', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    from: from,
+                    to: to
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch RIN current month data (${response.status})`);
+                }
+                return response.json();
+            })
+            .then(response => {
+                const data = response.data;
+                hideLoading('RinCurrentMonth');
+
+                // Check if data is empty
+                if (!data || data.length === 0) {
+                    showNoDataMessage('RinCurrentMonth');
+                    return;
+                }
+
+                if (rinCurrentMonthChart) {
+                    rinCurrentMonthChart.destroy();
+                }
+
+                // Process data for chart - create separate datasets for D3 and D5
+                const d3Data = data.map(item => ({
+                    x: luxon.DateTime.fromISO(item.timestamp).toJSDate(),
+                    y: item.d3
+                }));
+
+                const d5Data = data.map(item => ({
+                    x: luxon.DateTime.fromISO(item.timestamp).toJSDate(),
+                    y: item.d5
+                }));
+
+                // Create chart
+                const chartType = rinCurrentMonthChartType.value;
+                rinCurrentMonthChart = new Chart(rinCurrentMonthCtx, {
+                    type: chartType === 'column' ? 'bar' : chartType,
+                    data: {
+                        datasets: [
+                            {
+                                label: 'D3 RIN',
+                                data: d3Data,
+                                backgroundColor: 'rgba(255, 99, 132, 0.8)',
+                                borderColor: 'rgba(255, 99, 132, 1)',
+                                borderWidth: 2,
+                                tension: 0.1
+                            },
+                            {
+                                label: 'D5 RIN',
+                                data: d5Data,
+                                backgroundColor: 'rgba(153, 102, 255, 0.8)',
+                                borderColor: 'rgba(153, 102, 255, 1)',
+                                borderWidth: 2,
+                                tension: 0.1
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        indexAxis: chartType === 'bar' ? 'y' : 'x',
+                        scales: {
+                            x: {
+                                type: 'time',
+                                time: {
+                                    unit: 'day',
+                                    displayFormats: {
+                                        day: 'MMM d'
+                                    }
+                                },
+                                title: {
+                                    display: true,
+                                    text: 'Date'
+                                }
+                            },
+                            y: {
+                                beginAtZero: false,
+                                title: {
+                                    display: true,
+                                    text: 'US c/RIN'
+                                }
+                            }
+                        },
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Current Month OPIS RIN Prices'
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return `${context.dataset.label}: ${context.parsed.y.toFixed(2)} c/RIN`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            })
+            .catch(error => {
+                console.error('❌ Error:', error);
+                const errorMessage = error.message || 'Failed to load chart data. Please try again.';
+                const errorCode = errorMessage.match(/\((\d+)\)/) ? errorMessage.match(/\((\d+)\)/)[1] : null;
+                showError('RinCurrentMonth', errorMessage, errorCode);
+                hideLoading('RinCurrentMonth');
+            });
+        }
+
+        // Natural Gas Historic Chart
+        let natGasHistoricChart;
+        const natGasHistoricChartType = document.getElementById('natGasHistoricChartType');
+        const natGasHistoricCtx = document.getElementById('natGasHistoricChart').getContext('2d');
+
+        function updateNatGasHistoricChart() {
+            showLoading('NatGasHistoric');
+            hideError('NatGasHistoric');
+
+            const from = getFirstDayOfYear(2022);
+            const to = getYesterdaysDate();
+
+            fetch('/api/charts/market/market-prices-monthly-timeline', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    from: from,
+                    to: to
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch Natural Gas historic data (${response.status})`);
+                }
+                return response.json();
+            })
+            .then(response => {
+                const data = response.data;
+                hideLoading('NatGasHistoric');
+
+                // Check if data is empty
+                if (!data || data.length === 0) {
+                    showNoDataMessage('NatGasHistoric');
+                    return;
+                }
+
+                if (natGasHistoricChart) {
+                    natGasHistoricChart.destroy();
+                }
+
+                // Process data for chart
+                const chartData = data.map(item => ({
+                    x: luxon.DateTime.fromISO(item.timestamp).toJSDate(),
+                    y: item.natural_gas
+                }));
+
+                // Create chart
+                const chartType = natGasHistoricChartType.value;
+                natGasHistoricChart = new Chart(natGasHistoricCtx, {
+                    type: chartType === 'column' ? 'bar' : chartType,
+                    data: {
+                        datasets: [{
+                            label: 'Natural Gas Price',
+                            data: chartData,
+                            backgroundColor: 'rgba(255, 159, 64, 0.8)',
+                            borderColor: 'rgba(255, 159, 64, 1)',
+                            borderWidth: 2,
+                            tension: 0.1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        indexAxis: chartType === 'bar' ? 'y' : 'x',
+                        scales: {
+                            x: {
+                                type: 'time',
+                                time: {
+                                    unit: 'month',
+                                    displayFormats: {
+                                        month: 'MMM yyyy'
+                                    }
+                                },
+                                title: {
+                                    display: true,
+                                    text: 'Date'
+                                }
+                            },
+                            y: {
+                                beginAtZero: false,
+                                title: {
+                                    display: true,
+                                    text: '$/MMBTUs'
+                                }
+                            }
+                        },
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Historic Henry Hub Natural Gas Prices'
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return `Natural Gas: $${context.parsed.y.toFixed(2)}/MMBTUs`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            })
+            .catch(error => {
+                console.error('❌ Error:', error);
+                const errorMessage = error.message || 'Failed to load chart data. Please try again.';
+                const errorCode = errorMessage.match(/\((\d+)\)/) ? errorMessage.match(/\((\d+)\)/)[1] : null;
+                showError('NatGasHistoric', errorMessage, errorCode);
+                hideLoading('NatGasHistoric');
+            });
+        }
+
+        // Natural Gas Current Month Chart
+        let natGasCurrentMonthChart;
+        const natGasCurrentMonthChartType = document.getElementById('natGasCurrentMonthChartType');
+        const natGasCurrentMonthDate = document.getElementById('natGasCurrentMonthDate');
+        const natGasCurrentMonthCtx = document.getElementById('natGasCurrentMonthChart').getContext('2d');
+
+        function updateNatGasCurrentMonthChart() {
+            showLoading('NatGasCurrentMonth');
+            hideError('NatGasCurrentMonth');
+
+            const selectedDate = new Date(natGasCurrentMonthDate.value);
+            const from = getFirstDayOfMonth(selectedDate);
+            const to = natGasCurrentMonthDate.value;
+
+            fetch('/api/charts/market/market-prices-daily-timeline', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    from: from,
+                    to: to
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch Natural Gas current month data (${response.status})`);
+                }
+                return response.json();
+            })
+            .then(response => {
+                const data = response.data;
+                hideLoading('NatGasCurrentMonth');
+
+                // Check if data is empty
+                if (!data || data.length === 0) {
+                    showNoDataMessage('NatGasCurrentMonth');
+                    return;
+                }
+
+                if (natGasCurrentMonthChart) {
+                    natGasCurrentMonthChart.destroy();
+                }
+
+                // Process data for chart
+                const chartData = data.map(item => ({
+                    x: luxon.DateTime.fromISO(item.timestamp).toJSDate(),
+                    y: item.natural_gas
+                }));
+
+                // Create chart
+                const chartType = natGasCurrentMonthChartType.value;
+                natGasCurrentMonthChart = new Chart(natGasCurrentMonthCtx, {
+                    type: chartType === 'column' ? 'bar' : chartType,
+                    data: {
+                        datasets: [{
+                            label: 'Natural Gas Price',
+                            data: chartData,
+                            backgroundColor: 'rgba(255, 159, 64, 0.8)',
+                            borderColor: 'rgba(255, 159, 64, 1)',
+                            borderWidth: 2,
+                            tension: 0.1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        indexAxis: chartType === 'bar' ? 'y' : 'x',
+                        scales: {
+                            x: {
+                                type: 'time',
+                                time: {
+                                    unit: 'day',
+                                    displayFormats: {
+                                        day: 'MMM d'
+                                    }
+                                },
+                                title: {
+                                    display: true,
+                                    text: 'Date'
+                                }
+                            },
+                            y: {
+                                beginAtZero: false,
+                                title: {
+                                    display: true,
+                                    text: '$/MMBTUs'
+                                }
+                            }
+                        },
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Current Month Henry Hub Natural Gas Prices'
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return `Natural Gas: $${context.parsed.y.toFixed(2)}/MMBTUs`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            })
+            .catch(error => {
+                console.error('❌ Error:', error);
+                const errorMessage = error.message || 'Failed to load chart data. Please try again.';
+                const errorCode = errorMessage.match(/\((\d+)\)/) ? errorMessage.match(/\((\d+)\)/)[1] : null;
+                showError('NatGasCurrentMonth', errorMessage, errorCode);
+                hideLoading('NatGasCurrentMonth');
+            });
+        }
+
+        // Event listeners for chart type selectors
+        lcfsHistoricChartType.addEventListener('change', updateLcfsHistoricChart);
+        lcfsCurrentMonthChartType.addEventListener('change', updateLcfsCurrentMonthChart);
+        lcfsCurrentMonthDate.addEventListener('change', updateLcfsCurrentMonthChart);
+        lcfsFutureChartType.addEventListener('change', updateLcfsFutureChart);
+        rinHistoricChartType.addEventListener('change', updateRinHistoricChart);
+        rinCurrentMonthChartType.addEventListener('change', updateRinCurrentMonthChart);
+        rinCurrentMonthDate.addEventListener('change', updateRinCurrentMonthChart);
+        natGasHistoricChartType.addEventListener('change', updateNatGasHistoricChart);
+        natGasCurrentMonthChartType.addEventListener('change', updateNatGasCurrentMonthChart);
+        natGasCurrentMonthDate.addEventListener('change', updateNatGasCurrentMonthChart);
+
+        // Initialize charts on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            updateLcfsHistoricChart();
+            updateLcfsCurrentMonthChart();
+            updateLcfsFutureChart();
+            updateRinHistoricChart();
+            updateRinCurrentMonthChart();
+            updateNatGasHistoricChart();
+            updateNatGasCurrentMonthChart();
+        });
+    </script>
+</th:block>
 </body>
-</html> 
+</html>
