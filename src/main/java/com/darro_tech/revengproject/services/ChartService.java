@@ -3,9 +3,13 @@ package com.darro_tech.revengproject.services;
 import com.darro_tech.revengproject.dto.FarmVolumeData;
 import com.darro_tech.revengproject.models.CompanyFarm;
 import com.darro_tech.revengproject.models.Farm;
+import com.darro_tech.revengproject.models.MarketPrice;
+import com.darro_tech.revengproject.models.MarketPricesMonthly;
 import com.darro_tech.revengproject.repositories.ChartMeterDailyViewRepository;
 import com.darro_tech.revengproject.repositories.CompanyFarmRepository;
 import com.darro_tech.revengproject.repositories.FarmRepository;
+import com.darro_tech.revengproject.repositories.MarketPriceRepository;
+import com.darro_tech.revengproject.repositories.MarketPricesMonthlyRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,6 +37,12 @@ public class ChartService {
 
     @Autowired
     private CompanyFarmRepository companyFarmRepository;
+
+    @Autowired
+    private MarketPriceRepository marketPriceRepository;
+
+    @Autowired
+    private MarketPricesMonthlyRepository marketPricesMonthlyRepository;
 
     /**
      * Get daily volume data for all farms in a company for a specific date
@@ -224,6 +234,208 @@ public class ChartService {
             return populationDataList;
         } catch (Exception e) {
             logger.error("❌ Error in getProductionPopulationTimeline: {}", e.getMessage(), e);
+            return new ArrayList<>();
+        }
+    }
+
+    /**
+     * Get company population timeline data for a date range
+     */
+    public List<Map<String, Object>> getCompanyPopulationTimeline(String companyId, LocalDate fromDate, LocalDate toDate) {
+        logger.info("🔍 Fetching company population timeline for company: {} from {} to {}", companyId, fromDate, toDate);
+
+        try {
+            // In a real implementation, we would query the database for company population data
+            // For now, we'll generate sample data for demonstration purposes
+            List<Map<String, Object>> populationDataList = new ArrayList<>();
+
+            // Generate monthly data points from fromDate to toDate
+            LocalDate currentDate = fromDate;
+            while (!currentDate.isAfter(toDate)) {
+                Map<String, Object> dataPoint = new HashMap<>();
+                dataPoint.put("timestamp", currentDate.toString());
+
+                // Generate a random value between 1000 and 5000 for population
+                double value = 1000 + Math.random() * 4000;
+                dataPoint.put("value", value);
+
+                populationDataList.add(dataPoint);
+
+                // Move to next month
+                currentDate = currentDate.plusMonths(1);
+            }
+
+            // Log data presence verification
+            logger.info("📊 Data verification:");
+            logger.info("✓ Total records: {}", populationDataList.size());
+
+            return populationDataList;
+        } catch (Exception e) {
+            logger.error("❌ Error in getCompanyPopulationTimeline: {}", e.getMessage(), e);
+            return new ArrayList<>();
+        }
+    }
+
+    /**
+     * Get company population forecast timeline data for a date range
+     */
+    public List<Map<String, Object>> getCompanyPopulationForecastTimeline(String companyId, LocalDate fromDate, LocalDate toDate) {
+        logger.info("🔍 Fetching company population forecast timeline for company: {} from {} to {}", companyId, fromDate, toDate);
+
+        try {
+            // In a real implementation, we would query the database for company population forecast data
+            // For now, we'll generate sample data for demonstration purposes
+            List<Map<String, Object>> forecastDataList = new ArrayList<>();
+
+            // Generate monthly data points from fromDate to toDate
+            LocalDate currentDate = fromDate;
+            while (!currentDate.isAfter(toDate)) {
+                Map<String, Object> dataPoint = new HashMap<>();
+                dataPoint.put("timestamp", currentDate.toString());
+
+                // Generate a random value between 1000 and 5000 for forecast
+                // Make it slightly higher than historical data to show growth
+                double value = 1200 + Math.random() * 4000;
+                dataPoint.put("value", value);
+
+                forecastDataList.add(dataPoint);
+
+                // Move to next month
+                currentDate = currentDate.plusMonths(1);
+            }
+
+            // Log data presence verification
+            logger.info("📊 Data verification:");
+            logger.info("✓ Total records: {}", forecastDataList.size());
+
+            return forecastDataList;
+        } catch (Exception e) {
+            logger.error("❌ Error in getCompanyPopulationForecastTimeline: {}", e.getMessage(), e);
+            return new ArrayList<>();
+        }
+    }
+
+    /**
+     * Get company population budget timeline data for a date range
+     */
+    public List<Map<String, Object>> getCompanyPopulationBudgetTimeline(String companyId, LocalDate fromDate, LocalDate toDate) {
+        logger.info("🔍 Fetching company population budget timeline for company: {} from {} to {}", companyId, fromDate, toDate);
+
+        try {
+            // In a real implementation, we would query the database for company population budget data
+            // For now, we'll generate sample data for demonstration purposes
+            List<Map<String, Object>> budgetDataList = new ArrayList<>();
+
+            // Generate monthly data points from fromDate to toDate
+            LocalDate currentDate = fromDate;
+            while (!currentDate.isAfter(toDate)) {
+                Map<String, Object> dataPoint = new HashMap<>();
+                dataPoint.put("timestamp", currentDate.toString());
+
+                // Generate a random value between 1000 and 5000 for budget
+                // Make it slightly different from historical data
+                double value = 1100 + Math.random() * 4200;
+                dataPoint.put("value", value);
+
+                budgetDataList.add(dataPoint);
+
+                // Move to next month
+                currentDate = currentDate.plusMonths(1);
+            }
+
+            // Log data presence verification
+            logger.info("📊 Data verification:");
+            logger.info("✓ Total records: {}", budgetDataList.size());
+
+            return budgetDataList;
+        } catch (Exception e) {
+            logger.error("❌ Error in getCompanyPopulationBudgetTimeline: {}", e.getMessage(), e);
+            return new ArrayList<>();
+        }
+    }
+
+    /**
+     * Get market prices monthly timeline data for a date range
+     */
+    public List<Map<String, Object>> getMarketPricesMonthlyTimeline(LocalDate fromDate, LocalDate toDate) {
+        logger.info("🔍 Fetching market prices monthly timeline from {} to {}", fromDate, toDate);
+
+        try {
+            // Convert LocalDate to Instant
+            Instant fromInstant = fromDate.atStartOfDay(ZoneId.systemDefault()).toInstant();
+            Instant toInstant = toDate.atTime(23, 59, 59).atZone(ZoneId.systemDefault()).toInstant();
+
+            // Query the database for market prices monthly data
+            List<MarketPricesMonthly> pricesData = marketPricesMonthlyRepository.findByTimestampBetweenOrderByTimestampAsc(
+                fromInstant, toInstant);
+
+            logger.info("Found {} market prices monthly records", pricesData.size());
+
+            // If no data is found, return an empty list
+            if (pricesData.isEmpty()) {
+                logger.info("No market prices monthly data found, returning empty list");
+                return new ArrayList<>();
+            }
+
+            // Convert to the format expected by the frontend
+            List<Map<String, Object>> result = new ArrayList<>();
+            for (MarketPricesMonthly price : pricesData) {
+                Map<String, Object> priceData = new HashMap<>();
+                priceData.put("timestamp", price.getTimestamp().toString());
+                priceData.put("lcfs", price.getLcfs());
+                priceData.put("d3", price.getD3());
+                priceData.put("d5", price.getD5());
+                priceData.put("natural_gas", price.getNaturalGas());
+                result.add(priceData);
+            }
+
+            return result;
+        } catch (Exception e) {
+            logger.error("❌ Error in getMarketPricesMonthlyTimeline: {}", e.getMessage(), e);
+            // Return empty list
+            return new ArrayList<>();
+        }
+    }
+
+    /**
+     * Get market prices daily timeline data for a date range
+     */
+    public List<Map<String, Object>> getMarketPricesDailyTimeline(LocalDate fromDate, LocalDate toDate) {
+        logger.info("🔍 Fetching market prices daily timeline from {} to {}", fromDate, toDate);
+
+        try {
+            // Convert LocalDate to Instant
+            Instant fromInstant = fromDate.atStartOfDay(ZoneId.systemDefault()).toInstant();
+            Instant toInstant = toDate.atTime(23, 59, 59).atZone(ZoneId.systemDefault()).toInstant();
+
+            // Query the database for market prices daily data
+            List<MarketPrice> pricesData = marketPriceRepository.findByTimestampBetweenOrderByTimestampAsc(
+                fromInstant, toInstant);
+
+            logger.info("Found {} market prices daily records", pricesData.size());
+
+            // If no data is found, return an empty list
+            if (pricesData.isEmpty()) {
+                logger.info("No market prices daily data found, returning empty list");
+                return new ArrayList<>();
+            }
+
+            // Convert to the format expected by the frontend
+            List<Map<String, Object>> result = new ArrayList<>();
+            for (MarketPrice price : pricesData) {
+                Map<String, Object> priceData = new HashMap<>();
+                priceData.put("timestamp", price.getTimestamp().toString());
+                priceData.put("lcfs", price.getLcfs());
+                priceData.put("d3", price.getD3());
+                priceData.put("d5", price.getD5());
+                priceData.put("natural_gas", price.getNaturalGas());
+                result.add(priceData);
+            }
+
+            return result;
+        } catch (Exception e) {
+            logger.error("❌ Error in getMarketPricesDailyTimeline: {}", e.getMessage(), e);
+            // Return empty list
             return new ArrayList<>();
         }
     }

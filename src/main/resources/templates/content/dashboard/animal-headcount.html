@@ -1,23 +1,349 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/main}">
 <head>
     <title>Animal Headcount Dashboard</title>
+    <!-- Chart.js and required dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/luxon@3.0.1/build/global/luxon.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1.2.0/dist/chartjs-adapter-luxon.min.js"></script>
 </head>
 <body>
+<div layout:fragment="content">
     <div class="container-fluid">
-        <h1 class="h3 mb-4 text-gray-800">Animal Headcount Dashboard</h1>
         <div class="row">
             <div class="col-12">
                 <div class="card shadow mb-4">
                     <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
                         <h6 class="m-0 font-weight-bold text-primary">Animal Headcount</h6>
+                        <div class="chart-controls">
+                            <!-- Chart Type Selector -->
+                            <select id="chartType" class="form-control d-inline-block w-auto">
+                                <option value="line">Line</option>
+                                <option value="column">Column</option>
+                                <option value="bar">Bar</option>
+                            </select>
+                        </div>
                     </div>
                     <div class="card-body">
-                        <p>Animal headcount dashboard content will be implemented here.</p>
+                        <div id="loadingIndicator" style="display: none;">Loading...</div>
+                        <div id="errorMessage" class="alert alert-danger" style="display: none;"></div>
+                        <canvas id="animalHeadcountChart"></canvas>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+</div>
+
+<!-- Chart Initialization Script -->
+<th:block layout:fragment="scripts">
+    <script th:inline="javascript">
+        // Get company ID from Thymeleaf model
+        const selectedCompanyId = /*[[${selectedCompanyId}]]*/ '';
+        const chartTypeSelector = document.getElementById('chartType');
+        const ctx = document.getElementById('animalHeadcountChart').getContext('2d');
+        let chart;
+
+        // Log initial data presence
+        console.log('🔍 Chart Configuration Verification:');
+        console.log('✓ Chart container present:', !!document.getElementById('animalHeadcountChart'));
+        console.log('✓ Chart type selector present:', !!chartTypeSelector);
+        console.log('✓ Company ID present:', !!selectedCompanyId);
+
+        function showLoading() {
+            document.getElementById('loadingIndicator').style.display = 'block';
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingIndicator').style.display = 'none';
+        }
+
+        function showError(message) {
+            const errorElement = document.getElementById('errorMessage');
+            errorElement.textContent = message;
+            errorElement.style.display = 'block';
+        }
+
+        function hideError() {
+            document.getElementById('errorMessage').style.display = 'none';
+        }
+
+        // Get the current year and previous years
+        const currentYear = new Date().getFullYear();
+        const oneYearAgo = currentYear - 1;
+        const twoYearsAgo = currentYear - 2;
+
+        // Function to get first day of year in ISO format
+        function getFirstDayOfYear(year) {
+            return `${year}-01-01`;
+        }
+
+        // Function to get last day of year in ISO format
+        function getLastDayOfYear(year) {
+            return `${year}-12-31`;
+        }
+
+        // Function to get first day of current month in ISO format
+        function getFirstDayOfCurrentMonth() {
+            const now = new Date();
+            return `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-01`;
+        }
+
+        // Function to generate a color based on index
+        function getChartColor(index) {
+            const colors = [
+                'rgba(54, 162, 235, 1)',   // Blue
+                'rgba(255, 99, 132, 1)',   // Red
+                'rgba(75, 192, 192, 1)',   // Green
+                'rgba(255, 159, 64, 1)',   // Orange
+                'rgba(153, 102, 255, 1)',  // Purple
+                'rgba(255, 205, 86, 1)'    // Yellow
+            ];
+            return colors[index % colors.length];
+        }
+
+        // Arrays to store datasets and promises
+        let datasets = [];
+        let dataPromises = [];
+
+        function fetchPopulationData(year, index) {
+            const from = getFirstDayOfYear(year);
+            const to = getLastDayOfYear(year);
+
+            return fetch('/api/charts/company/population-timeline', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    company_id: selectedCompanyId,
+                    from: from,
+                    to: to
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch population data for ${year}`);
+                }
+                return response.json();
+            })
+            .then(response => {
+                const data = response.data || [];
+
+                // Create monthly data array (12 months)
+                const monthlyData = Array(12).fill(null);
+
+                // Fill in the data we have
+                data.forEach(item => {
+                    const date = new Date(item.timestamp);
+                    const month = date.getMonth();
+                    monthlyData[month] = item.value;
+                });
+
+                // Add to datasets
+                datasets.push({
+                    label: year.toString(),
+                    data: monthlyData,
+                    backgroundColor: getChartColor(index),
+                    borderColor: getChartColor(index),
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.1
+                });
+            });
+        }
+
+        function fetchForecastData(year, index) {
+            const from = getFirstDayOfCurrentMonth();
+            const to = getLastDayOfYear(year);
+
+            return fetch('/api/charts/company/population-forecast-timeline', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    company_id: selectedCompanyId,
+                    from: from,
+                    to: to
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch forecast data for ${year}`);
+                }
+                return response.json();
+            })
+            .then(response => {
+                const data = response.data || [];
+
+                // Create monthly data array (12 months)
+                const monthlyData = Array(12).fill(null);
+
+                // Fill in the data we have
+                data.forEach(item => {
+                    const date = new Date(item.timestamp);
+                    const month = date.getMonth();
+                    monthlyData[month] = item.value;
+                });
+
+                // Add to datasets
+                datasets.push({
+                    label: `${year} Forecast`,
+                    data: monthlyData,
+                    backgroundColor: getChartColor(index),
+                    borderColor: getChartColor(index),
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.1,
+                    borderDash: [5, 5] // Dashed line for forecast
+                });
+            });
+        }
+
+        function fetchBudgetData(year, index) {
+            const from = getFirstDayOfYear(year);
+            const to = getLastDayOfYear(year);
+
+            return fetch('/api/charts/company/population-budget-timeline', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    company_id: selectedCompanyId,
+                    from: from,
+                    to: to
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch budget data for ${year}`);
+                }
+                return response.json();
+            })
+            .then(response => {
+                const data = response.data || [];
+
+                // Create monthly data array (12 months)
+                const monthlyData = Array(12).fill(null);
+
+                // Fill in the data we have
+                data.forEach(item => {
+                    const date = new Date(item.timestamp);
+                    const month = date.getMonth();
+                    monthlyData[month] = item.value;
+                });
+
+                // Add to datasets
+                datasets.push({
+                    label: `${year} Budget`,
+                    data: monthlyData,
+                    backgroundColor: getChartColor(index),
+                    borderColor: getChartColor(index),
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.1,
+                    borderDash: [10, 5] // Different dash pattern for budget
+                });
+            });
+        }
+
+        function updateChart() {
+            console.log('🏢 Company ID:', selectedCompanyId);
+
+            showLoading();
+            hideError();
+
+            // Reset datasets and promises
+            datasets = [];
+            dataPromises = [];
+
+            // Add promises for data fetching
+            dataPromises.push(fetchPopulationData(twoYearsAgo, 0));
+            dataPromises.push(fetchPopulationData(oneYearAgo, 1));
+            dataPromises.push(fetchPopulationData(currentYear, 2));
+            dataPromises.push(fetchForecastData(currentYear, 3));
+            dataPromises.push(fetchBudgetData(currentYear, 4));
+
+            // Wait for all data to be fetched
+            Promise.all(dataPromises)
+                .then(() => {
+                    // Sort datasets by label for consistent order
+                    datasets.sort((a, b) => a.label.localeCompare(b.label));
+
+                    // Create the chart
+                    createChart();
+                })
+                .catch(error => {
+                    console.error('❌ Error:', error);
+                    showError('Failed to load chart data. Please try again.');
+                    hideLoading();
+                });
+        }
+
+        function createChart() {
+            // Get the selected chart type
+            const chartType = chartTypeSelector.value;
+            console.log('📊 Creating chart with type:', chartType);
+
+            // Month labels
+            const labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+            if (chart) {
+                chart.destroy();
+            }
+
+            chart = new Chart(ctx, {
+                type: chartType === 'column' ? 'bar' : chartType,
+                data: {
+                    labels: labels,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: chartType === 'bar' ? 'y' : 'x',
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Weekly Average'
+                            }
+                        }
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Animal Headcount'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.dataset.label}: ${context.parsed.y !== null ? context.parsed.y.toFixed(2) : 'No data'}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            hideLoading();
+            console.log('✅ Chart successfully rendered');
+        }
+
+        // Event listeners
+        chartTypeSelector.addEventListener('change', () => {
+            // When chart type changes, we need to recreate the chart with the new type
+            updateChart();
+        });
+
+        // Initialize chart on page load
+        document.addEventListener('DOMContentLoaded', updateChart);
+    </script>
+</th:block>
 </body>
-</html> 
+</html>
