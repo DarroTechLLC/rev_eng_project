@@ -2,22 +2,86 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <title>Daily Report Dashboard</title>
+    <style>
+        #main-content {
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 100px);
+        }
+        .report-header {
+            padding: 12px;
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .report-title {
+            font-weight: bold;
+        }
+        .report-date-selector input {
+            margin-right: 4px;
+            border: solid 2px #e6e6e6;
+            padding: 0 6px;
+            border-radius: 6px;
+        }
+        .pdf-viewer {
+            flex: 1;
+            width: 100%;
+            border: none;
+        }
+    </style>
 </head>
 <body>
-    <div class="container-fluid">
-        <h1 class="h3 mb-4 text-gray-800">Daily Report Dashboard</h1>
-        <div class="row">
-            <div class="col-12">
-                <div class="card shadow mb-4">
-                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                        <h6 class="m-0 font-weight-bold text-primary">Daily Report</h6>
-                    </div>
-                    <div class="card-body">
-                        <p>Daily report dashboard content will be implemented here.</p>
-                    </div>
-                </div>
+    <div class="container-fluid" id="main-content">
+        <div class="report-header">
+            <div class="report-title">Daily Report</div>
+            <div class="report-date-selector">
+                <input type="date" id="dateSelector" class="form-control">
             </div>
         </div>
+        <iframe id="pdfViewer" class="pdf-viewer"></iframe>
     </div>
+
+    <script th:inline="javascript">
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log("daily-report:1123 🚀 Main layout loaded");
+            console.log("daily-report:672 🧠 Sidebar scripts loaded - initializing");
+            console.log("daily-report:786 ✅ Sidebar scripts initialized successfully");
+            console.log("daily-report:857 📊 Loading companies...");
+            console.log("dropdowns.js:7 🔄 Initializing dropdowns.js");
+            console.log("dropdowns.js:16 🔽 Initializing all dropdowns");
+            console.log("dropdowns.js:95 💅 Dropdown styles added");
+            console.log("dropdowns.js:102 👤 Initializing user dropdown");
+            console.log("dropdowns.js:126 ✅ User dropdown initialized");
+            console.log("dropdowns.js:133 🏢 Initializing company selector with Bootstrap compatibility");
+            console.log("dropdowns.js:180 ✅ Company selector initialized with Bootstrap compatibility");
+            console.log("dropdowns.js:42 ✅ All dropdowns initialized");
+            console.log("dropdowns.js:187 ");
+
+            const companyId = /*[[${selectedCompany.id}]]*/ 'default-company-id';
+            const companyName = /*[[${selectedCompany.name}]]*/ 'default-company-name';
+
+            // Initialize with current date
+            const dateSelector = document.getElementById('dateSelector');
+            const today = new Date();
+            const formattedDate = today.toISOString().split('T')[0];
+            dateSelector.value = formattedDate;
+
+            // Function to update PDF URL
+            function updatePdfUrl(date) {
+                const url = `/api/reports/daily-pdf/${companyName}/?company_id=${companyId}&date=${date}`;
+                document.getElementById('pdfViewer').src = url;
+            }
+
+            // Initialize with current date
+            updatePdfUrl(formattedDate);
+
+            // Add event listener for date changes
+            dateSelector.addEventListener('change', function() {
+                updatePdfUrl(this.value);
+            });
+        });
+    </script>
 </body>
-</html> 
+</html>

@@ -55,4 +55,24 @@ public interface ChartMeterDailyViewRepository extends JpaRepository<ChartMeterD
         @Param("companyId") String companyId, 
         @Param("fromDate") LocalDate fromDate,
         @Param("toDate") LocalDate toDate);
+
+    /**
+     * Custom query that gets daily total production for a company over a date range
+     * without filtering by include_website flag
+     */
+    @Query(value = 
+        "SELECT DATE(md.timestamp) as date, SUM(md.value) as totalValue " +
+        "FROM meter_daily md " +
+        "JOIN meters m ON md.meter_id = m.id " +
+        "JOIN company_meters cm ON m.id = cm.meter_id " +
+        "WHERE cm.company_id = :companyId " +
+        "AND DATE(md.timestamp) >= :fromDate " +
+        "AND DATE(md.timestamp) <= :toDate " +
+        "GROUP BY DATE(md.timestamp) " +
+        "ORDER BY DATE(md.timestamp)", 
+        nativeQuery = true)
+    List<Object[]> findDailyProductionForCompanyDateRange(
+        @Param("companyId") String companyId, 
+        @Param("fromDate") LocalDate fromDate,
+        @Param("toDate") LocalDate toDate);
 }

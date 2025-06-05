@@ -2,23 +2,405 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <title>Livestock Project</title>
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        .grid-layout {
+            display: grid;
+            grid-template-columns: 1fr;
+            grid-gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .grid-row {
+            display: grid;
+            grid-template-columns: 1fr;
+            grid-gap: 20px;
+        }
+
+        .chart-panel {
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .chart-nav {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .chart-type-selector {
+            display: flex;
+            gap: 5px;
+        }
+
+        .chart-type-button {
+            padding: 5px 10px;
+            border: 1px solid #ddd;
+            background-color: #f8f9fc;
+            cursor: pointer;
+        }
+
+        .chart-type-button.active {
+            background-color: #4e73df;
+            color: white;
+        }
+
+        .chart-year-selector {
+            position: relative;
+            display: inline-block;
+        }
+
+        .chart-year-selector .items {
+            display: flex;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .chart-year-selector .year {
+            padding: 5px 10px;
+            background-color: #f8f9fc;
+            cursor: pointer;
+            border-right: 1px solid #ddd;
+        }
+
+        .chart-year-selector .year:last-child {
+            border-right: none;
+        }
+
+        .chart-year-selector .year.selected {
+            background-color: #4e73df;
+            color: white;
+        }
+
+        h1 {
+            margin-top: 20px;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #333;
+        }
+    </style>
 </head>
 <body>
     <div class="container-fluid">
         <h1 class="h3 mb-4 text-gray-800">Livestock Project</h1>
-        <div class="row">
-            <div class="col-12">
-                <div class="card shadow mb-4">
-                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                        <h6 class="m-0 font-weight-bold text-primary">Livestock</h6>
+        <p>Farm ID: <span th:text="${selectedFarmKey}"></span></p>
+
+        <div class="grid-layout">
+            <div class="grid-row">
+                <div class="grid-col">
+                    <div class="chart-panel">
+                        <div class="chart-nav">
+                            <span>
+                                <span>Animal Headcount</span>
+                                <div class="chart-year-selector" id="headcount-chart-year-selector">
+                                    <div class="items">
+                                        <!-- Year buttons will be added dynamically -->
+                                    </div>
+                                </div>
+                            </span>
+                            <span class="chart-type-selector" id="headcount-chart-selector">
+                                <button class="chart-type-button active" data-type="line">Line</button>
+                                <button class="chart-type-button" data-type="column">Column</button>
+                                <button class="chart-type-button" data-type="bar">Bar</button>
+                            </span>
+                        </div>
+                        <div id="animal-headcount-chart"></div>
                     </div>
-                    <div class="card-body">
-                        <p>Livestock project content will be implemented here.</p>
-                        <p>Farm ID: <span th:text="${selectedFarmKey}"></span></p>
+                </div>
+            </div>
+
+            <h1>52 Week Metrics</h1>
+
+            <div class="grid-row">
+                <div class="grid-col">
+                    <div class="chart-panel">
+                        <div class="chart-nav">
+                            <span>
+                                <span>Head vs Weight 52 Week</span>
+                                <div class="chart-year-selector" id="head-weight-chart-year-selector">
+                                    <div class="items">
+                                        <!-- Year buttons will be added dynamically -->
+                                    </div>
+                                </div>
+                            </span>
+                            <span class="chart-type-selector" id="head-weight-chart-selector">
+                                <button class="chart-type-button active" data-type="line">Line</button>
+                                <button class="chart-type-button" data-type="column">Column</button>
+                            </span>
+                        </div>
+                        <div id="head-weight-chart"></div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        const farmId = /*[[${selectedFarmKey}]]*/ 'default-farm-id';
+
+        // Helper function to get current year and date ranges
+        function getCurrentYear() {
+            return new Date().getFullYear();
+        }
+
+        function getDateRange(year) {
+            return {
+                from: `${year}-01-01`,
+                to: `${year}-12-31`
+            };
+        }
+
+        // Year selector functionality
+        let selectedYears = {
+            'headcount': getCurrentYear(),
+            'head-weight': getCurrentYear()
+        };
+
+        function initYearSelectors() {
+            const curYear = getCurrentYear();
+            const lastYear = curYear - 1;
+            const twoYearsAgo = curYear - 2;
+            const years = [curYear, lastYear, twoYearsAgo];
+
+            // Initialize each year selector
+            initYearSelector('headcount-chart-year-selector', 'headcount', years);
+            initYearSelector('head-weight-chart-year-selector', 'head-weight', years);
+        }
+
+        function initYearSelector(selectorId, chartType, years) {
+            const selector = document.getElementById(selectorId);
+            if (!selector) return;
+
+            const itemsContainer = selector.querySelector('.items');
+            if (!itemsContainer) return;
+
+            // Clear existing items
+            itemsContainer.innerHTML = '';
+
+            // Add year buttons
+            years.forEach(year => {
+                const yearElement = document.createElement('div');
+                yearElement.className = 'year' + (year === selectedYears[chartType] ? ' selected' : '');
+                yearElement.textContent = year;
+                yearElement.addEventListener('click', function() {
+                    // Update selected year
+                    if (year !== selectedYears[chartType]) {
+                        selectedYears[chartType] = year;
+
+                        // Update UI
+                        itemsContainer.querySelectorAll('.year').forEach(el => {
+                            el.classList.remove('selected');
+                        });
+                        yearElement.classList.add('selected');
+
+                        // Reload chart
+                        reloadChart(chartType);
+                    }
+                });
+
+                itemsContainer.appendChild(yearElement);
+            });
+        }
+
+        function reloadChart(chartType) {
+            switch(chartType) {
+                case 'headcount':
+                    loadAnimalHeadcountChart(document.querySelector('#headcount-chart-selector .chart-type-button.active').dataset.type);
+                    break;
+                case 'head-weight':
+                    loadHeadWeightChart(document.querySelector('#head-weight-chart-selector .chart-type-button.active').dataset.type);
+                    break;
+            }
+        }
+
+        // Chart type selector functionality
+        function setupChartTypeSelector(selectorId, chartFunction) {
+            const selector = document.getElementById(selectorId);
+            if (!selector) return;
+
+            const buttons = selector.querySelectorAll('.chart-type-button');
+            buttons.forEach(button => {
+                button.addEventListener('click', function() {
+                    buttons.forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    chartFunction(this.dataset.type);
+                });
+            });
+        }
+
+        // Animal Headcount Chart
+        function loadAnimalHeadcountChart(chartType = 'line') {
+            const selectedYear = selectedYears['headcount'];
+            const { from, to } = getDateRange(selectedYear);
+
+            // Clear previous chart
+            document.getElementById('animal-headcount-chart').innerHTML = '';
+
+            // Show loading indicator
+            document.getElementById('animal-headcount-chart').innerHTML = '<div style="text-align: center; padding: 20px;">Loading...</div>';
+
+            fetch('/api/charts/single-farm/animal-headcount', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ farm_id: farmId, from, to })
+            })
+            .then(res => res.json())
+            .then(response => {
+                const data = response.data || [];
+
+                // Process data for headcount chart
+                const categories = [];
+                const seriesData = [];
+
+                data.forEach(d => {
+                    categories.push(d.date);
+                    seriesData.push(d.headcount);
+                });
+
+                // Render chart
+                Highcharts.chart('animal-headcount-chart', {
+                    chart: {
+                        type: chartType
+                    },
+                    title: {
+                        text: 'Animal Headcount'
+                    },
+                    xAxis: {
+                        categories: categories,
+                        title: {
+                            text: 'Date'
+                        }
+                    },
+                    yAxis: {
+                        title: {
+                            text: 'Headcount'
+                        }
+                    },
+                    tooltip: {
+                        formatter: function() {
+                            return `<b>${selectedYear}</b><br/>
+                                    Date: ${this.x}<br/>
+                                    Headcount: ${Highcharts.numberFormat(this.y, 0)}`;
+                        }
+                    },
+                    series: [{
+                        name: 'Headcount',
+                        data: seriesData
+                    }]
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching animal headcount data:', error);
+                document.getElementById('animal-headcount-chart').innerHTML = 
+                    '<div style="text-align: center; padding: 20px; color: red;">Error loading chart data</div>';
+            });
+        }
+
+        // Head vs Weight 52 Week Chart
+        function loadHeadWeightChart(chartType = 'line') {
+            const selectedYear = selectedYears['head-weight'];
+            const { from, to } = getDateRange(selectedYear);
+
+            // Clear previous chart
+            document.getElementById('head-weight-chart').innerHTML = '';
+
+            // Show loading indicator
+            document.getElementById('head-weight-chart').innerHTML = '<div style="text-align: center; padding: 20px;">Loading...</div>';
+
+            fetch('/api/charts/single-farm/head-vs-weight-52week', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ farm_id: farmId, from, to })
+            })
+            .then(res => res.json())
+            .then(response => {
+                const data = response.data || [];
+
+                // Process data for head vs weight chart
+                const categories = [];
+                const headData = [];
+                const weightData = [];
+
+                data.forEach(d => {
+                    categories.push(d.week);
+                    headData.push(d.headcount);
+                    weightData.push(d.weight);
+                });
+
+                // Render chart
+                Highcharts.chart('head-weight-chart', {
+                    chart: {
+                        type: chartType
+                    },
+                    title: {
+                        text: 'Head vs Weight 52 Week'
+                    },
+                    xAxis: {
+                        categories: categories,
+                        title: {
+                            text: 'Week'
+                        }
+                    },
+                    yAxis: [{
+                        title: {
+                            text: 'Headcount'
+                        }
+                    }, {
+                        title: {
+                            text: 'Weight (lbs)'
+                        },
+                        opposite: true
+                    }],
+                    tooltip: {
+                        formatter: function() {
+                            return `<b>${this.series.name}</b><br/>
+                                    Week: ${this.x}<br/>
+                                    Value: ${Highcharts.numberFormat(this.y, this.series.name === 'Headcount' ? 0 : 2)}`;
+                        }
+                    },
+                    series: [{
+                        name: 'Headcount',
+                        data: headData,
+                        yAxis: 0
+                    }, {
+                        name: 'Weight',
+                        data: weightData,
+                        yAxis: 1
+                    }]
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching head vs weight data:', error);
+                document.getElementById('head-weight-chart').innerHTML = 
+                    '<div style="text-align: center; padding: 20px; color: red;">Error loading chart data</div>';
+            });
+        }
+
+        // Initialize all charts when the page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize year selectors
+            initYearSelectors();
+
+            // Load all charts
+            loadAnimalHeadcountChart();
+            loadHeadWeightChart();
+
+            // Setup chart type selectors
+            setupChartTypeSelector('headcount-chart-selector', loadAnimalHeadcountChart);
+            setupChartTypeSelector('head-weight-chart-selector', loadHeadWeightChart);
+        });
+        /*]]>*/
+    </script>
 </body>
-</html> 
+</html>

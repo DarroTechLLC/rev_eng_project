@@ -2,23 +2,459 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <title>Metrics Project</title>
+    <style>
+        .grid-layout {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .grid-row {
+            display: flex;
+            gap: 20px;
+        }
+        .grid-col {
+            flex: 1;
+        }
+        .chart-panel {
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .chart-nav {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .fill-height {
+            height: 100%;
+        }
+        .table-wrapper {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .table-header, .table-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+        .table-header {
+            font-weight: bold;
+            background-color: #f8f9fc;
+        }
+    </style>
 </head>
 <body>
     <div class="container-fluid">
         <h1 class="h3 mb-4 text-gray-800">Metrics Project</h1>
-        <div class="row">
-            <div class="col-12">
-                <div class="card shadow mb-4">
-                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                        <h6 class="m-0 font-weight-bold text-primary">Metrics</h6>
+
+        <div class="grid-layout">
+            <!-- First row: Mass Balance Chart and CI Scores Table -->
+            <div class="grid-row">
+                <div class="grid-col">
+                    <div class="chart-panel">
+                        <h6 class="m-0 font-weight-bold text-primary">Mass Balance</h6>
+                        <div class="chart-nav">
+                            <span>
+                                <select id="massBalanceYearSelector" class="form-control">
+                                    <option value="2023">2023</option>
+                                    <option value="2022">2022</option>
+                                    <option value="2021">2021</option>
+                                </select>
+                            </span>
+                            <span></span>
+                        </div>
+                        <div id="massBalanceChart" style="height: 300px;"></div>
                     </div>
-                    <div class="card-body">
-                        <p>Metrics project content will be implemented here.</p>
-                        <p>Farm ID: <span th:text="${selectedFarmKey}"></span></p>
+                </div>
+                <div class="grid-col fill-height">
+                    <div class="chart-panel">
+                        <h6 class="m-0 font-weight-bold text-primary">CI Scores</h6>
+                        <div id="ciScoresTable">
+                            <div class="table-wrapper">
+                                <div class="table-header">
+                                    <span>CI Score</span>
+                                    <span>Current</span>
+                                    <span>Expected 2022</span>
+                                    <span>Legacy</span>
+                                </div>
+                                <!-- Table rows will be populated by JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Second row: Methane Recovery Chart -->
+            <div class="grid-row">
+                <div class="grid-col">
+                    <div class="chart-panel">
+                        <h6 class="m-0 font-weight-bold text-primary">Methane Recovery</h6>
+                        <div class="chart-nav">
+                            <span>
+                                <select id="methaneRecoveryYearSelector" class="form-control">
+                                    <option value="2023">2023</option>
+                                    <option value="2022">2022</option>
+                                    <option value="2021">2021</option>
+                                </select>
+                            </span>
+                            <span></span>
+                        </div>
+                        <div id="methaneRecoveryChart" style="height: 300px;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Third row: Ambient Temperatures -->
+            <div class="grid-row">
+                <div class="grid-col">
+                    <h1>Ambient Temperatures</h1>
+                    <div class="chart-panel">
+                        <h6 class="m-0 font-weight-bold text-primary">Monthly Average Temperatures (2021 - 2023)</h6>
+                        <div class="chart-nav">
+                            <span></span>
+                            <span>
+                                <select id="temperatureChartType" class="form-control">
+                                    <option value="line">Line</option>
+                                    <option value="column">Column</option>
+                                    <option value="bar">Bar</option>
+                                </select>
+                            </span>
+                        </div>
+                        <div id="temperatureChart" style="height: 300px;"></div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- Include Highcharts -->
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+
+    <!-- JavaScript for charts -->
+    <script th:inline="javascript">
+        document.addEventListener('DOMContentLoaded', function() {
+            const farmId = /*[[${selectedFarm.id}]]*/ 'farm-id';
+            const companyId = /*[[${selectedCompany.id}]]*/ 'company-id';
+
+            // Initialize charts
+            initMassBalanceChart(farmId);
+            initCiScoresTable(companyId);
+            initMethaneRecoveryChart(farmId);
+            initTemperatureChart(farmId);
+
+            // Add event listeners for year selectors
+            document.getElementById('massBalanceYearSelector').addEventListener('change', function() {
+                initMassBalanceChart(farmId);
+            });
+
+            document.getElementById('methaneRecoveryYearSelector').addEventListener('change', function() {
+                initMethaneRecoveryChart(farmId);
+            });
+
+            document.getElementById('temperatureChartType').addEventListener('change', function() {
+                initTemperatureChart(farmId);
+            });
+        });
+
+        function initMassBalanceChart(farmId) {
+            const year = document.getElementById('massBalanceYearSelector').value;
+            const fromDate = `${year}-01-01`;
+            const toDate = `${year}-12-31`;
+
+            // Fetch data from API
+            fetch('/api/charts/single-farm/mass-balance-timeline', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ farm_id: farmId, from: fromDate, to: toDate })
+            })
+            .then(response => response.json())
+            .then(response => {
+                const { data } = response;
+
+                // Process data for chart
+                const monthlyValues = [];
+                const averages = [];
+                const internals = [];
+
+                // Create a map to store data by month
+                const map = new Map();
+                data.forEach(rec => {
+                    const month = new Date(rec.timestamp).getMonth();
+                    map.set(month, rec);
+                });
+
+                // Fill in data for all 12 months
+                for (let i = 0; i < 12; i++) {
+                    const rec = map.get(i);
+                    monthlyValues.push(rec ? rec.value : null);
+                    averages.push(rec ? rec.average : null);
+                    internals.push(rec ? rec.average_internal : null);
+                }
+
+                // Create chart
+                Highcharts.chart('massBalanceChart', {
+                    title: {
+                        text: 'Mass Balance'
+                    },
+                    xAxis: {
+                        categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+                    },
+                    yAxis: {
+                        title: {
+                            text: '%'
+                        }
+                    },
+                    tooltip: {
+                        formatter: function() {
+                            return `<b>${this.series.name}</b><br/>${this.x}: ${this.y.toFixed(2)}%`;
+                        }
+                    },
+                    series: [{
+                        name: 'Monthly',
+                        type: 'column',
+                        data: monthlyValues
+                    }, {
+                        name: 'Annual Average',
+                        data: averages
+                    }, {
+                        name: 'Annual Average (Internal)',
+                        data: internals
+                    }]
+                });
+            });
+        }
+
+        function initCiScoresTable(companyId) {
+            // Fetch data from API
+            fetch('/api/charts/multi-farm/ci-scores-combined-table', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ company_id: companyId })
+            })
+            .then(response => response.json())
+            .then(response => {
+                const { data } = response;
+
+                // Process data and create table
+                const tableWrapper = document.querySelector('#ciScoresTable .table-wrapper');
+                const tableHeader = tableWrapper.querySelector('.table-header');
+
+                // Clear existing rows
+                Array.from(tableWrapper.querySelectorAll('.table-row')).forEach(row => row.remove());
+
+                // Filter out items without farm_name or with undefined values
+                const validData = data.filter(item => 
+                    item.farm_name && 
+                    item.current !== undefined && 
+                    item.forecast !== undefined
+                );
+
+                // Check if we have legacy data
+                const hasLegacy = validData.some(item => item.legacy !== undefined);
+
+                // Update header if needed
+                if (!hasLegacy) {
+                    // Remove legacy column if it exists
+                    const legacyHeader = tableHeader.querySelector('span:nth-child(4)');
+                    if (legacyHeader) {
+                        legacyHeader.remove();
+                    }
+                }
+
+                // Add data rows
+                validData.forEach(item => {
+                    const row = document.createElement('div');
+                    row.className = 'table-row';
+
+                    let rowHtml = `
+                        <span>${item.farm_name}</span>
+                        <span>${item.current !== undefined ? item.current.toFixed(2) : ''}</span>
+                        <span>${item.forecast !== undefined ? item.forecast.toFixed(2) : ''}</span>
+                    `;
+
+                    if (hasLegacy) {
+                        rowHtml += `<span>${item.legacy !== undefined ? item.legacy.toFixed(2) : ''}</span>`;
+                    }
+
+                    row.innerHTML = rowHtml;
+                    tableWrapper.appendChild(row);
+                });
+            });
+        }
+
+        function initMethaneRecoveryChart(farmId) {
+            const year = document.getElementById('methaneRecoveryYearSelector').value;
+            const fromDate = `${year}-01-01`;
+            const toDate = `${year}-12-31`;
+
+            // Fetch data from API
+            fetch('/api/charts/single-farm/ch4-recovery-timeline', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ farm_id: farmId, from: fromDate, to: toDate })
+            })
+            .then(response => response.json())
+            .then(response => {
+                const { data } = response;
+
+                // Process data for chart
+                const recoveryValues = [];
+
+                // Create a map to store data by month
+                const map = new Map();
+                data.forEach(rec => {
+                    const month = new Date(rec.timestamp).getMonth();
+                    map.set(month, rec.value);
+                });
+
+                // Fill in data for all 12 months
+                for (let i = 0; i < 12; i++) {
+                    const value = map.get(i);
+                    recoveryValues.push(value !== undefined ? value : null);
+                }
+
+                // Create chart
+                Highcharts.chart('methaneRecoveryChart', {
+                    title: {
+                        text: 'Methane Recovery'
+                    },
+                    xAxis: {
+                        categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+                    },
+                    yAxis: {
+                        title: {
+                            text: '%'
+                        },
+                        min: 0,
+                        max: 100
+                    },
+                    tooltip: {
+                        formatter: function() {
+                            return `<b>${this.series.name}</b><br/>${this.x}: ${this.y.toFixed(2)}%`;
+                        }
+                    },
+                    series: [{
+                        name: 'CH4% Recovery',
+                        data: recoveryValues
+                    }]
+                });
+            });
+        }
+
+        function initTemperatureChart(farmId) {
+            const chartType = document.getElementById('temperatureChartType').value;
+            const currentYear = new Date().getFullYear();
+            const oneYearAgo = currentYear - 1;
+            const twoYearsAgo = currentYear - 2;
+
+            // Fetch data for all three years
+            Promise.all([
+                fetchTemperatureData(farmId, twoYearsAgo),
+                fetchTemperatureData(farmId, oneYearAgo),
+                fetchTemperatureData(farmId, currentYear)
+            ])
+            .then(([data2YearsAgo, data1YearAgo, dataCurYear]) => {
+                // Process data for chart
+                const series = [];
+
+                // Process data for each year
+                const processYearData = (responseData, year, index) => {
+                    if (!responseData || !responseData.data) return;
+
+                    const { data } = responseData;
+                    const tempValues = [];
+
+                    // Create a map to store data by month
+                    const map = new Map();
+                    data.forEach(rec => {
+                        const month = new Date(rec.timestamp).getMonth();
+                        map.set(month, rec.value);
+                    });
+
+                    // Fill in data for all 12 months
+                    for (let i = 0; i < 12; i++) {
+                        const value = map.get(i);
+                        tempValues.push(value !== undefined ? value : null);
+                    }
+
+                    // Add series if we have data
+                    if (tempValues.some(val => val !== null)) {
+                        series.push({
+                            name: year.toString(),
+                            type: chartType,
+                            data: tempValues,
+                            // Use different colors for different years
+                            color: getChartColor(index)
+                        });
+                    }
+                };
+
+                // Process data for each year
+                processYearData(data2YearsAgo, twoYearsAgo, 0);
+                processYearData(data1YearAgo, oneYearAgo, 1);
+                processYearData(dataCurYear, currentYear, 2);
+
+                // Create chart
+                Highcharts.chart('temperatureChart', {
+                    title: {
+                        text: `Monthly Average Temperatures (${twoYearsAgo} - ${currentYear})`
+                    },
+                    xAxis: {
+                        categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+                    },
+                    yAxis: {
+                        title: {
+                            text: 'Temperature ℉'
+                        }
+                    },
+                    tooltip: {
+                        formatter: function() {
+                            return `<b>${this.series.name}</b><br/>${this.x}: ${this.y.toFixed(2)}℉`;
+                        }
+                    },
+                    series: series
+                });
+            });
+        }
+
+        // Helper function to get chart colors
+        function getChartColor(index) {
+            const colors = [
+                '#7cb5ec', // blue
+                '#90ed7d', // green
+                '#f7a35c', // orange
+                '#8085e9', // purple
+                '#f15c80', // pink
+                '#e4d354', // yellow
+                '#2b908f', // teal
+                '#f45b5b', // red
+                '#91e8e1'  // light blue
+            ];
+            return colors[index % colors.length];
+        }
+
+        function fetchTemperatureData(farmId, year) {
+            const fromDate = `${year}-01-01`;
+            const toDate = `${year}-12-31`;
+
+            return fetch('/api/charts/single-farm/temperature-timeline', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ farm_id: farmId, from: fromDate, to: toDate })
+            })
+            .then(response => response.json());
+        }
+    </script>
 </body>
-</html> 
+</html>
