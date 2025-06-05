@@ -1,6 +1,12 @@
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('createFarmForm');
     const submitBtn = document.getElementById('saveFarmBtn');
+
+    // Only proceed if the form and submit button exist
+    if (!form || !submitBtn) {
+        return; // Exit early if elements don't exist
+    }
+
     const spinner = submitBtn.querySelector('.spinner-border');
     let isDirty = false;
 
@@ -77,7 +83,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="_csrf"]').content
                 }
             });
-            
+
             if (!response.ok) {
                 throw new Error('Failed to fetch temperature sources');
             }
@@ -85,7 +91,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const tempSources = await response.json();
             const select = document.getElementById('tempSourceId');
             select.innerHTML = '<option value="">- None -</option>';
-            
+
             tempSources.forEach(source => {
                 const option = document.createElement('option');
                 option.value = source.id;
@@ -152,7 +158,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             const result = await validateField(field, value);
-            
+
             if (!result.valid) {
                 input.classList.add('is-invalid');
                 input.nextElementSibling.nextElementSibling.textContent = result.error;
@@ -197,7 +203,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 if (value && value.trim() !== '') {
                     const result = await validateField(field, value);
-                    
+
                     if (!result.valid) {
                         input.classList.add('is-invalid');
                         input.nextElementSibling.nextElementSibling.textContent = result.error;
@@ -216,7 +222,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Handle form submission
     submitBtn.addEventListener('click', async (e) => {
         e.preventDefault();
-        
+
         if (!form.checkValidity()) {
             form.classList.add('was-validated');
             return;
@@ -261,7 +267,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (result.success) {
                 toastr.success('Farm created successfully');
-                
+
                 // Refresh farm list if the function exists
                 if (typeof loadFarms === 'function') {
                     loadFarms();
@@ -269,10 +275,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     // If no loadFarms function, reload the page
                     window.location.reload();
                 }
-                
+
                 // Close modal
                 $('#createFarmModal').modal('hide');
-                
+
                 // Reset form
                 form.reset();
                 isDirty = false;

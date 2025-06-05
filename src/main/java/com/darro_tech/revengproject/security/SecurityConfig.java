@@ -115,6 +115,9 @@ public class SecurityConfig {
     public SecurityFilterChain defaultFilterChain(HttpSecurity http, MvcRequestMatcher.Builder mvc) throws Exception {
         http
                 .csrf(csrf -> csrf.disable()) // Disable CSRF for now to simplify login
+                .headers(headers -> headers
+                    .frameOptions(frameOptions -> frameOptions.sameOrigin())
+                )
                 .authorizeHttpRequests(authorize -> authorize
                 .requestMatchers(
                         mvc.pattern("/login"),

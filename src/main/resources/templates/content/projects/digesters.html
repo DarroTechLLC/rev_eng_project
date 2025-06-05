@@ -2,23 +2,291 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <title>Digesters Project</title>
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        .grid-layout {
+            display: grid;
+            grid-template-columns: 1fr;
+            grid-gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .grid-row {
+            display: grid;
+            grid-template-columns: 1fr;
+            grid-gap: 20px;
+        }
+
+        .chart-panel {
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .chart-nav {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .chart-type-selector {
+            display: flex;
+            gap: 5px;
+        }
+
+        .chart-type-button {
+            padding: 5px 10px;
+            border: 1px solid #ddd;
+            background-color: #f8f9fc;
+            cursor: pointer;
+        }
+
+        .chart-type-button.active {
+            background-color: #4e73df;
+            color: white;
+        }
+
+        .chart-year-selector {
+            position: relative;
+            display: inline-block;
+        }
+
+        .chart-year-selector .items {
+            display: flex;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .chart-year-selector .year {
+            padding: 5px 10px;
+            background-color: #f8f9fc;
+            cursor: pointer;
+            border-right: 1px solid #ddd;
+        }
+
+        .chart-year-selector .year:last-child {
+            border-right: none;
+        }
+
+        .chart-year-selector .year.selected {
+            background-color: #4e73df;
+            color: white;
+        }
+    </style>
 </head>
 <body>
     <div class="container-fluid">
         <h1 class="h3 mb-4 text-gray-800">Digesters Project</h1>
-        <div class="row">
-            <div class="col-12">
-                <div class="card shadow mb-4">
-                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                        <h6 class="m-0 font-weight-bold text-primary">Digesters</h6>
-                    </div>
-                    <div class="card-body">
-                        <p>Digesters project content will be implemented here.</p>
-                        <p>Farm ID: <span th:text="${selectedFarmKey}"></span></p>
+        <p>Farm ID: <span th:text="${selectedFarmKey}"></span></p>
+
+        <div class="grid-layout">
+            <div class="grid-row">
+                <div class="grid-col">
+                    <div class="chart-panel">
+                        <div class="chart-nav">
+                            <span>
+                                <span>Lagoon Levels</span>
+                                <div class="chart-year-selector" id="lagoon-chart-year-selector">
+                                    <div class="items">
+                                        <!-- Year buttons will be added dynamically -->
+                                    </div>
+                                </div>
+                            </span>
+                            <span class="chart-type-selector" id="lagoon-chart-selector">
+                                <button class="chart-type-button active" data-type="line">Line</button>
+                                <button class="chart-type-button" data-type="column">Column</button>
+                                <button class="chart-type-button" data-type="area">Area</button>
+                            </span>
+                        </div>
+                        <div id="lagoon-levels-chart"></div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        const farmId = /*[[${selectedFarmKey}]]*/ 'default-farm-id';
+
+        // Helper function to get current year and date ranges
+        function getCurrentYear() {
+            return new Date().getFullYear();
+        }
+
+        function getDateRange(year) {
+            return {
+                from: `${year}-01-01`,
+                to: `${year}-12-31`
+            };
+        }
+
+        // Year selector functionality
+        let selectedYears = {
+            'lagoon': getCurrentYear()
+        };
+
+        function initYearSelectors() {
+            const curYear = getCurrentYear();
+            const lastYear = curYear - 1;
+            const twoYearsAgo = curYear - 2;
+            const years = [curYear, lastYear, twoYearsAgo];
+
+            // Initialize each year selector
+            initYearSelector('lagoon-chart-year-selector', 'lagoon', years);
+        }
+
+        function initYearSelector(selectorId, chartType, years) {
+            const selector = document.getElementById(selectorId);
+            if (!selector) return;
+
+            const itemsContainer = selector.querySelector('.items');
+            if (!itemsContainer) return;
+
+            // Clear existing items
+            itemsContainer.innerHTML = '';
+
+            // Add year buttons
+            years.forEach(year => {
+                const yearElement = document.createElement('div');
+                yearElement.className = 'year' + (year === selectedYears[chartType] ? ' selected' : '');
+                yearElement.textContent = year;
+                yearElement.addEventListener('click', function() {
+                    // Update selected year
+                    if (year !== selectedYears[chartType]) {
+                        selectedYears[chartType] = year;
+
+                        // Update UI
+                        itemsContainer.querySelectorAll('.year').forEach(el => {
+                            el.classList.remove('selected');
+                        });
+                        yearElement.classList.add('selected');
+
+                        // Reload chart
+                        reloadChart(chartType);
+                    }
+                });
+
+                itemsContainer.appendChild(yearElement);
+            });
+        }
+
+        function reloadChart(chartType) {
+            switch(chartType) {
+                case 'lagoon':
+                    loadLagoonLevelsChart(document.querySelector('#lagoon-chart-selector .chart-type-button.active').dataset.type);
+                    break;
+            }
+        }
+
+        // Chart type selector functionality
+        function setupChartTypeSelector(selectorId, chartFunction) {
+            const selector = document.getElementById(selectorId);
+            if (!selector) return;
+
+            const buttons = selector.querySelectorAll('.chart-type-button');
+            buttons.forEach(button => {
+                button.addEventListener('click', function() {
+                    buttons.forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    chartFunction(this.dataset.type);
+                });
+            });
+        }
+
+        // Lagoon Levels Chart
+        function loadLagoonLevelsChart(chartType = 'line') {
+            const selectedYear = selectedYears['lagoon'];
+            const { from, to } = getDateRange(selectedYear);
+
+            // Clear previous chart
+            document.getElementById('lagoon-levels-chart').innerHTML = '';
+
+            // Show loading indicator
+            document.getElementById('lagoon-levels-chart').innerHTML = '<div style="text-align: center; padding: 20px;">Loading...</div>';
+
+            fetch('/api/charts/single-farm/lagoon-levels', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ farm_id: farmId, from, to })
+            })
+            .then(res => res.json())
+            .then(response => {
+                const data = response.data || [];
+
+                // Process data for lagoon levels chart
+                const categories = [];
+                const lagoon1Data = [];
+                const lagoon2Data = [];
+
+                data.forEach(d => {
+                    categories.push(d.date);
+                    lagoon1Data.push(d.lagoon1);
+                    lagoon2Data.push(d.lagoon2);
+                });
+
+                // Render chart
+                Highcharts.chart('lagoon-levels-chart', {
+                    chart: {
+                        type: chartType
+                    },
+                    title: {
+                        text: 'Lagoon Levels'
+                    },
+                    xAxis: {
+                        categories: categories,
+                        title: {
+                            text: 'Date'
+                        }
+                    },
+                    yAxis: {
+                        title: {
+                            text: 'Level (%)'
+                        },
+                        min: 0,
+                        max: 100
+                    },
+                    tooltip: {
+                        formatter: function() {
+                            return `<b>${this.series.name}</b><br/>
+                                    Date: ${this.x}<br/>
+                                    Level: ${Highcharts.numberFormat(this.y, 1)}%`;
+                        }
+                    },
+                    series: [{
+                        name: 'Lagoon 1',
+                        data: lagoon1Data
+                    }, {
+                        name: 'Lagoon 2',
+                        data: lagoon2Data
+                    }]
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching lagoon levels data:', error);
+                document.getElementById('lagoon-levels-chart').innerHTML = 
+                    '<div style="text-align: center; padding: 20px; color: red;">Error loading chart data</div>';
+            });
+        }
+
+        // Initialize all charts when the page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize year selectors
+            initYearSelectors();
+
+            // Load all charts
+            loadLagoonLevelsChart();
+
+            // Setup chart type selectors
+            setupChartTypeSelector('lagoon-chart-selector', loadLagoonLevelsChart);
+        });
+        /*]]>*/
+    </script>
 </body>
-</html> 
+</html>

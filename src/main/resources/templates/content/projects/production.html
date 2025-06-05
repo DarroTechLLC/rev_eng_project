@@ -2,23 +2,374 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <title>Production Project</title>
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        .grid-layout {
+            display: grid;
+            grid-template-columns: 1fr;
+            grid-gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .grid-row {
+            display: grid;
+            grid-template-columns: 1fr;
+            grid-gap: 20px;
+        }
+
+        .chart-panel {
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .chart-nav {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .chart-type-selector {
+            display: flex;
+            gap: 5px;
+        }
+
+        .chart-type-button {
+            padding: 5px 10px;
+            border: 1px solid #ddd;
+            background-color: #f8f9fc;
+            cursor: pointer;
+        }
+
+        .chart-type-button.active {
+            background-color: #4e73df;
+            color: white;
+        }
+
+        .chart-year-selector {
+            position: relative;
+            display: inline-block;
+        }
+
+        .chart-year-selector .items {
+            display: flex;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .chart-year-selector .year {
+            padding: 5px 10px;
+            background-color: #f8f9fc;
+            cursor: pointer;
+            border-right: 1px solid #ddd;
+        }
+
+        .chart-year-selector .year:last-child {
+            border-right: none;
+        }
+
+        .chart-year-selector .year.selected {
+            background-color: #4e73df;
+            color: white;
+        }
+    </style>
 </head>
 <body>
     <div class="container-fluid">
         <h1 class="h3 mb-4 text-gray-800">Production Project</h1>
-        <div class="row">
-            <div class="col-12">
-                <div class="card shadow mb-4">
-                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                        <h6 class="m-0 font-weight-bold text-primary">Production</h6>
+        <p>Farm ID: <span th:text="${selectedFarmKey}"></span></p>
+
+        <div class="grid-layout">
+            <div class="grid-row">
+                <div class="grid-col">
+                    <div class="chart-panel">
+                        <div class="chart-nav">
+                            <span>
+                                <span>Monthly Production</span>
+                                <div class="chart-year-selector" id="monthly-chart-year-selector">
+                                    <div class="items">
+                                        <!-- Year buttons will be added dynamically -->
+                                    </div>
+                                </div>
+                            </span>
+                            <span class="chart-type-selector" id="monthly-chart-selector">
+                                <button class="chart-type-button active" data-type="line">Line</button>
+                                <button class="chart-type-button" data-type="column">Column</button>
+                                <button class="chart-type-button" data-type="bar">Bar</button>
+                            </span>
+                        </div>
+                        <div id="monthly-production-chart"></div>
                     </div>
-                    <div class="card-body">
-                        <p>Production project content will be implemented here.</p>
-                        <p>Farm ID: <span th:text="${selectedFarmKey}"></span></p>
+
+                    <div class="chart-panel">
+                        <div class="chart-nav">
+                            <span>
+                                <span>Cumulative Production</span>
+                                <div class="chart-year-selector" id="cumulative-chart-year-selector">
+                                    <div class="items">
+                                        <!-- Year buttons will be added dynamically -->
+                                    </div>
+                                </div>
+                            </span>
+                            <span class="chart-type-selector" id="cumulative-chart-selector">
+                                <button class="chart-type-button active" data-type="line">Line</button>
+                                <button class="chart-type-button" data-type="column">Column</button>
+                                <button class="chart-type-button" data-type="bar">Bar</button>
+                            </span>
+                        </div>
+                        <div id="cumulative-production-chart"></div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        const farmId = /*[[${selectedFarmKey}]]*/ 'default-farm-id';
+
+        // Helper function to get current year and date ranges
+        function getCurrentYear() {
+            return new Date().getFullYear();
+        }
+
+        function getDateRange(year) {
+            return {
+                from: `${year}-01-01`,
+                to: `${year}-12-31`
+            };
+        }
+
+        // Year selector functionality
+        let selectedYears = {
+            'monthly': getCurrentYear(),
+            'cumulative': getCurrentYear()
+        };
+
+        function initYearSelectors() {
+            const curYear = getCurrentYear();
+            const lastYear = curYear - 1;
+            const twoYearsAgo = curYear - 2;
+            const years = [curYear, lastYear, twoYearsAgo];
+
+            // Initialize each year selector
+            initYearSelector('monthly-chart-year-selector', 'monthly', years);
+            initYearSelector('cumulative-chart-year-selector', 'cumulative', years);
+        }
+
+        function initYearSelector(selectorId, chartType, years) {
+            const selector = document.getElementById(selectorId);
+            if (!selector) return;
+
+            const itemsContainer = selector.querySelector('.items');
+            if (!itemsContainer) return;
+
+            // Clear existing items
+            itemsContainer.innerHTML = '';
+
+            // Add year buttons
+            years.forEach(year => {
+                const yearElement = document.createElement('div');
+                yearElement.className = 'year' + (year === selectedYears[chartType] ? ' selected' : '');
+                yearElement.textContent = year;
+                yearElement.addEventListener('click', function() {
+                    // Update selected year
+                    if (year !== selectedYears[chartType]) {
+                        selectedYears[chartType] = year;
+
+                        // Update UI
+                        itemsContainer.querySelectorAll('.year').forEach(el => {
+                            el.classList.remove('selected');
+                        });
+                        yearElement.classList.add('selected');
+
+                        // Reload chart
+                        reloadChart(chartType);
+                    }
+                });
+
+                itemsContainer.appendChild(yearElement);
+            });
+        }
+
+        function reloadChart(chartType) {
+            switch(chartType) {
+                case 'monthly':
+                    loadMonthlyProductionChart(document.querySelector('#monthly-chart-selector .chart-type-button.active').dataset.type);
+                    break;
+                case 'cumulative':
+                    loadCumulativeProductionChart(document.querySelector('#cumulative-chart-selector .chart-type-button.active').dataset.type);
+                    break;
+            }
+        }
+
+        // Chart type selector functionality
+        function setupChartTypeSelector(selectorId, chartFunction) {
+            const selector = document.getElementById(selectorId);
+            if (!selector) return;
+
+            const buttons = selector.querySelectorAll('.chart-type-button');
+            buttons.forEach(button => {
+                button.addEventListener('click', function() {
+                    buttons.forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    chartFunction(this.dataset.type);
+                });
+            });
+        }
+
+        // Monthly Production Chart
+        function loadMonthlyProductionChart(chartType = 'line') {
+            const selectedYear = selectedYears['monthly'];
+            const { from, to } = getDateRange(selectedYear);
+
+            // Clear previous chart
+            document.getElementById('monthly-production-chart').innerHTML = '';
+
+            // Show loading indicator
+            document.getElementById('monthly-production-chart').innerHTML = '<div style="text-align: center; padding: 20px;">Loading...</div>';
+
+            fetch('/api/charts/single-farm/meter-monthly-timeline', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ farm_id: farmId, from, to })
+            })
+            .then(res => res.json())
+            .then(response => {
+                const data = response.data || [];
+
+                // Process data for monthly chart
+                const seriesData = data.map(d => d.value || 0);
+
+                // Render chart
+                Highcharts.chart('monthly-production-chart', {
+                    chart: {
+                        type: chartType
+                    },
+                    title: {
+                        text: 'Monthly Production'
+                    },
+                    xAxis: {
+                        categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                        title: {
+                            text: 'Month'
+                        }
+                    },
+                    yAxis: {
+                        title: {
+                            text: 'MMBTUs'
+                        }
+                    },
+                    tooltip: {
+                        formatter: function() {
+                            return `<b>${selectedYear}</b><br/>
+                                    Month: ${this.x}<br/>
+                                    Value: ${Highcharts.numberFormat(this.y, 2)} MMBTUs`;
+                        }
+                    },
+                    series: [{
+                        name: selectedYear.toString(),
+                        data: seriesData
+                    }]
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching monthly production data:', error);
+                document.getElementById('monthly-production-chart').innerHTML = 
+                    '<div style="text-align: center; padding: 20px; color: red;">Error loading chart data</div>';
+            });
+        }
+
+        // Cumulative Production Chart
+        function loadCumulativeProductionChart(chartType = 'line') {
+            const selectedYear = selectedYears['cumulative'];
+            const { from, to } = getDateRange(selectedYear);
+
+            // Clear previous chart
+            document.getElementById('cumulative-production-chart').innerHTML = '';
+
+            // Show loading indicator
+            document.getElementById('cumulative-production-chart').innerHTML = '<div style="text-align: center; padding: 20px;">Loading...</div>';
+
+            fetch('/api/charts/single-farm/meter-monthly-timeline', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ farm_id: farmId, from, to })
+            })
+            .then(res => res.json())
+            .then(response => {
+                const data = response.data || [];
+
+                // Process data for cumulative chart
+                const seriesData = [];
+                let cumulative = 0;
+
+                data.forEach(d => {
+                    cumulative += (d.value || 0);
+                    seriesData.push(cumulative);
+                });
+
+                // Render chart
+                Highcharts.chart('cumulative-production-chart', {
+                    chart: {
+                        type: chartType
+                    },
+                    title: {
+                        text: 'Cumulative Production'
+                    },
+                    xAxis: {
+                        categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                        title: {
+                            text: 'Month'
+                        }
+                    },
+                    yAxis: {
+                        title: {
+                            text: 'MMBTUs'
+                        }
+                    },
+                    tooltip: {
+                        formatter: function() {
+                            return `<b>${selectedYear}</b><br/>
+                                    Month: ${this.x}<br/>
+                                    Value: ${Highcharts.numberFormat(this.y, 2)} MMBTUs`;
+                        }
+                    },
+                    series: [{
+                        name: selectedYear.toString(),
+                        data: seriesData
+                    }]
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching cumulative production data:', error);
+                document.getElementById('cumulative-production-chart').innerHTML = 
+                    '<div style="text-align: center; padding: 20px; color: red;">Error loading chart data</div>';
+            });
+        }
+
+        // Initialize all charts when the page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize year selectors
+            initYearSelectors();
+
+            // Load all charts
+            loadMonthlyProductionChart();
+            loadCumulativeProductionChart();
+
+            // Setup chart type selectors
+            setupChartTypeSelector('monthly-chart-selector', loadMonthlyProductionChart);
+            setupChartTypeSelector('cumulative-chart-selector', loadCumulativeProductionChart);
+        });
+        /*]]>*/
+    </script>
 </body>
-</html> 
+</html>
