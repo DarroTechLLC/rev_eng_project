@@ -1,9 +1,6 @@
 package com.darro_tech.revengproject.models;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 
 import java.time.Instant;
 
@@ -14,8 +11,9 @@ public class WeeklyReportCompany {
     @Column(name = "id", nullable = false)
     private Integer id;
 
-    @Column(name = "company_id", nullable = false, length = 36)
-    private String companyId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "company_id", nullable = false)
+    private Company company;
 
     @Column(name = "pdf", nullable = false)
     private byte[] pdf;
@@ -31,12 +29,12 @@ public class WeeklyReportCompany {
         this.id = id;
     }
 
-    public String getCompanyId() {
-        return companyId;
+    public Company getCompany() {
+        return company;
     }
 
-    public void setCompanyId(String companyId) {
-        this.companyId = companyId;
+    public void setCompany(Company company) {
+        this.company = company;
     }
 
     public byte[] getPdf() {
