@@ -4,10 +4,10 @@
       layout:decorate="~{layouts/main}">
 <head>
     <title>Production Headcount Dashboard</title>
-    <!-- Chart.js and required dependencies -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/luxon@3.0.1/build/global/luxon.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1.2.0/dist/chartjs-adapter-luxon.min.js"></script>
+    <!-- Highcharts -->
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <!-- Chart Utils -->
+    <script src="/js/chart-utils/highcharts-utils.js"></script>
 </head>
 <body>
 <div layout:fragment="content">
@@ -29,7 +29,7 @@
                     <div class="card-body">
                         <div id="loadingIndicator" style="display: none;">Loading...</div>
                         <div id="errorMessage" class="alert alert-danger" style="display: none;"></div>
-                        <canvas id="productionHeadcountChart"></canvas>
+                        <div id="productionHeadcountChart" style="min-height: 400px;"></div>
                     </div>
                 </div>
             </div>
@@ -43,7 +43,7 @@
         // Get company ID from Thymeleaf model
         const selectedCompanyId = /*[[${selectedCompanyId}]]*/ '';
         const chartTypeSelector = document.getElementById('chartType');
-        const ctx = document.getElementById('productionHeadcountChart').getContext('2d');
+        const chartContainer = document.getElementById('productionHeadcountChart');
         let chart;
 
         // Log initial data presence
@@ -130,30 +130,26 @@
                     };
                 }
 
-                // Parse the timestamp string to a Luxon DateTime object
-                const timestamp = luxon.DateTime.fromISO(item.timestamp);
-                farmData[item.farm_id].data.push({
-                    x: timestamp.toJSDate(), // Convert to JS Date for Chart.js
-                    y: item.population
-                });
+                // Parse the timestamp
+                const timestamp = new Date(item.timestamp).getTime();
+                farmData[item.farm_id].data.push([
+                    timestamp, // X value (timestamp)
+                    item.population // Y value
+                ]);
             });
 
-            // Create datasets for each farm, sorted alphabetically by farm name
-            const datasets = Object.values(farmData)
-                .sort((a, b) => a.name.localeCompare(b.name)) // Sort alphabetically by farm name
+            // Create series for each farm, sorted alphabetically by farm name
+            const series = Object.values(farmData)
+                .sort((a, b) => a.name && b.name ? a.name.localeCompare(b.name) : 0) // Sort alphabetically by farm name
                 .map((farm, index) => {
                     // Generate a color based on index
                     const hue = (index * 137) % 360; // Use golden ratio for color distribution
                     const color = `hsl(${hue}, 70%, 60%)`;
 
                     return {
-                        label: farm.name,
+                        name: farm.name,
                         data: farm.data,
-                        backgroundColor: color,
-                        borderColor: color,
-                        borderWidth: 2,
-                        fill: false,
-                        tension: 0.1
+                        color: color
                     };
                 });
 
@@ -161,51 +157,57 @@
             const chartType = chartTypeSelector.value;
             console.log('📊 Creating chart with type:', chartType);
 
-            chart = new Chart(ctx, {
-                type: chartType === 'column' ? 'bar' : chartType,
-                data: {
-                    datasets: datasets
+            // If chart exists, destroy it
+            if (chart) {
+                chart.destroy();
+            }
+
+            // Create Highcharts chart
+            chart = Highcharts.chart(chartContainer, {
+                chart: {
+                    type: chartType === 'column' ? 'column' : chartType,
+                    inverted: chartType === 'bar', // For horizontal bar charts
+                    height: 400
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    indexAxis: chartType === 'bar' ? 'y' : 'x',
-                    scales: {
-                        x: {
-                            type: 'time',
-                            time: {
-                                unit: 'month',
-                                displayFormats: {
-                                    month: 'MMM yyyy'
-                                }
-                            },
-                            title: {
-                                display: true,
-                                text: 'Date'
-                            }
-                        },
-                        y: {
-                            beginAtZero: true,
-                            title: {
-                                display: true,
-                                text: 'MMBTUs/stocked space/year'
-                            }
-                        }
+                title: {
+                    text: 'Historic 52-Week Production per 52-Week Inventory Population',
+                    style: {
+                        fontSize: '16px',
+                        fontWeight: 'bold'
+                    }
+                },
+                xAxis: {
+                    type: 'datetime',
+                    title: {
+                        text: 'Date'
                     },
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: 'Historic 52-Week Production per 52-Week Inventory Population'
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return `${context.dataset.label}: ${context.parsed.y.toFixed(2)} MMBTUs/stocked space/year`;
-                                }
-                            }
+                    labels: {
+                        format: '{value:%b %Y}'
+                    }
+                },
+                yAxis: {
+                    min: 0,
+                    title: {
+                        text: 'MMBTUs/stocked space/year'
+                    },
+                    labels: {
+                        formatter: function() {
+                            return Highcharts.numberFormat(this.value, 0);
                         }
                     }
-                }
+                },
+                tooltip: {
+                    formatter: function() {
+                        return `<b>${this.series.name}</b><br/>
+                                ${Highcharts.dateFormat('%b %Y', this.x)}: ${Highcharts.numberFormat(this.y, 2)} MMBTUs/stocked space/year`;
+                    }
+                },
+                legend: {
+                    enabled: true,
+                    align: 'center',
+                    verticalAlign: 'bottom'
+                },
+                series: series
             });
 
             hideLoading();

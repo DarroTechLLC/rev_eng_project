@@ -89,7 +89,7 @@
 <body>
     <div class="container-fluid">
         <h1 class="h3 mb-4 text-gray-800">Livestock Project</h1>
-        <p>Farm ID: <span th:text="${selectedFarmKey}"></span></p>
+        <p>Farm: <span th:text="${selectedFarmName}"></span></p>
 
         <div class="grid-layout">
             <div class="grid-row">
@@ -122,7 +122,7 @@
                     <div class="chart-panel">
                         <div class="chart-nav">
                             <span>
-                                <span>Head vs Weight 52 Week</span>
+                                <span>Historic Production per Animal Headcount vs. Weight Unit</span>
                                 <div class="chart-year-selector" id="head-weight-chart-year-selector">
                                     <div class="items">
                                         <!-- Year buttons will be added dynamically -->
@@ -344,7 +344,7 @@
                         type: chartType
                     },
                     title: {
-                        text: 'Head vs Weight 52 Week'
+                        text: 'Historic Production per Animal Headcount vs. Weight Unit'
                     },
                     xAxis: {
                         categories: categories,
@@ -354,11 +354,11 @@
                     },
                     yAxis: [{
                         title: {
-                            text: 'Headcount'
+                            text: 'MMBTUs / Hd / Year'
                         }
                     }, {
                         title: {
-                            text: 'Weight (lbs)'
+                            text: 'MMBTUs / AU / Year'
                         },
                         opposite: true
                     }],
@@ -366,15 +366,15 @@
                         formatter: function() {
                             return `<b>${this.series.name}</b><br/>
                                     Week: ${this.x}<br/>
-                                    Value: ${Highcharts.numberFormat(this.y, this.series.name === 'Headcount' ? 0 : 2)}`;
+                                    Value: ${Highcharts.numberFormat(this.y, this.series.name === 'Animal Headcount (Pop)' ? 0 : 2)}`;
                         }
                     },
                     series: [{
-                        name: 'Headcount',
+                        name: 'Animal Headcount (Pop)',
                         data: headData,
                         yAxis: 0
                     }, {
-                        name: 'Weight',
+                        name: 'Animal Weight Unit (AU)',
                         data: weightData,
                         yAxis: 1
                     }]

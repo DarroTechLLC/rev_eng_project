@@ -4,10 +4,10 @@
       layout:decorate="~{layouts/main}">
 <head>
     <title>Animal Headcount Dashboard</title>
-    <!-- Chart.js and required dependencies -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/luxon@3.0.1/build/global/luxon.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1.2.0/dist/chartjs-adapter-luxon.min.js"></script>
+    <!-- Highcharts -->
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <!-- Chart Utils -->
+    <script src="/js/chart-utils/highcharts-utils.js"></script>
 </head>
 <body>
 <div layout:fragment="content">
@@ -29,7 +29,7 @@
                     <div class="card-body">
                         <div id="loadingIndicator" style="display: none;">Loading...</div>
                         <div id="errorMessage" class="alert alert-danger" style="display: none;"></div>
-                        <canvas id="animalHeadcountChart"></canvas>
+                        <div id="animalHeadcountChart" style="min-height: 400px;"></div>
                     </div>
                 </div>
             </div>
@@ -43,7 +43,7 @@
         // Get company ID from Thymeleaf model
         const selectedCompanyId = /*[[${selectedCompanyId}]]*/ '';
         const chartTypeSelector = document.getElementById('chartType');
-        const ctx = document.getElementById('animalHeadcountChart').getContext('2d');
+        const chartContainer = document.getElementById('animalHeadcountChart');
         let chart;
 
         // Log initial data presence
@@ -133,24 +133,29 @@
                 const data = response.data || [];
 
                 // Create monthly data array (12 months)
-                const monthlyData = Array(12).fill(null);
+                const monthlyData = [];
 
                 // Fill in the data we have
                 data.forEach(item => {
                     const date = new Date(item.timestamp);
                     const month = date.getMonth();
-                    monthlyData[month] = item.value;
+
+                    // Create a date for the first day of the month
+                    const monthDate = new Date(year, month, 1);
+
+                    // Add data point [timestamp, value]
+                    monthlyData.push([monthDate.getTime(), item.value]);
                 });
+
+                // Sort data by date
+                monthlyData.sort((a, b) => a[0] - b[0]);
 
                 // Add to datasets
                 datasets.push({
-                    label: year.toString(),
+                    name: year.toString(),
                     data: monthlyData,
-                    backgroundColor: getChartColor(index),
-                    borderColor: getChartColor(index),
-                    borderWidth: 2,
-                    fill: false,
-                    tension: 0.1
+                    color: getChartColor(index),
+                    type: chartTypeSelector.value === 'column' ? 'column' : chartTypeSelector.value
                 });
             });
         }
@@ -179,26 +184,31 @@
             .then(response => {
                 const data = response.data || [];
 
-                // Create monthly data array (12 months)
-                const monthlyData = Array(12).fill(null);
+                // Create monthly data array
+                const monthlyData = [];
 
                 // Fill in the data we have
                 data.forEach(item => {
                     const date = new Date(item.timestamp);
                     const month = date.getMonth();
-                    monthlyData[month] = item.value;
+
+                    // Create a date for the first day of the month
+                    const monthDate = new Date(year, month, 1);
+
+                    // Add data point [timestamp, value]
+                    monthlyData.push([monthDate.getTime(), item.value]);
                 });
+
+                // Sort data by date
+                monthlyData.sort((a, b) => a[0] - b[0]);
 
                 // Add to datasets
                 datasets.push({
-                    label: `${year} Forecast`,
+                    name: `${year} Forecast`,
                     data: monthlyData,
-                    backgroundColor: getChartColor(index),
-                    borderColor: getChartColor(index),
-                    borderWidth: 2,
-                    fill: false,
-                    tension: 0.1,
-                    borderDash: [5, 5] // Dashed line for forecast
+                    color: getChartColor(index),
+                    type: chartTypeSelector.value === 'column' ? 'column' : chartTypeSelector.value,
+                    dashStyle: 'Dash', // Dashed line for forecast
                 });
             });
         }
@@ -227,26 +237,31 @@
             .then(response => {
                 const data = response.data || [];
 
-                // Create monthly data array (12 months)
-                const monthlyData = Array(12).fill(null);
+                // Create monthly data array
+                const monthlyData = [];
 
                 // Fill in the data we have
                 data.forEach(item => {
                     const date = new Date(item.timestamp);
                     const month = date.getMonth();
-                    monthlyData[month] = item.value;
+
+                    // Create a date for the first day of the month
+                    const monthDate = new Date(year, month, 1);
+
+                    // Add data point [timestamp, value]
+                    monthlyData.push([monthDate.getTime(), item.value]);
                 });
+
+                // Sort data by date
+                monthlyData.sort((a, b) => a[0] - b[0]);
 
                 // Add to datasets
                 datasets.push({
-                    label: `${year} Budget`,
+                    name: `${year} Budget`,
                     data: monthlyData,
-                    backgroundColor: getChartColor(index),
-                    borderColor: getChartColor(index),
-                    borderWidth: 2,
-                    fill: false,
-                    tension: 0.1,
-                    borderDash: [10, 5] // Different dash pattern for budget
+                    color: getChartColor(index),
+                    type: chartTypeSelector.value === 'column' ? 'column' : chartTypeSelector.value,
+                    dashStyle: 'DashDot', // Different dash pattern for budget
                 });
             });
         }
@@ -271,8 +286,8 @@
             // Wait for all data to be fetched
             Promise.all(dataPromises)
                 .then(() => {
-                    // Sort datasets by label for consistent order
-                    datasets.sort((a, b) => a.label.localeCompare(b.label));
+                    // Sort datasets by name for consistent order
+                    datasets.sort((a, b) => a.name && b.name ? a.name.localeCompare(b.name) : 0);
 
                     // Create the chart
                     createChart();
@@ -289,46 +304,59 @@
             const chartType = chartTypeSelector.value;
             console.log('📊 Creating chart with type:', chartType);
 
-            // Month labels
-            const labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
             if (chart) {
                 chart.destroy();
             }
 
-            chart = new Chart(ctx, {
-                type: chartType === 'column' ? 'bar' : chartType,
-                data: {
-                    labels: labels,
-                    datasets: datasets
+            // Sort datasets by name for consistent order
+            datasets.sort((a, b) => a.name && b.name ? a.name.localeCompare(b.name) : 0);
+
+            // Create Highcharts chart
+            chart = Highcharts.chart(chartContainer, {
+                chart: {
+                    type: chartType === 'column' ? 'column' : chartType,
+                    inverted: chartType === 'bar', // For horizontal bar charts
+                    height: 400
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    indexAxis: chartType === 'bar' ? 'y' : 'x',
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            title: {
-                                display: true,
-                                text: 'Weekly Average'
-                            }
-                        }
+                title: {
+                    text: 'Animal Headcount',
+                    style: {
+                        fontSize: '16px',
+                        fontWeight: 'bold'
+                    }
+                },
+                xAxis: {
+                    type: 'datetime',
+                    title: {
+                        text: 'Month'
                     },
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: 'Animal Headcount'
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return `${context.dataset.label}: ${context.parsed.y !== null ? context.parsed.y.toFixed(2) : 'No data'}`;
-                                }
-                            }
+                    labels: {
+                        format: '{value:%b %Y}'
+                    }
+                },
+                yAxis: {
+                    min: 0,
+                    title: {
+                        text: 'Weekly Average'
+                    },
+                    labels: {
+                        formatter: function() {
+                            return Highcharts.numberFormat(this.value, 0);
                         }
                     }
-                }
+                },
+                tooltip: {
+                    formatter: function() {
+                        return `<b>${this.series.name}</b><br/>
+                                ${Highcharts.dateFormat('%b %Y', this.x)}: ${Highcharts.numberFormat(this.y, 2)}`;
+                    }
+                },
+                legend: {
+                    enabled: true,
+                    align: 'center',
+                    verticalAlign: 'bottom'
+                },
+                series: datasets
             });
 
             hideLoading();
