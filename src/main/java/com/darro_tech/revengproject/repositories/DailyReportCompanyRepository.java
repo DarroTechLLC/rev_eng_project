@@ -7,6 +7,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -21,8 +22,8 @@ public interface DailyReportCompanyRepository extends JpaRepository<DailyReportC
      * @param companyId The ID of the company
      * @return The most recent daily report, if any
      */
-    @Query("SELECT DISTINCT d FROM DailyReportCompany d JOIN FETCH d.company c WHERE c.id = :companyId ORDER BY d.timestamp DESC")
-    Optional<DailyReportCompany> findLatestByCompanyId(@Param("companyId") String companyId);
+    @Query(value = "SELECT DISTINCT d FROM DailyReportCompany d JOIN FETCH d.company c WHERE c.id = :companyId ORDER BY d.timestamp DESC", nativeQuery = false)
+    List<DailyReportCompany> findLatestByCompanyId(@Param("companyId") String companyId);
 
     /**
      * Find the daily report for a company closest to the given date
@@ -31,6 +32,6 @@ public interface DailyReportCompanyRepository extends JpaRepository<DailyReportC
      * @param date The date to find the report for
      * @return The daily report closest to the given date, if any
      */
-    @Query("SELECT DISTINCT d FROM DailyReportCompany d JOIN FETCH d.company c WHERE c.id = :companyId AND d.timestamp <= :date ORDER BY d.timestamp DESC")
-    Optional<DailyReportCompany> findByCompanyIdAndDate(@Param("companyId") String companyId, @Param("date") Instant date);
+    @Query(value = "SELECT DISTINCT d FROM DailyReportCompany d JOIN FETCH d.company c WHERE c.id = :companyId AND d.timestamp <= :date ORDER BY d.timestamp DESC", nativeQuery = false)
+    List<DailyReportCompany> findByCompanyIdAndDate(@Param("companyId") String companyId, @Param("date") Instant date);
 }

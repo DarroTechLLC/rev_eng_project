@@ -289,7 +289,7 @@ public class UserManagementController extends BaseController {
             }
 
             // Check if username already exists
-            User existingUser = userRepository.findByUsername(registerFormDTO.getUsername());
+            User existingUser = userRepository.findByUsername(registerFormDTO.getUsername()).orElse(null);
             if (existingUser != null) {
                 logger.warning("⚠️ User creation attempted with existing username: " + registerFormDTO.getUsername());
                 errors.rejectValue("username", "username.alreadyexists", "A user with that username already exists");

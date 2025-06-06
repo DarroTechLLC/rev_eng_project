@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
 
+import com.fasterxml.jackson.databind.exc.InvalidDefinitionException;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpHeaders;
@@ -36,32 +37,32 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     public ResponseEntity<Object> handleException(Exception ex) {
         logger.severe("💥 Unhandled exception: " + ex.getMessage());
         ex.printStackTrace();
-        
+
         ApiError error = new ApiError(
             HttpStatus.INTERNAL_SERVER_ERROR.value(),
             "Internal Server Error",
             "An unexpected error occurred"
         );
         error.addDetail(ex.getMessage());
-        
+
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
     }
-    
+
     /**
      * Handle CSRF token exceptions
      */
     @ExceptionHandler({InvalidCsrfTokenException.class, MissingCsrfTokenException.class})
     public ResponseEntity<Object> handleCsrfException(Exception ex) {
         logger.warning("🛡️ CSRF token error: " + ex.getMessage());
-        
+
         Map<String, Object> errorResponse = new HashMap<>();
         errorResponse.put("success", false);
         errorResponse.put("message", "CSRF token validation failed");
         errorResponse.put("error", "Invalid or missing CSRF token");
-        
+
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
     }
-    
+
     /**
      * Handle invalid JSON in request body by properly overriding the method from ResponseEntityExceptionHandler
      */
@@ -71,14 +72,14 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             HttpHeaders headers, 
             HttpStatusCode status, 
             WebRequest request) {
-        
+
         logger.warning("⚠️ Invalid request format: " + ex.getMessage());
-        
+
         Map<String, Object> errorResponse = new HashMap<>();
         errorResponse.put("success", false);
         errorResponse.put("message", "Invalid request format");
         errorResponse.put("error", "The request body contains invalid JSON or is missing required fields");
-        
+
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
 }
@@ -90,19 +91,43 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 @RestControllerAdvice(basePackages = "com.darro_tech.revengproject.controllers.api")
 @Order(Ordered.HIGHEST_PRECEDENCE)
 class ApiExceptionHandler {
-    
+
     private static final Logger logger = Logger.getLogger(ApiExceptionHandler.class.getName());
-    
+
+    /**
+     * Handle InvalidDefinitionException specifically for ByteArrayInputStream serialization issues
+     */
+    @ExceptionHandler(InvalidDefinitionException.class)
+    public ResponseEntity<Map<String, Object>> handleInvalidDefinitionException(InvalidDefinitionException ex) {
+        logger.severe("🔴 API serialization error: " + ex.getMessage());
+        ex.printStackTrace();
+
+        // Check if it's a ByteArrayInputStream issue
+        if (ex.getMessage() != null && ex.getMessage().contains("ByteArrayInputStream")) {
+            logger.info("🔧 Handling ByteArrayInputStream serialization issue");
+
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", "An error occurred processing your request");
+            errorResponse.put("error", "Error processing binary data");
+
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+
+        // For other invalid definition exceptions, use the general handler
+        return handleAllExceptions(ex);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleAllExceptions(Exception ex) {
         logger.severe("🔴 API error: " + ex.getMessage());
         ex.printStackTrace();
-        
+
         Map<String, Object> errorResponse = new HashMap<>();
         errorResponse.put("success", false);
         errorResponse.put("message", "An error occurred processing your request");
         errorResponse.put("error", ex.getMessage());
-        
+
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
     }
 } 

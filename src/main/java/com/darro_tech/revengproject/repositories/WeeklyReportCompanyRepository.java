@@ -7,6 +7,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -21,8 +22,8 @@ public interface WeeklyReportCompanyRepository extends JpaRepository<WeeklyRepor
      * @param companyId The ID of the company
      * @return The most recent weekly report, if any
      */
-    @Query("SELECT DISTINCT w FROM WeeklyReportCompany w JOIN FETCH w.company c WHERE c.id = :companyId ORDER BY w.timestamp DESC")
-    Optional<WeeklyReportCompany> findLatestByCompanyId(@Param("companyId") String companyId);
+    @Query(value = "SELECT DISTINCT w FROM WeeklyReportCompany w JOIN FETCH w.company c WHERE c.id = :companyId ORDER BY w.timestamp DESC", nativeQuery = false)
+    List<WeeklyReportCompany> findLatestByCompanyId(@Param("companyId") String companyId);
 
     /**
      * Find the weekly report for a company closest to the given date
@@ -31,6 +32,6 @@ public interface WeeklyReportCompanyRepository extends JpaRepository<WeeklyRepor
      * @param date The date to find the report for
      * @return The weekly report closest to the given date, if any
      */
-    @Query("SELECT DISTINCT w FROM WeeklyReportCompany w JOIN FETCH w.company c WHERE c.id = :companyId AND w.timestamp <= :date ORDER BY w.timestamp DESC")
-    Optional<WeeklyReportCompany> findByCompanyIdAndDate(@Param("companyId") String companyId, @Param("date") Instant date);
+    @Query(value = "SELECT DISTINCT w FROM WeeklyReportCompany w JOIN FETCH w.company c WHERE c.id = :companyId AND w.timestamp <= :date ORDER BY w.timestamp DESC", nativeQuery = false)
+    List<WeeklyReportCompany> findByCompanyIdAndDate(@Param("companyId") String companyId, @Param("date") Instant date);
 }
