@@ -34,4 +34,15 @@ public interface WeeklyReportCompanyRepository extends JpaRepository<WeeklyRepor
      */
     @Query(value = "SELECT DISTINCT w FROM WeeklyReportCompany w JOIN FETCH w.company c WHERE c.id = :companyId AND w.timestamp <= :date ORDER BY w.timestamp DESC", nativeQuery = false)
     List<WeeklyReportCompany> findByCompanyIdAndDate(@Param("companyId") String companyId, @Param("date") Instant date);
+
+    /**
+     * Find weekly reports for a company within a date range
+     * 
+     * @param companyId The ID of the company
+     * @param startDate The start date of the range
+     * @param endDate The end date of the range
+     * @return Weekly reports within the date range, if any
+     */
+    @Query(value = "SELECT DISTINCT w FROM WeeklyReportCompany w JOIN FETCH w.company c WHERE c.id = :companyId AND w.timestamp >= :startDate AND w.timestamp < :endDate ORDER BY w.timestamp DESC", nativeQuery = false)
+    List<WeeklyReportCompany> findByCompanyIdAndDateBetween(@Param("companyId") String companyId, @Param("startDate") Instant startDate, @Param("endDate") Instant endDate);
 }

@@ -34,4 +34,15 @@ public interface DailyReportCompanyRepository extends JpaRepository<DailyReportC
      */
     @Query(value = "SELECT DISTINCT d FROM DailyReportCompany d JOIN FETCH d.company c WHERE c.id = :companyId AND d.timestamp <= :date ORDER BY d.timestamp DESC", nativeQuery = false)
     List<DailyReportCompany> findByCompanyIdAndDate(@Param("companyId") String companyId, @Param("date") Instant date);
+
+    /**
+     * Find daily reports for a company within a date range
+     * 
+     * @param companyId The ID of the company
+     * @param startDate The start date of the range
+     * @param endDate The end date of the range
+     * @return Daily reports within the date range, if any
+     */
+    @Query(value = "SELECT DISTINCT d FROM DailyReportCompany d JOIN FETCH d.company c WHERE c.id = :companyId AND d.timestamp >= :startDate AND d.timestamp < :endDate ORDER BY d.timestamp DESC", nativeQuery = false)
+    List<DailyReportCompany> findByCompanyIdAndDateBetween(@Param("companyId") String companyId, @Param("startDate") Instant startDate, @Param("endDate") Instant endDate);
 }
