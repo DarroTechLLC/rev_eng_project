@@ -55,7 +55,7 @@
                         <input type="text" id="tableSearch" class="form-control" placeholder="Search farms..." aria-label="Search">
                     </div>
                 </div>
-                
+
                 <div class="table-responsive">
                     <table class="table table-bordered" id="farmsTable" width="100%" cellspacing="0">
                         <thead>
@@ -169,11 +169,11 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             console.log("🚜 Farm management page script starting...");
-            
+
             // Variables for sorting and filtering
             let currentSortColumn = 'name';
             let currentSortDirection = 'asc';
-            
+
             // Setup search functionality
             const searchInput = document.getElementById('tableSearch');
             if (searchInput) {
@@ -181,7 +181,7 @@
                     filterFarms(this.value);
                 });
             }
-            
+
             // Setup sorting
             document.querySelectorAll('.sortable').forEach(header => {
                 header.addEventListener('click', function() {
@@ -189,35 +189,35 @@
                     sortFarms(column);
                 });
             });
-            
+
             // Setup delete buttons
             document.querySelectorAll('.delete-farm-btn').forEach(button => {
                 button.addEventListener('click', function() {
                     const farmId = this.getAttribute('data-id');
                     const farmName = this.getAttribute('data-name');
-                    
+
                     // Set the farm name in the modal
                     document.getElementById('farmNameToDelete').textContent = farmName;
-                    
+
                     // Set the form action
                     const form = document.getElementById('deleteFarmForm');
                     form.action = `/admin/farms/delete/${farmId}`;
-                    
+
                     // Show the modal
                     $('#deleteFarmModal').modal('show');
                 });
             });
-            
+
             // Filter farms based on search text
             function filterFarms(searchText) {
                 const rows = document.querySelectorAll('.farm-row');
                 searchText = searchText.toLowerCase();
-                
+
                 rows.forEach(row => {
                     const name = row.querySelector('.farm-name').textContent.toLowerCase();
                     const displayName = row.querySelector('.farm-display-name').textContent.toLowerCase();
                     const farmType = row.querySelector('.farm-type').textContent.toLowerCase();
-                    
+
                     if (name.includes(searchText) || 
                         displayName.includes(searchText) || 
                         farmType.includes(searchText)) {
@@ -227,7 +227,7 @@
                     }
                 });
             }
-            
+
             // Sort farms by the specified column
             function sortFarms(column) {
                 if (currentSortColumn === column) {
@@ -238,38 +238,38 @@
                     currentSortColumn = column;
                     currentSortDirection = 'asc';
                 }
-                
+
                 // Update sort icons in header
                 updateSortIcons();
-                
+
                 // Sort the table rows
                 sortTableRows();
             }
-            
+
             // Update sort icons in table headers
             function updateSortIcons() {
                 document.querySelectorAll('.sortable i').forEach(icon => {
                     icon.className = 'fas fa-sort';
                 });
-                
+
                 const currentHeader = document.querySelector(`.sortable[data-sort="${currentSortColumn}"] i`);
                 if (currentHeader) {
                     currentHeader.className = `fas fa-sort-${currentSortDirection === 'asc' ? 'up' : 'down'}`;
                 }
             }
-            
+
             // Sort the table rows
             function sortTableRows() {
                 const table = document.getElementById('farmsTable');
                 if (!table) return;
-                
+
                 const tbody = table.querySelector('tbody');
                 const rows = Array.from(tbody.querySelectorAll('tr.farm-row'));
-                
+
                 // Sort the rows
                 rows.sort((rowA, rowB) => {
                     let valueA, valueB;
-                    
+
                     switch (currentSortColumn) {
                         case 'name':
                             valueA = rowA.querySelector('.farm-name').textContent.trim();
@@ -295,23 +295,29 @@
                             valueA = '';
                             valueB = '';
                     }
-                    
-                    // String comparison
-                    const result = valueA.localeCompare(valueB);
-                    return currentSortDirection === 'asc' ? result : -result;
+
+                    // String comparison with null/undefined check
+                    if (valueA && valueB) {
+                        const result = valueA.localeCompare(valueB);
+                        return currentSortDirection === 'asc' ? result : -result;
+                    }
+                    // If either value is null/undefined, use simple comparison
+                    return currentSortDirection === 'asc' ? 
+                        (valueA ? 1 : -1) : 
+                        (valueA ? -1 : 1);
                 });
-                
+
                 // Remove existing rows
                 rows.forEach(row => {
                     tbody.removeChild(row);
                 });
-                
+
                 // Append sorted rows
                 rows.forEach(row => {
                     tbody.appendChild(row);
                 });
             }
-            
+
             // Log logo loading
             const currentCompanyLogo = document.getElementById('currentCompanyLogo');
             if (currentCompanyLogo) {

@@ -47,8 +47,13 @@ public class CompanyApiController {
     @Autowired
     private UserRoleService userRoleService;
 
-    @PostMapping("/list-all")
+    @PostMapping("/list")
     public ResponseEntity<?> listCompanies() {
+        return listAllCompanies();
+    }
+
+    @PostMapping("/list-all")
+    public ResponseEntity<?> listAllCompanies() {
         logger.info("🏢 API request for company list");
         try {
             List<Company> companies = companyService.getAllCompanies();

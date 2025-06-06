@@ -603,4 +603,66 @@ public class ChartApiController extends BaseController {
             return ResponseEntity.ok(errorResponse);
         }
     }
+
+    @PostMapping("/multi-farm/production-budget-summary")
+    public ResponseEntity<Map<String, Object>> getMultiFarmProductionBudgetSummary(@RequestBody CompanyDateRangeRequest request) {
+        logger.info("📊 Processing multi-farm production budget summary request - companyId: {}, from: {}, to: {}", 
+            request.getCompany_id(), request.getFrom(), request.getTo());
+
+        try {
+            Map<String, Object> chartData = chartService.getProductionVsBudgetByFarm(
+                request.getCompany_id(), 
+                request.getFrom(),
+                request.getTo()
+            );
+
+            logger.info("📈 Successfully retrieved multi-farm production budget summary data");
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("data", chartData);
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("❌ Error processing request: {}", e.getMessage(), e);
+
+            // Return empty data with error flag for frontend debugging
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("data", new HashMap<>());
+            errorResponse.put("error", true);
+            errorResponse.put("errorMessage", e.getMessage());
+
+            return ResponseEntity.ok(errorResponse);
+        }
+    }
+
+    @PostMapping("/company/production-budget-summary")
+    public ResponseEntity<Map<String, Object>> getCompanyProductionBudgetSummary(@RequestBody CompanyDateRangeRequest request) {
+        logger.info("📊 Processing company production budget summary request - companyId: {}, from: {}, to: {}", 
+            request.getCompany_id(), request.getFrom(), request.getTo());
+
+        try {
+            Map<String, Object> chartData = chartService.getProductionVsBudgetByFarm(
+                request.getCompany_id(), 
+                request.getFrom(),
+                request.getTo()
+            );
+
+            logger.info("📈 Successfully retrieved company production budget summary data");
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("data", chartData);
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("❌ Error processing request: {}", e.getMessage(), e);
+
+            // Return empty data with error flag for frontend debugging
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("data", new HashMap<>());
+            errorResponse.put("error", true);
+            errorResponse.put("errorMessage", e.getMessage());
+
+            return ResponseEntity.ok(errorResponse);
+        }
+    }
 }
