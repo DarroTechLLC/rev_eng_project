@@ -120,7 +120,7 @@ public class AuthenticationController {
 
             logger.debug("🔍 Checking if username already exists: {}", registerFormDTO.getUsername());
             LoggerUtils.logDatabase(logger, "SELECT", "User", "Checking if username exists: " + registerFormDTO.getUsername());
-            User existingUser = userRepository.findByUsername(registerFormDTO.getUsername());
+            User existingUser = userRepository.findByUsername(registerFormDTO.getUsername()).orElse(null);
 
             if (existingUser != null) {
                 logger.warn("⚠️ Registration attempted with existing username: {}", registerFormDTO.getUsername());
@@ -293,7 +293,7 @@ public class AuthenticationController {
 
             logger.debug("🔍 Looking up user by username: {}", loginFormDTO.getUsername());
             LoggerUtils.logDatabase(logger, "SELECT", "User", "Finding user by username for login");
-            User theUser = userRepository.findByUsername(loginFormDTO.getUsername());
+            User theUser = userRepository.findByUsername(loginFormDTO.getUsername()).orElse(null);
 
             if (theUser == null) {
                 logger.warn("⚠️ Login attempt with non-existent username: {}", loginFormDTO.getUsername());

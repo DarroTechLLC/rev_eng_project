@@ -22,6 +22,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -61,12 +62,12 @@ public class ReportApiController extends BaseController {
             Instant instant = localDate.atStartOfDay(ZoneId.systemDefault()).toInstant();
 
             // Find the weekly report for the company and date
-            Optional<WeeklyReportCompany> report = weeklyReportRepository.findByCompanyIdAndDate(companyId, instant);
+            List<WeeklyReportCompany> reports = weeklyReportRepository.findByCompanyIdAndDate(companyId, instant);
 
             Map<String, Object> response = new HashMap<>();
-            if (report.isPresent()) {
-                // Return the timestamp of the report
-                response.put("timestamp", report.get().getTimestamp().toString());
+            if (!reports.isEmpty()) {
+                // Return the timestamp of the first report
+                response.put("timestamp", reports.get(0).getTimestamp().toString());
             } else {
                 // If no report is found, return the current timestamp
                 response.put("timestamp", Instant.now().toString());
@@ -92,7 +93,7 @@ public class ReportApiController extends BaseController {
      * @return The PDF report as a resource
      */
     @GetMapping({"/weekly-pdf/{companyName}", "/weekly-pdf/{companyName}/"})
-    public ResponseEntity<Resource> getWeeklyPdf(
+    public ResponseEntity<?> getWeeklyPdf(
             @PathVariable String companyName,
             @RequestParam("company_id") String companyId,
             @RequestParam("date") String date) {
@@ -106,32 +107,36 @@ public class ReportApiController extends BaseController {
             Instant instant = localDate.atStartOfDay(ZoneId.systemDefault()).toInstant();
 
             // Find the weekly report for the company and date
-            Optional<WeeklyReportCompany> report = weeklyReportRepository.findByCompanyIdAndDate(companyId, instant);
+            List<WeeklyReportCompany> reports = weeklyReportRepository.findByCompanyIdAndDate(companyId, instant);
 
-            if (report.isPresent()) {
+            if (!reports.isEmpty()) {
                 // Return the PDF from the database
-                byte[] pdfBytes = report.get().getPdf();
-                ByteArrayResource resource = new ByteArrayResource(pdfBytes);
+                byte[] pdfBytes = reports.get(0).getPdf();
 
                 return ResponseEntity.ok()
                         .contentType(MediaType.APPLICATION_PDF)
-                        .body(resource);
+                        .header("Content-Disposition", "inline; filename=\"" + companyName + "-weekly-report.pdf\"")
+                        .body(pdfBytes);
             } else {
                 // If no report is found, return a placeholder PDF
                 logger.warn("⚠️ No weekly report found for companyId: {}, date: {}", companyId, date);
                 Resource resource = new ClassPathResource("static/img/undraw_profile.svg");
+                byte[] svgBytes = resource.getInputStream().readAllBytes();
 
                 return ResponseEntity.ok()
                         .contentType(MediaType.valueOf("image/svg+xml"))
-                        .body(resource);
+                        .body(svgBytes);
             }
         } catch (Exception e) {
             logger.error("❌ Error processing request: {}", e.getMessage(), e);
-            // Return a ByteArrayResource with a JSON error message
+            // Return a JSON error response
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("error", true);
+            errorResponse.put("message", "An error occurred while processing the request");
+
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .body(new ByteArrayResource(
-                            ("{\"error\":true,\"message\":\"An error occurred while processing the request\"}").getBytes()));
+                    .body(errorResponse);
         }
     }
 
@@ -155,12 +160,12 @@ public class ReportApiController extends BaseController {
             Instant instant = localDate.atStartOfDay(ZoneId.systemDefault()).toInstant();
 
             // Find the daily report for the company and date
-            Optional<DailyReportCompany> report = dailyReportRepository.findByCompanyIdAndDate(companyId, instant);
+            List<DailyReportCompany> reports = dailyReportRepository.findByCompanyIdAndDate(companyId, instant);
 
             Map<String, Object> response = new HashMap<>();
-            if (report.isPresent()) {
-                // Return the timestamp of the report
-                response.put("timestamp", report.get().getTimestamp().toString());
+            if (!reports.isEmpty()) {
+                // Return the timestamp of the first report
+                response.put("timestamp", reports.get(0).getTimestamp().toString());
             } else {
                 // If no report is found, return the current timestamp
                 response.put("timestamp", Instant.now().toString());
@@ -186,7 +191,7 @@ public class ReportApiController extends BaseController {
      * @return The PDF report as a resource
      */
     @GetMapping({"/daily-pdf/{companyName}", "/daily-pdf/{companyName}/"})
-    public ResponseEntity<Resource> getDailyPdf(
+    public ResponseEntity<?> getDailyPdf(
             @PathVariable String companyName,
             @RequestParam("company_id") String companyId,
             @RequestParam("date") String date) {
@@ -200,32 +205,36 @@ public class ReportApiController extends BaseController {
             Instant instant = localDate.atStartOfDay(ZoneId.systemDefault()).toInstant();
 
             // Find the daily report for the company and date
-            Optional<DailyReportCompany> report = dailyReportRepository.findByCompanyIdAndDate(companyId, instant);
+            List<DailyReportCompany> reports = dailyReportRepository.findByCompanyIdAndDate(companyId, instant);
 
-            if (report.isPresent()) {
+            if (!reports.isEmpty()) {
                 // Return the PDF from the database
-                byte[] pdfBytes = report.get().getPdf();
-                ByteArrayResource resource = new ByteArrayResource(pdfBytes);
+                byte[] pdfBytes = reports.get(0).getPdf();
 
                 return ResponseEntity.ok()
                         .contentType(MediaType.APPLICATION_PDF)
-                        .body(resource);
+                        .header("Content-Disposition", "inline; filename=\"" + companyName + "-daily-report.pdf\"")
+                        .body(pdfBytes);
             } else {
                 // If no report is found, return a placeholder PDF
                 logger.warn("⚠️ No daily report found for companyId: {}, date: {}", companyId, date);
                 Resource resource = new ClassPathResource("static/img/undraw_profile.svg");
+                byte[] svgBytes = resource.getInputStream().readAllBytes();
 
                 return ResponseEntity.ok()
                         .contentType(MediaType.valueOf("image/svg+xml"))
-                        .body(resource);
+                        .body(svgBytes);
             }
         } catch (Exception e) {
             logger.error("❌ Error processing request: {}", e.getMessage(), e);
-            // Return a ByteArrayResource with a JSON error message
+            // Return a JSON error response
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("error", true);
+            errorResponse.put("message", "An error occurred while processing the request");
+
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .body(new ByteArrayResource(
-                            ("{\"error\":true,\"message\":\"An error occurred while processing the request\"}").getBytes()));
+                    .body(errorResponse);
         }
     }
 }

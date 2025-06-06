@@ -70,6 +70,6 @@ public class UserService {
      */
     public User findUserByUsername(String username) {
         System.out.println("UserService: Finding user by username: " + username);
-        return userRepository.findByUsername(username);
+        return userRepository.findByUsername(username).orElse(null);
     }
 }
