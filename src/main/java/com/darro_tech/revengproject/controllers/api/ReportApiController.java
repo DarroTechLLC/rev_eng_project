@@ -64,10 +64,26 @@ public class ReportApiController extends BaseController {
             // Find the weekly report for the company and date
             List<WeeklyReportCompany> reports = weeklyReportRepository.findByCompanyIdAndDate(companyId, instant);
 
+            // If no reports found with the exact date, try a date range approach
+            if (reports.isEmpty()) {
+                logger.info("🔍 No reports found with exact date match, trying date range for companyId: {}, date: {}", companyId, date);
+
+                // Create a date range for the entire day (from start of day to start of next day)
+                Instant startOfDay = localDate.atStartOfDay(ZoneId.systemDefault()).toInstant();
+                Instant startOfNextDay = localDate.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant();
+
+                reports = weeklyReportRepository.findByCompanyIdAndDateBetween(companyId, startOfDay, startOfNextDay);
+
+                if (!reports.isEmpty()) {
+                    logger.info("✅ Found {} reports using date range for companyId: {}, date: {}", reports.size(), companyId, date);
+                }
+            }
+
             Map<String, Object> response = new HashMap<>();
             if (!reports.isEmpty()) {
                 // Return the timestamp of the first report
                 response.put("timestamp", reports.get(0).getTimestamp().toString());
+                logger.info("⏱️ Returning timestamp: {} for date: {}", reports.get(0).getTimestamp(), date);
             } else {
                 // If no report is found, return the current timestamp
                 response.put("timestamp", Instant.now().toString());
@@ -109,9 +125,25 @@ public class ReportApiController extends BaseController {
             // Find the weekly report for the company and date
             List<WeeklyReportCompany> reports = weeklyReportRepository.findByCompanyIdAndDate(companyId, instant);
 
+            // If no reports found with the exact date, try a date range approach
+            if (reports.isEmpty()) {
+                logger.info("🔍 No reports found with exact date match, trying date range for companyId: {}, date: {}", companyId, date);
+
+                // Create a date range for the entire day (from start of day to start of next day)
+                Instant startOfDay = localDate.atStartOfDay(ZoneId.systemDefault()).toInstant();
+                Instant startOfNextDay = localDate.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant();
+
+                reports = weeklyReportRepository.findByCompanyIdAndDateBetween(companyId, startOfDay, startOfNextDay);
+
+                if (!reports.isEmpty()) {
+                    logger.info("✅ Found {} reports using date range for companyId: {}, date: {}", reports.size(), companyId, date);
+                }
+            }
+
             if (!reports.isEmpty()) {
                 // Return the PDF from the database
                 byte[] pdfBytes = reports.get(0).getPdf();
+                logger.info("📄 Returning PDF report with timestamp: {} for date: {}", reports.get(0).getTimestamp(), date);
 
                 return ResponseEntity.ok()
                         .contentType(MediaType.APPLICATION_PDF)
@@ -162,10 +194,26 @@ public class ReportApiController extends BaseController {
             // Find the daily report for the company and date
             List<DailyReportCompany> reports = dailyReportRepository.findByCompanyIdAndDate(companyId, instant);
 
+            // If no reports found with the exact date, try a date range approach
+            if (reports.isEmpty()) {
+                logger.info("🔍 No reports found with exact date match, trying date range for companyId: {}, date: {}", companyId, date);
+
+                // Create a date range for the entire day (from start of day to start of next day)
+                Instant startOfDay = localDate.atStartOfDay(ZoneId.systemDefault()).toInstant();
+                Instant startOfNextDay = localDate.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant();
+
+                reports = dailyReportRepository.findByCompanyIdAndDateBetween(companyId, startOfDay, startOfNextDay);
+
+                if (!reports.isEmpty()) {
+                    logger.info("✅ Found {} reports using date range for companyId: {}, date: {}", reports.size(), companyId, date);
+                }
+            }
+
             Map<String, Object> response = new HashMap<>();
             if (!reports.isEmpty()) {
                 // Return the timestamp of the first report
                 response.put("timestamp", reports.get(0).getTimestamp().toString());
+                logger.info("⏱️ Returning timestamp: {} for date: {}", reports.get(0).getTimestamp(), date);
             } else {
                 // If no report is found, return the current timestamp
                 response.put("timestamp", Instant.now().toString());
@@ -207,9 +255,25 @@ public class ReportApiController extends BaseController {
             // Find the daily report for the company and date
             List<DailyReportCompany> reports = dailyReportRepository.findByCompanyIdAndDate(companyId, instant);
 
+            // If no reports found with the exact date, try a date range approach
+            if (reports.isEmpty()) {
+                logger.info("🔍 No reports found with exact date match, trying date range for companyId: {}, date: {}", companyId, date);
+
+                // Create a date range for the entire day (from start of day to start of next day)
+                Instant startOfDay = localDate.atStartOfDay(ZoneId.systemDefault()).toInstant();
+                Instant startOfNextDay = localDate.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant();
+
+                reports = dailyReportRepository.findByCompanyIdAndDateBetween(companyId, startOfDay, startOfNextDay);
+
+                if (!reports.isEmpty()) {
+                    logger.info("✅ Found {} reports using date range for companyId: {}, date: {}", reports.size(), companyId, date);
+                }
+            }
+
             if (!reports.isEmpty()) {
                 // Return the PDF from the database
                 byte[] pdfBytes = reports.get(0).getPdf();
+                logger.info("📄 Returning PDF report with timestamp: {} for date: {}", reports.get(0).getTimestamp(), date);
 
                 return ResponseEntity.ok()
                         .contentType(MediaType.APPLICATION_PDF)
