@@ -4,8 +4,10 @@
       layout:decorate="~{layouts/main}">
 <head>
     <title>Daily Volume Dashboard</title>
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Highcharts -->
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <!-- Chart Utils -->
+    <script src="/js/chart-utils/highcharts-utils.js"></script>
 </head>
 <body>
 <div layout:fragment="content">
@@ -29,7 +31,7 @@
                     <div class="card-body">
                         <div id="loadingIndicator" style="display: none;">Loading...</div>
                         <div id="errorMessage" class="alert alert-danger" style="display: none;"></div>
-                        <canvas id="dailyVolumeChart"></canvas>
+                        <div id="dailyVolumeChart" style="min-height: 400px;"></div>
                     </div>
                 </div>
             </div>
@@ -44,12 +46,12 @@
         const selectedCompanyId = /*[[${selectedCompanyId}]]*/ '';
         const dateSelector = document.getElementById('dateSelector');
         const chartTypeSelector = document.getElementById('chartType');
-        const ctx = document.getElementById('dailyVolumeChart').getContext('2d');
+        const chartContainer = document.getElementById('dailyVolumeChart');
         let chart;
 
         // Log initial data presence
         console.log('🔍 Chart Configuration Verification:');
-        console.log('✓ Chart container present:', !!document.getElementById('dailyVolumeChart'));
+        console.log('✓ Chart container present:', !!chartContainer);
         console.log('✓ Date selector present:', !!dateSelector);
         console.log('✓ Chart type selector present:', !!chartTypeSelector);
         console.log('✓ Company ID present:', !!selectedCompanyId);
@@ -122,52 +124,53 @@
         }
 
         function createChart(data) {
-            const chartData = {
-                labels: data.map(item => item.farm_name || item.farm_id),
-                datasets: [{
-                    label: 'Volume (MMBTUs)',
-                    data: data.map(item => item.volume),
-                    backgroundColor: 'rgba(54, 162, 235, 0.8)',
-                    borderColor: 'rgba(54, 162, 235, 1)',
-                    borderWidth: 1
-                }]
-            };
+            // Prepare data for Highcharts
+            const chartSeries = [{
+                name: 'Volume',
+                data: data.map(item => [item.farm_name || item.farm_id, item.volume || 0])
+            }];
 
             const totalVolume = data.reduce((sum, item) => sum + (item.volume || 0), 0);
 
             console.log('📈 Chart Data Verification:');
-            console.log('✓ Labels present:', chartData.labels.length);
-            console.log('✓ Data points present:', chartData.datasets[0].data.length);
+            console.log('✓ Data points present:', chartSeries[0].data.length);
             console.log('✓ Total volume calculated:', totalVolume);
 
             // Get the selected chart type
             const chartType = chartTypeSelector.value;
             console.log('📊 Creating chart with type:', chartType);
 
-            chart = new Chart(ctx, {
-                // For column type, we use 'bar' type in Chart.js but with horizontal: false
-                type: chartType === 'column' ? 'bar' : chartType,
-                data: chartData,
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    indexAxis: chartType === 'bar' ? 'y' : 'x', // Use horizontal bars for 'bar' type
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: `Daily Production Volume: ${Math.round(totalVolume).toLocaleString()} MMBTUs`
-                        }
+            // Create Highcharts chart
+            chart = Highcharts.chart(chartContainer, {
+                chart: {
+                    type: chartType,
+                    height: 400
+                },
+                title: createTitleWithTotal('Daily Production Volume', totalVolume, 'MMBTUs'),
+                xAxis: {
+                    type: 'category',
+                    title: {
+                        text: 'Farm'
+                    }
+                },
+                yAxis: {
+                    min: 0,
+                    title: {
+                        text: 'MMBTUs'
                     },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            title: {
-                                display: true,
-                                text: 'MMBTUs'
-                            }
+                    labels: {
+                        formatter: function() {
+                            return Highcharts.numberFormat(this.value, 0);
                         }
                     }
-                }
+                },
+                tooltip: {
+                    formatter: createTooltipFormatter('MMBTUs')
+                },
+                legend: {
+                    enabled: false
+                },
+                series: chartSeries
             });
 
             hideLoading();
