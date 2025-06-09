@@ -74,8 +74,7 @@
                 <!-- Farm Selector Placeholder -->
                 <div class="px-3 mb-2">
                     <span class="text-xs font-weight-bold text-primary mb-1">Select Farm</span>
-                    <select id="farmSelector" class="form-control form-control-sm"
-                            onchange="updateProjectLinks(this.value)">
+                    <select id="farmSelector" class="form-control form-control-sm" onchange="updateProjectLinks(this.value)">
                         <option th:each="farm : ${farms}" th:value="${farm.id}"
                                 th:text="${farm.name}"
                                 th:selected="${farm.id == selectedFarmKey}"></option>
@@ -113,38 +112,78 @@
 
     <!-- Divider -->
     <hr class="sidebar-divider">
+
+    <!-- AI Insights Section -->
+    <li class="nav-item">
+        <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#aiSubmenu" aria-expanded="false">
+            <i class="fas fa-fw fa-brain"></i>
+            <span>AI Insights</span>
+        </a>
+        <div id="aiSubmenu" class="collapse" aria-labelledby="headingAI" data-parent="#accordionSidebar">
+            <div class="bg-white py-2 collapse-inner rounded">
+                <a class="collapse-item" th:href="${selectedCompany != null ? '/' + selectedCompany.name.toLowerCase().replace(' ', '-') + '/ai/anomaly-detection' : '/dashboard'}">
+                    <i class="fas fa-fw fa-exclamation-triangle"></i> Anomaly Detection
+                </a>
+                <a class="collapse-item" th:href="${selectedCompany != null ? '/' + selectedCompany.name.toLowerCase().replace(' ', '-') + '/ai/trend-analysis' : '/dashboard'}">
+                    <i class="fas fa-fw fa-chart-line"></i> Trend Analysis
+                </a>
+                <a class="collapse-item" th:href="${selectedCompany != null ? '/' + selectedCompany.name.toLowerCase().replace(' ', '-') + '/ai/production-forecasting' : '/dashboard'}">
+                    <i class="fas fa-fw fa-calendar-alt"></i> Production Forecasting
+                </a>
+            </div>
+        </div>
+    </li>
+
+    <!-- Divider -->
+    <hr class="sidebar-divider">
 </ul>
 
 <!-- JavaScript for Farm Selector -->
 <script th:fragment="sidebar-scripts">
     function updateProjectLinks(farmKey) {
+        console.log(`🚜 updateProjectLinks called with farmKey: ${farmKey}`);
+
         // Store selected farm key in localStorage
         localStorage.setItem('selectedFarmKey', farmKey);
-        
-        // Get the farm name from the select element
+
+        // Set the selected value in the dropdown
         const farmSelector = document.getElementById('farmSelector');
         if (!farmSelector) {
             console.error("Farm selector element not found");
             return;
         }
-        
+
+        // Explicitly set the value to ensure it's selected
+        farmSelector.value = farmKey;
+
+        // Force the dropdown to update its selection
+        for (let i = 0; i < farmSelector.options.length; i++) {
+            if (farmSelector.options[i].value === farmKey) {
+                farmSelector.selectedIndex = i;
+                break;
+            }
+        }
+
+        // Get the selected option directly using the farmKey parameter
         const selectedOption = farmSelector.options[farmSelector.selectedIndex];
         if (!selectedOption) {
             console.error("No farm selected");
             return;
         }
-        
+
+        console.log(`🚜 Selected farm: ${selectedOption.text} (ID: ${selectedOption.value})`);
+
         const selectedFarmName = selectedOption.text.toLowerCase().replace(/\s+/g, '-');
-        
+
         // Get company name from URL or data attribute
         let companyName = '';
         const urlParts = window.location.pathname.split('/');
-        
+
         // Try to get company name from URL first
         if (urlParts.length > 1 && urlParts[1]) {
             companyName = urlParts[1];
         }
-        
+
         // If not found in URL, try from company selector data attribute
         if (!companyName) {
             const companyDisplayEl = document.getElementById('currentCompanyDisplay');
@@ -152,37 +191,42 @@
                 companyName = companyDisplayEl.getAttribute('data-company-slug') || '';
             }
         }
-        
+
         if (!companyName) {
             console.error("Unable to determine company name for navigation");
             return;
         }
-        
+
         // Get current project type (production, livestock, etc.) if we're on a projects page
         let projectType = 'production'; // Default
         const projectsIndex = urlParts.indexOf('projects');
-        
+
         if (projectsIndex !== -1 && projectsIndex + 2 < urlParts.length) {
             projectType = urlParts[projectsIndex + 2] || 'production';
         }
-        
+
         // Build SEO-friendly URL
         const newUrl = `/${companyName}/projects/${selectedFarmName}/${projectType}`;
         console.log(`📍 Navigating to: ${newUrl}`);
-        window.location.href = newUrl;
+
+        // Add a small delay to ensure the browser has processed the selection
+        setTimeout(() => {
+            console.log(`🚀 Navigating to: ${newUrl}`);
+            window.location.href = newUrl;
+        }, 10);
     }
 
     // Initialize when document is ready
     document.addEventListener('DOMContentLoaded', function() {
         console.log("🧠 Sidebar scripts loaded - initializing");
-        
+
         // Set default farm key if none is selected
         const farmSelector = document.getElementById('farmSelector');
         if (farmSelector && !localStorage.getItem('selectedFarmKey')) {
             localStorage.setItem('selectedFarmKey', farmSelector.value);
             console.log("💾 Stored default farm key: " + farmSelector.value);
         }
-        
+
         // Check for URL navigation errors on page load
         const urlPath = window.location.pathname;
         if (urlPath.includes('//')) {
@@ -194,7 +238,7 @@
                 window.location.href = fixedUrl;
             }
         }
-        
+
         // Listen for company selection changes
         document.addEventListener('companySelected', function(event) {
             console.log("🏢 Company selection changed event received", event.detail);
@@ -202,18 +246,18 @@
             const companyName = event.detail.companyName;
             const companySlug = companyName.toLowerCase().replace(/\s+/g, '-');
             const companyId = event.detail.companyId;
-            
+
             // Store the new company slug for future reference
             const companyDisplayEl = document.getElementById('currentCompanyDisplay');
             if (companyDisplayEl) {
                 companyDisplayEl.setAttribute('data-company-slug', companySlug);
                 console.log("🔄 Updated company slug attribute:", companySlug);
             }
-            
+
             // Refresh farms for the new company
             console.log("🚜 Will fetch farms for company ID:", companyId);
             console.log("🔄 Company change will trigger page navigation, defer farm updates");
-            
+
             // The actual farm update will happen after page reload
             // This is because changing company redirects to a new URL
             // But we'll still make the API call to ensure the session is updated
@@ -225,11 +269,11 @@
                     console.error("❌ Error pre-fetching farms:", error);
                 });
         });
-        
+
         // Function to fetch farms for a company and update the farm selector
         function fetchFarmsForCompany(companyId) {
             console.log("🚜 Fetching farms for company ID:", companyId);
-            
+
             // API call to get farms for the selected company
             fetch(`/api/farms/by-company/${companyId}`)
                 .then(response => response.json())
@@ -245,7 +289,7 @@
                     console.error("❌ Error fetching farms:", error);
                 });
         }
-        
+
         // Function to update the farm selector dropdown
         function updateFarmSelector(farms, selectedFarmId) {
             const farmSelector = document.getElementById('farmSelector');
@@ -253,41 +297,41 @@
                 console.error("⚠️ Farm selector element not found");
                 return;
             }
-            
+
             console.log("🧩 Updating farm selector with farms:", farms.length);
-            
+
             // Clear existing options
             farmSelector.innerHTML = '';
-            
+
             // Add options for farms
             farms.forEach(farm => {
                 const option = document.createElement('option');
                 option.value = farm.id;
                 option.text = farm.name;
-                
+
                 // Select the farm if it matches the one in session
                 if (selectedFarmId && farm.id === selectedFarmId) {
                     option.selected = true;
                     console.log("✅ Selected farm in dropdown:", farm.name);
                 }
-                
+
                 farmSelector.appendChild(option);
             });
-            
+
             // If no farm is selected but we have farms, select the first one
             if (farmSelector.selectedIndex === -1 && farms.length > 0) {
                 farmSelector.selectedIndex = 0;
                 console.log("ℹ️ No farm was selected, defaulted to first farm:", farmSelector.options[0].text);
-                
+
                 // Store the default farm key
                 localStorage.setItem('selectedFarmKey', farmSelector.value);
             }
-            
+
             // Update farm links based on the selected farm
             updateProjectLinks(farmSelector.value);
             console.log("🔄 Updated project links based on selected farm");
         }
-        
+
         console.log("✅ Sidebar scripts initialized successfully");
     });
 </script>
