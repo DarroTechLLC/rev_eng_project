@@ -19,6 +19,14 @@ async function isPlatformAuthenticatorAvailable() {
 
 // Convert base64 string to ArrayBuffer
 function base64ToArrayBuffer(base64) {
+    // Convert base64url → base64
+    base64 = base64.replace(/-/g, '+').replace(/_/g, '/');
+
+    // Add padding if missing
+    while (base64.length % 4 !== 0) {
+        base64 += '=';
+    }
+
     const binaryString = window.atob(base64);
     const len = binaryString.length;
     const bytes = new Uint8Array(len);
