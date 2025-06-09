@@ -126,7 +126,8 @@ public class SecurityConfig {
                         mvc.pattern("/css/**"),
                         mvc.pattern("/js/**"),
                         mvc.pattern("/vendor/**"),
-                        mvc.pattern("/img/**")
+                        mvc.pattern("/img/**"),
+                        mvc.pattern("/webauthn/**")  // Explicitly permit WebAuthn endpoints
                 ).permitAll()
                 .anyRequest().permitAll() // Allow all requests for now, the controllers will handle auth
                 )

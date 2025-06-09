@@ -36,7 +36,7 @@ public class AccountController extends BaseController {
 
     @GetMapping("/change-password")
     public String changePassword(Model model) {
-        model.addAttribute("title", "Change Password");
+        model.addAttribute("title", "Biometric Authentication");
         return view("account/change-password", model);
     }
 
@@ -77,7 +77,7 @@ public class AccountController extends BaseController {
                 return ResponseEntity.ok(response);
             } else {
                 model.addAttribute("error", "Current password is incorrect");
-                model.addAttribute("title", "Change Password");
+                model.addAttribute("title", "Biometric Authentication");
                 return view("account/change-password", model);
             }
         }
@@ -91,7 +91,7 @@ public class AccountController extends BaseController {
                 return ResponseEntity.ok(response);
             } else {
                 model.addAttribute("error", "New password and confirmation do not match");
-                model.addAttribute("title", "Change Password");
+                model.addAttribute("title", "Biometric Authentication");
                 return view("account/change-password", model);
             }
         }
@@ -105,7 +105,7 @@ public class AccountController extends BaseController {
                 return ResponseEntity.ok(response);
             } else {
                 model.addAttribute("error", "New password must be at least 5 characters long");
-                model.addAttribute("title", "Change Password");
+                model.addAttribute("title", "Biometric Authentication");
                 return view("account/change-password", model);
             }
         }
@@ -133,7 +133,7 @@ public class AccountController extends BaseController {
                 return ResponseEntity.ok(response);
             } else {
                 model.addAttribute("error", "An error occurred while changing your password. Please try again.");
-                model.addAttribute("title", "Change Password");
+                model.addAttribute("title", "Biometric Authentication");
                 return view("account/change-password", model);
             }
         }

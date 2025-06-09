@@ -54,6 +54,13 @@
                                         <button type="submit" class="btn btn-primary btn-user btn-block">
                                             Login
                                         </button>
+                                        <!-- Biometric login button (hidden by default, shown by JavaScript if available) -->
+                                        <button type="button" id="biometric-login-button" class="btn btn-info btn-user btn-block mt-2" 
+                                               data-toggle="tooltip" data-placement="top" 
+                                               title="First-time users: You need to register your biometric credentials first. Please log in with your password and go to Account → Biometric Authentication."
+                                               style="display: none;">
+                                            <i class="fas fa-fingerprint mr-1"></i> Login with Biometrics
+                                        </button>
                                         <hr>
                                         <div class="text-center">
                                             <a class="small" href="/forgot-password">Forgot Password?</a>
@@ -81,5 +88,15 @@
 
     <!-- Custom scripts for all pages-->
     <script src="/js/sb-admin-2.min.js"></script>
+
+    <!-- WebAuthn scripts -->
+    <script src="/js/webauthn.js"></script>
+
+    <!-- Initialize tooltips -->
+    <script>
+        $(function () {
+            $('[data-toggle="tooltip"]').tooltip();
+        });
+    </script>
 </body>
 </html>
