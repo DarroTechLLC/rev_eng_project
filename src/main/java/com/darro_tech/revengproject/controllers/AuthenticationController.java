@@ -80,7 +80,7 @@ public class AuthenticationController {
         return user.get();
     }
 
-    private static void setUserInSession(HttpSession session, User user) {
+    public static void setUserInSession(HttpSession session, User user) {
         logger.debug("🔐 Setting user in session: {}", user.getUsername());
         session.setAttribute(userSessionKey, user.getId());
     }
