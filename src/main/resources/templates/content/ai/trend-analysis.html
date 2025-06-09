@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/main-layout}">
+<head>
+    <title>AI Trend Analysis</title>
+    <!-- Highcharts -->
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <!-- Chart Utils -->
+    <script src="/js/chart-utils/highcharts-utils.js"></script>
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="container-fluid">
+        <!-- Page Heading -->
+        <div class="d-sm-flex align-items-center justify-content-between mb-4">
+            <div>
+                <a href="javascript:history.back()" class="btn btn-sm btn-primary mb-2">
+                    <i class="fas fa-arrow-left"></i> Back
+                </a>
+                <h1 class="h3 mb-0 text-gray-800">AI Trend Analysis</h1>
+            </div>
+        </div>
+
+        <!-- Explanation Card -->
+        <div class="card bg-light mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="m-0"><i class="fas fa-info-circle mr-2"></i>About Trend Analysis</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item">
+                        <strong>What it does:</strong> Analyzes CH4 recovery data over time to identify increasing, decreasing, or stable trends.
+                    </li>
+                    <li class="list-group-item">
+                        <strong>How it works:</strong> Applies linear regression to calculate the slope of the trend line and the R² value (coefficient of determination).
+                    </li>
+                    <li class="list-group-item">
+                        <strong>Why it's useful:</strong> Helps predict future production patterns, identify gradual degradation in equipment performance, and validate process improvements.
+                    </li>
+                    <li class="list-group-item">
+                        <strong>Accuracy:</strong> Determined by the R² value, which measures how well the trend line fits the actual data:
+                        <div class="mt-2">
+                            <span class="badge badge-danger">Low confidence</span> (R² < 0.3)
+                            <span class="badge badge-warning ml-2">Moderate confidence</span> (R² 0.3-0.7)
+                            <span class="badge badge-success ml-2">High confidence</span> (R² > 0.7)
+                        </div>
+                    </li>
+                    <li class="list-group-item">
+                        <strong>Interpretation:</strong> The slope indicates the rate of change, while the direction shows whether production is increasing, decreasing, or stable.
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Controls Card -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Analysis Controls</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="farmSelector">Select Farm</label>
+                            <select id="farmSelector" class="form-control">
+                                <option value="">-- Select Farm --</option>
+                                <option th:each="farm : ${farms}" th:value="${farm.id}" th:text="${farm.name}"></option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="metricSelector">Select Metric</label>
+                            <select id="metricSelector" class="form-control">
+                                <option value="ch4-recovery">CH4 Recovery</option>
+                                <option value="temperature">Temperature</option>
+                                <option value="mass-balance">Mass Balance</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="startDate">Start Date</label>
+                            <input type="date" id="startDate" class="form-control" />
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="endDate">End Date</label>
+                            <input type="date" id="endDate" class="form-control" />
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-12 text-center">
+                        <button id="analyzeButton" class="btn btn-primary">Analyze Trend</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Card -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Trend Analysis Results</h6>
+            </div>
+            <div class="card-body">
+                <div id="loadingIndicator" style="display: none;" class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="sr-only">Loading...</span>
+                    </div>
+                    <p class="mt-2">Analyzing trend data...</p>
+                </div>
+                <div id="errorMessage" class="alert alert-danger" style="display: none;"></div>
+
+                <!-- Trend Summary -->
+                <div id="trendSummary" class="alert alert-info" style="display: none;"></div>
+
+                <!-- Chart for visualizing trend -->
+                <div id="trendChart" style="min-height: 400px;"></div>
+
+                <!-- Trend Details -->
+                <div id="trendDetails" class="card mt-4" style="display: none;">
+                    <div class="card-header">
+                        <h6 class="m-0 font-weight-bold text-primary">Trend Details</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="card border-left-primary shadow h-100 py-2">
+                                    <div class="card-body">
+                                        <div class="row no-gutters align-items-center">
+                                            <div class="col mr-2">
+                                                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                                    Direction
+                                                </div>
+                                                <div id="trendDirection" class="h5 mb-0 font-weight-bold text-gray-800">
+                                                    -
+                                                </div>
+                                            </div>
+                                            <div class="col-auto">
+                                                <i class="fas fa-arrow-trend-up fa-2x text-gray-300"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card border-left-success shadow h-100 py-2">
+                                    <div class="card-body">
+                                        <div class="row no-gutters align-items-center">
+                                            <div class="col mr-2">
+                                                <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                                    Slope
+                                                </div>
+                                                <div id="trendSlope" class="h5 mb-0 font-weight-bold text-gray-800">
+                                                    -
+                                                </div>
+                                            </div>
+                                            <div class="col-auto">
+                                                <i class="fas fa-chart-line fa-2x text-gray-300"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card border-left-info shadow h-100 py-2">
+                                    <div class="card-body">
+                                        <div class="row no-gutters align-items-center">
+                                            <div class="col mr-2">
+                                                <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                                    Confidence (R²)
+                                                </div>
+                                                <div id="trendConfidence" class="h5 mb-0 font-weight-bold text-gray-800">
+                                                    -
+                                                </div>
+                                            </div>
+                                            <div class="col-auto">
+                                                <i class="fas fa-percent fa-2x text-gray-300"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript for Trend Analysis -->
+<th:block layout:fragment="scripts">
+    <script th:inline="javascript">
+        // Initialize date pickers with default values
+        document.addEventListener('DOMContentLoaded', function() {
+            const today = new Date();
+            const ninetyDaysAgo = new Date();
+            ninetyDaysAgo.setDate(today.getDate() - 90);
+
+            document.getElementById('startDate').value = formatDate(ninetyDaysAgo);
+            document.getElementById('endDate').value = formatDate(today);
+
+            // Add event listener to analyze button
+            document.getElementById('analyzeButton').addEventListener('click', analyzeTrend);
+        });
+
+        function formatDate(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        function showLoading() {
+            document.getElementById('loadingIndicator').style.display = 'block';
+            document.getElementById('errorMessage').style.display = 'none';
+            document.getElementById('trendSummary').style.display = 'none';
+            document.getElementById('trendChart').style.display = 'none';
+            document.getElementById('trendDetails').style.display = 'none';
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingIndicator').style.display = 'none';
+        }
+
+        function showError(message) {
+            document.getElementById('errorMessage').textContent = message;
+            document.getElementById('errorMessage').style.display = 'block';
+        }
+
+        function analyzeTrend() {
+            const farmId = document.getElementById('farmSelector').value;
+            const metric = document.getElementById('metricSelector').value;
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+
+            if (!farmId) {
+                showError('Please select a farm');
+                return;
+            }
+
+            showLoading();
+
+            // Format dates for API
+            const startDateTime = new Date(startDate).toISOString();
+            const endDateTime = new Date(endDate).toISOString();
+
+            // Call the appropriate API based on selected metric
+            let apiUrl = `/api/ai/trends/${metric}?farmId=${farmId}&startDate=${startDateTime}&endDate=${endDateTime}`;
+
+            fetch(apiUrl)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch trend data');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    hideLoading();
+                    console.log('[DEBUG_LOG] Trend data received:', data);
+
+                    if (!data) {
+                        showError('No data received from server');
+                        return;
+                    }
+
+                    if (!data.trend) {
+                        showError('No trend data available');
+                        return;
+                    }
+
+                    // Validate trend data
+                    const trend = data.trend;
+                    if (!trend.farmId || !trend.metricType || trend.slope === undefined || trend.r2Value === undefined) {
+                        console.error('[DEBUG_LOG] Invalid trend data:', trend);
+                        showError('Received invalid trend data from server');
+                        return;
+                    }
+
+                    displayTrend(trend);
+                })
+                .catch(error => {
+                    hideLoading();
+                    showError('Error analyzing trend: ' + error.message);
+                });
+        }
+
+        function displayTrend(trend) {
+            // Display trend summary
+            const summaryElement = document.getElementById('trendSummary');
+            summaryElement.textContent = trend.interpretation;
+            summaryElement.style.display = 'block';
+
+            // Update trend details
+            document.getElementById('trendDirection').textContent = trend.direction;
+            document.getElementById('trendSlope').textContent = trend.slope.toFixed(4);
+            document.getElementById('trendConfidence').textContent = (trend.r2Value * 100).toFixed(2) + '%';
+
+            document.getElementById('trendDetails').style.display = 'block';
+
+            // Create chart visualization
+            createTrendChart(trend);
+        }
+
+        function createTrendChart(trend) {
+            // Implementation depends on your charting library
+            // This is a placeholder for Highcharts implementation
+            document.getElementById('trendChart').style.display = 'block';
+
+            // Basic chart implementation
+            Highcharts.chart('trendChart', {
+                chart: {
+                    type: 'line',
+                    zoomType: 'x'
+                },
+                title: {
+                    text: `${trend.metricType} Trend Analysis (${trend.direction})`
+                },
+                subtitle: {
+                    text: trend.interpretation
+                },
+                xAxis: {
+                    title: {
+                        text: 'Time'
+                    }
+                },
+                yAxis: {
+                    title: {
+                        text: trend.metricType
+                    }
+                },
+                tooltip: {
+                    formatter: function() {
+                        return `<b>${this.series.name}</b><br>
+                                Value: ${this.y.toFixed(2)}`;
+                    }
+                },
+                series: [{
+                    name: 'Trend Line',
+                    data: [
+                        [0, 0], 
+                        [100, trend.slope * 100]
+                    ],
+                    color: trend.direction === 'Increasing' ? 'green' : 
+                           trend.direction === 'Decreasing' ? 'red' : 'blue',
+                    dashStyle: 'dash'
+                }]
+            });
+        }
+    </script>
+</th:block>
+</body>
+</html>

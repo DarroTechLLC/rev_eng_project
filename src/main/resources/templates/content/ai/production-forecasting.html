@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/main-layout}">
+<head>
+    <title>AI Production Forecasting</title>
+    <!-- Highcharts -->
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <!-- Chart Utils -->
+    <script src="/js/chart-utils/highcharts-utils.js"></script>
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="container-fluid">
+        <!-- Page Heading -->
+        <div class="d-sm-flex align-items-center justify-content-between mb-4">
+            <div>
+                <a href="javascript:history.back()" class="btn btn-sm btn-primary mb-2">
+                    <i class="fas fa-arrow-left"></i> Back
+                </a>
+                <h1 class="h3 mb-0 text-gray-800">AI Production Forecasting</h1>
+            </div>
+        </div>
+
+        <!-- Explanation Card -->
+        <div class="card bg-light mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="m-0"><i class="fas fa-info-circle mr-2"></i>About Production Forecasting</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item">
+                        <strong>What it does:</strong> Predicts future CH4 recovery values for the next 30 days based on historical data patterns.
+                    </li>
+                    <li class="list-group-item">
+                        <strong>How it works:</strong> Uses a moving average algorithm that calculates the average of the last 7 data points to predict future values.
+                    </li>
+                    <li class="list-group-item">
+                        <strong>Why it's useful:</strong> Helps with production planning, resource allocation, and financial forecasting for biogas operations.
+                    </li>
+                    <li class="list-group-item">
+                        <strong>Accuracy:</strong> 70% confidence level for short-term predictions (1-7 days), decreasing for longer-term forecasts.
+                    </li>
+                    <li class="list-group-item">
+                        <strong>Limitations:</strong> This simple forecasting model assumes stable conditions and doesn't account for seasonal variations or planned maintenance activities.
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Controls Card -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Forecasting Controls</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="farmSelector">Select Farm</label>
+                            <select id="farmSelector" class="form-control">
+                                <option value="">-- Select Farm --</option>
+                                <option th:each="farm : ${farms}" th:value="${farm.id}" th:text="${farm.name}"></option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="metricSelector">Select Metric</label>
+                            <select id="metricSelector" class="form-control">
+                                <option value="ch4-recovery">CH4 Recovery</option>
+                                <option value="production-volume">Production Volume</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="historyPeriod">Historical Data Period</label>
+                            <select id="historyPeriod" class="form-control">
+                                <option value="30">Last 30 Days</option>
+                                <option value="60">Last 60 Days</option>
+                                <option value="90" selected>Last 90 Days</option>
+                                <option value="180">Last 180 Days</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-12 text-center">
+                        <button id="forecastButton" class="btn btn-primary">Generate Forecast</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Card -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Production Forecast</h6>
+            </div>
+            <div class="card-body">
+                <div id="loadingIndicator" style="display: none;" class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="sr-only">Loading...</span>
+                    </div>
+                    <p class="mt-2">Generating forecast...</p>
+                </div>
+                <div id="errorMessage" class="alert alert-danger" style="display: none;"></div>
+
+                <!-- Forecast Summary -->
+                <div id="forecastSummary" class="alert alert-info" style="display: none;">
+                    <strong>Forecast Summary:</strong> <span id="forecastSummaryText"></span>
+                </div>
+
+                <!-- Chart for visualizing forecast -->
+                <div id="forecastChart" style="min-height: 400px;"></div>
+
+                <!-- Forecast Details -->
+                <div id="forecastDetails" class="mt-4" style="display: none;">
+                    <h5 class="font-weight-bold">Forecast Details</h5>
+                    <div class="table-responsive">
+                        <table class="table table-bordered" id="forecastTable">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Forecasted Value</th>
+                                </tr>
+                            </thead>
+                            <tbody id="forecastTableBody">
+                                <!-- Populated via JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript for Production Forecasting -->
+<th:block layout:fragment="scripts">
+    <script th:inline="javascript">
+        // Initialize when document is ready
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add event listener to forecast button
+            document.getElementById('forecastButton').addEventListener('click', generateForecast);
+        });
+
+        function showLoading() {
+            document.getElementById('loadingIndicator').style.display = 'block';
+            document.getElementById('errorMessage').style.display = 'none';
+            document.getElementById('forecastSummary').style.display = 'none';
+            document.getElementById('forecastChart').style.display = 'none';
+            document.getElementById('forecastDetails').style.display = 'none';
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingIndicator').style.display = 'none';
+        }
+
+        function showError(message) {
+            document.getElementById('errorMessage').textContent = message;
+            document.getElementById('errorMessage').style.display = 'block';
+        }
+
+        function generateForecast() {
+            const farmId = document.getElementById('farmSelector').value;
+            const metric = document.getElementById('metricSelector').value;
+            const historyDays = document.getElementById('historyPeriod').value;
+
+            if (!farmId) {
+                showError('Please select a farm');
+                return;
+            }
+
+            showLoading();
+
+            // Calculate date range
+            const endDate = new Date();
+            const startDate = new Date();
+            startDate.setDate(endDate.getDate() - parseInt(historyDays));
+
+            // Format dates for API
+            const startDateTime = startDate.toISOString();
+            const endDateTime = endDate.toISOString();
+
+            // Call the appropriate API based on selected metric
+            let apiUrl = `/api/ai/forecast/${metric}?farmId=${farmId}&startDate=${startDateTime}&endDate=${endDateTime}`;
+
+            fetch(apiUrl)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch forecast data');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    hideLoading();
+                    console.log('[DEBUG_LOG] Forecast data received:', data);
+
+                    if (!data) {
+                        showError('No data received from server');
+                        return;
+                    }
+
+                    if (!data.forecast) {
+                        showError('No forecast data available');
+                        return;
+                    }
+
+                    // Validate forecast data
+                    const forecast = data.forecast;
+                    if (!forecast.farmId || !forecast.metricType) {
+                        console.error('[DEBUG_LOG] Invalid forecast data - missing basic properties:', forecast);
+                        showError('Received invalid forecast data from server');
+                        return;
+                    }
+
+                    if (!forecast.historicalData || !Array.isArray(forecast.historicalData)) {
+                        console.error('[DEBUG_LOG] Invalid forecast data - missing historical data:', forecast);
+                        showError('Forecast is missing historical data');
+                        return;
+                    }
+
+                    if (!forecast.forecastData || !Array.isArray(forecast.forecastData)) {
+                        console.error('[DEBUG_LOG] Invalid forecast data - missing forecast data:', forecast);
+                        showError('Forecast is missing prediction data');
+                        return;
+                    }
+
+                    // Check if we have enough data for forecasting
+                    if (forecast.historicalData.length === 0 || forecast.forecastData.length === 0) {
+                        showError('Not enough historical data available for forecasting. Please select a different time period or farm.');
+                        return;
+                    }
+
+                    displayForecast(forecast);
+                })
+                .catch(error => {
+                    hideLoading();
+                    showError('Error generating forecast: ' + error.message);
+                });
+        }
+
+        function displayForecast(forecast) {
+            // Display forecast summary
+            const summaryElement = document.getElementById('forecastSummaryText');
+            summaryElement.textContent = `30-day forecast for ${forecast.farmName} ${forecast.metricType} (Confidence: ${(forecast.confidenceLevel * 100).toFixed(0)}%)`;
+            document.getElementById('forecastSummary').style.display = 'block';
+
+            // Create forecast table
+            const tableBody = document.getElementById('forecastTableBody');
+            tableBody.innerHTML = '';
+
+            forecast.forecastData.forEach(point => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${new Date(point.timestamp).toLocaleDateString()}</td>
+                    <td>${point.value.toFixed(2)}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+
+            document.getElementById('forecastDetails').style.display = 'block';
+
+            // Create chart visualization
+            createForecastChart(forecast);
+        }
+
+        function createForecastChart(forecast) {
+            // Implementation depends on your charting library
+            // This is a placeholder for Highcharts implementation
+            document.getElementById('forecastChart').style.display = 'block';
+
+            // Prepare data for chart
+            const historicalData = forecast.historicalData.map(point => [
+                new Date(point.timestamp).getTime(),
+                point.value
+            ]);
+
+            const forecastData = forecast.forecastData.map(point => [
+                new Date(point.timestamp).getTime(),
+                point.value
+            ]);
+
+            // Create chart
+            Highcharts.chart('forecastChart', {
+                chart: {
+                    type: 'line',
+                    zoomType: 'x'
+                },
+                title: {
+                    text: `${forecast.metricType} 30-Day Forecast`
+                },
+                subtitle: {
+                    text: `For ${forecast.farmName}`
+                },
+                xAxis: {
+                    type: 'datetime',
+                    title: {
+                        text: 'Date'
+                    }
+                },
+                yAxis: {
+                    title: {
+                        text: forecast.metricType
+                    }
+                },
+                tooltip: {
+                    formatter: function() {
+                        return `<b>${this.series.name}</b><br>
+                                Date: ${Highcharts.dateFormat('%Y-%m-%d', this.x)}<br>
+                                Value: ${this.y.toFixed(2)}`;
+                    }
+                },
+                series: [
+                    {
+                        name: 'Historical Data',
+                        data: historicalData,
+                        color: 'blue'
+                    },
+                    {
+                        name: 'Forecast',
+                        data: forecastData,
+                        color: 'green',
+                        dashStyle: 'dash'
+                    }
+                ]
+            });
+        }
+    </script>
+</th:block>
+</body>
+</html>
