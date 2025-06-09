@@ -80,26 +80,23 @@
                     data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                     <i class="fas fa-bell fa-fw"></i>
                     <!-- Counter - Alerts -->
-                    <span class="badge badge-danger badge-counter">3+</span>
+                    <span class="badge badge-danger badge-counter" id="alertsCounter">0</span>
                 </a>
                 <!-- Dropdown - Alerts -->
                 <div class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in"
                     aria-labelledby="alertsDropdown">
                     <h6 class="dropdown-header">
-                        Alerts Center
+                        Website Alerts
                     </h6>
-                    <a class="dropdown-item d-flex align-items-center" href="#">
-                        <div class="mr-3">
-                            <div class="icon-circle bg-primary">
-                                <i class="fas fa-file-alt text-white"></i>
+                    <div id="alertsContainer">
+                        <div class="text-center p-3">
+                            <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                <span class="sr-only">Loading...</span>
                             </div>
+                            <span class="ml-2">Loading alerts...</span>
                         </div>
-                        <div>
-                            <div class="small text-gray-500">December 12, 2019</div>
-                            <span class="font-weight-bold">A new monthly report is ready to download!</span>
-                        </div>
-                    </a>
-                    <a class="dropdown-item text-center small text-gray-500" href="#">Show All Alerts</a>
+                    </div>
+                    <a class="dropdown-item text-center small text-gray-500" th:href="@{/admin/alerts}" id="showAllAlertsLink">Show All Alerts</a>
                 </div>
             </li>
 
@@ -154,7 +151,7 @@
             </li>
         </ul>
 
-        <!-- Script to handle dynamic role-based visibility -->
+        <!-- Script to handle dynamic role-based visibility and alerts -->
         <script>
             document.addEventListener('DOMContentLoaded', function() {
                 // Hide all admin menu items by default
@@ -185,6 +182,11 @@
                                     el.style.display = 'block';
                                 });
                             }
+
+                            // Hide "Show All Alerts" link for non-super-admins
+                            if (data.isSuperAdmin !== true) {
+                                document.getElementById('showAllAlertsLink').style.display = 'none';
+                            }
                         } else {
                             console.log('Not logged in or error fetching roles');
                         }
@@ -192,7 +194,114 @@
                     .catch(error => {
                         console.error('Error fetching role information:', error);
                     });
+
+                // Load website alerts for the current company
+                loadWebsiteAlerts();
+
+                // Add event listener for company selection to reload alerts
+                document.addEventListener('companySelected', function(event) {
+                    console.log('Company selected event detected, will reload alerts after navigation');
+                });
             });
+
+            // Function to load website alerts
+            function loadWebsiteAlerts() {
+                const alertsContainer = document.getElementById('alertsContainer');
+                const alertsCounter = document.getElementById('alertsCounter');
+
+                // Get the current company ID from the page-top data attribute
+                const pageTop = document.getElementById('page-top');
+                const companyId = pageTop.getAttribute('data-company-id');
+
+                if (!companyId || companyId === 'default') {
+                    console.log('No company ID found, skipping alerts fetch');
+                    alertsContainer.innerHTML = '<div class="text-center p-3">No company selected</div>';
+                    alertsCounter.textContent = '0';
+                    return;
+                }
+
+                console.log('Fetching alerts for company ID:', companyId);
+
+                // Get CSRF token from meta tag
+                const csrfToken = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
+                const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content');
+
+                // Prepare headers
+                const headers = {
+                    'Content-Type': 'application/json'
+                };
+
+                // Add CSRF token if available
+                if (csrfToken && csrfHeader) {
+                    headers[csrfHeader] = csrfToken;
+                }
+
+                // Fetch active alerts for the current company
+                fetch('/api/website-alerts/list-active', {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify({ companyId: companyId }),
+                    credentials: 'same-origin'
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch alerts');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Alerts data:', data);
+
+                    if (data.success && data.data) {
+                        const alerts = data.data;
+
+                        // Update the counter
+                        alertsCounter.textContent = alerts.length > 0 ? 
+                            (alerts.length > 99 ? '99+' : alerts.length) : '0';
+
+                        // If no alerts, show a message
+                        if (alerts.length === 0) {
+                            alertsContainer.innerHTML = '<div class="text-center p-3">No active alerts</div>';
+                            return;
+                        }
+
+                        // Clear the container
+                        alertsContainer.innerHTML = '';
+
+                        // Add each alert to the container
+                        alerts.forEach(alert => {
+                            const alertDate = new Date(alert.created_at).toLocaleDateString();
+
+                            const alertElement = document.createElement('a');
+                            alertElement.className = 'dropdown-item d-flex align-items-center';
+                            alertElement.href = '#';
+
+                            alertElement.innerHTML = `
+                                <div class="mr-3">
+                                    <div class="icon-circle bg-primary">
+                                        <i class="fas fa-bell text-white"></i>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="small text-gray-500">${alertDate}</div>
+                                    <span class="font-weight-bold">${alert.message}</span>
+                                </div>
+                            `;
+
+                            alertsContainer.appendChild(alertElement);
+                        });
+                    } else {
+                        console.error('Failed to fetch alerts:', data.message || 'Unknown error');
+                        alertsContainer.innerHTML = '<div class="text-center p-3 text-danger">Failed to load alerts</div>';
+                        alertsCounter.textContent = '0';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching alerts:', error ? error.message || error : 'Unknown error');
+                    alertsContainer.innerHTML = '<div class="text-center p-3 text-danger">Error loading alerts</div>';
+                    alertsCounter.textContent = '0';
+                });
+            }
         </script>
     </nav>
 </body>

@@ -19,13 +19,24 @@ async function isPlatformAuthenticatorAvailable() {
 
 // Convert base64 string to ArrayBuffer
 function base64ToArrayBuffer(base64) {
-    const binaryString = window.atob(base64);
-    const len = binaryString.length;
-    const bytes = new Uint8Array(len);
-    for (let i = 0; i < len; i++) {
-        bytes[i] = binaryString.charCodeAt(i);
+    // Fix base64 string: replace URL-safe chars and add padding if needed
+    let fixedBase64 = base64.replace(/-/g, '+').replace(/_/g, '/');
+    while (fixedBase64.length % 4) {
+        fixedBase64 += '=';
     }
-    return bytes.buffer;
+
+    try {
+        const binaryString = window.atob(fixedBase64);
+        const len = binaryString.length;
+        const bytes = new Uint8Array(len);
+        for (let i = 0; i < len; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+        }
+        return bytes.buffer;
+    } catch (error) {
+        console.error('Error decoding base64 string:', error, 'Original string:', base64);
+        throw error;
+    }
 }
 
 // Convert ArrayBuffer to base64 string

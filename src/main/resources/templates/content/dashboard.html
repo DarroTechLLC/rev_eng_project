@@ -4,7 +4,7 @@
     <!-- Page Heading -->
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
         <h1 class="h3 mb-0 text-gray-800" th:text="${dashboardTitle ?: 'Dashboard'}">Dashboard</h1>
-        
+
         <div class="d-flex">
             <!-- Company Info -->
             <div class="company-info d-flex align-items-center mr-3">
@@ -12,7 +12,7 @@
                      class="img-thumbnail mr-2" style="max-height: 40px; max-width: 80px;">
                 <span class="font-weight-bold text-primary" th:text="${companyName}">Company Name</span>
             </div>
-            
+
             <!-- Dashboard Actions -->
             <div class="btn-group">
                 <a href="#" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm">
@@ -29,16 +29,16 @@
         </div>
         <div class="card-body">
             <p>Welcome to the company dashboard. This page will display information specific to the selected company.</p>
-            
+
             <hr>
-            
+
             <h5>Current Company Information:</h5>
             <ul>
                 <li><strong>Company ID:</strong> <span th:text="${currentCompanyId ?: 'Not selected'}">CompanyID</span></li>
                 <li><strong>Company Name:</strong> <span th:text="${companyName ?: 'Unknown'}">Company Name</span></li>
                 <li><strong>Last Updated:</strong> <span th:text="${lastUpdated ?: 'Unknown'}">Timestamp</span></li>
             </ul>
-            
+
             <div class="alert alert-info mt-3">
                 <p class="mb-0">Debug Options:</p>
                 <div class="btn-group mt-2">
@@ -48,7 +48,7 @@
                     <a href="/api/companies/debug/user-session" class="btn btn-info btn-sm" target="_blank">Debug User Session</a>
                 </div>
             </div>
-            
+
             <!-- Session Troubleshooter -->
             <div class="card mt-3 border-warning">
                 <div class="card-header bg-warning text-white">
@@ -56,7 +56,7 @@
                 </div>
                 <div class="card-body">
                     <p>If you're experiencing issues with company selection, try these troubleshooting steps:</p>
-                    
+
                     <form id="auth-test-form" class="mb-2">
                         <div class="input-group mb-3">
                             <input type="text" class="form-control" id="test-username" placeholder="Enter your username">
@@ -65,25 +65,25 @@
                             </div>
                         </div>
                     </form>
-                    
+
                     <div id="auth-test-results" class="mt-3 d-none">
                         <h6>Test Results:</h6>
                         <pre class="bg-light p-2 rounded" style="max-height: 200px; overflow: auto;"></pre>
                     </div>
-                    
+
                     <script>
                         document.addEventListener('DOMContentLoaded', function() {
                             const form = document.getElementById('auth-test-form');
                             const results = document.getElementById('auth-test-results');
                             const resultsPre = results.querySelector('pre');
-                            
+
                             form.addEventListener('submit', function(e) {
                                 e.preventDefault();
-                                
+
                                 const username = document.getElementById('test-username').value;
                                 const formData = new FormData();
                                 formData.append('username', username);
-                                
+
                                 fetch('/api/companies/debug/test-auth', {
                                     method: 'POST',
                                     body: formData
@@ -92,7 +92,7 @@
                                 .then(data => {
                                     results.classList.remove('d-none');
                                     resultsPre.textContent = JSON.stringify(data, null, 2);
-                                    
+
                                     if (data.sessionUpdated) {
                                         // Refresh the page after a delay
                                         setTimeout(() => {
@@ -111,7 +111,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Content Row -->
     <div class="row">
         <!-- Company Stats Card -->
@@ -189,7 +189,7 @@
                             <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
                                 Alerts
                             </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">18</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="alertsCountDashboard">0</div>
                         </div>
                         <div class="col-auto">
                             <i class="fas fa-bell fa-2x text-gray-300"></i>
@@ -214,5 +214,81 @@
 
     <!-- Include the farm-view script -->
     <th:block th:replace="fragments/farm-view :: farm-view-script"></th:block>
+
+    <!-- Alerts Script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load website alerts for the dashboard
+            loadDashboardAlerts();
+
+            // Add event listener for company selection to reload alerts
+            document.addEventListener('companySelected', function(event) {
+                console.log('Company selected event detected in dashboard, will reload alerts after navigation');
+            });
+        });
+
+        // Function to load website alerts for the dashboard
+        function loadDashboardAlerts() {
+            const alertsCountDashboard = document.getElementById('alertsCountDashboard');
+
+            // Get the current company ID from the page-top data attribute
+            const pageTop = document.getElementById('page-top');
+            const companyId = pageTop.getAttribute('data-company-id');
+
+            if (!companyId || companyId === 'default') {
+                console.log('No company ID found, skipping alerts fetch for dashboard');
+                alertsCountDashboard.textContent = '0';
+                return;
+            }
+
+            console.log('Fetching alerts for dashboard, company ID:', companyId);
+
+            // Get CSRF token from meta tag
+            const csrfToken = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
+            const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content');
+
+            // Prepare headers
+            const headers = {
+                'Content-Type': 'application/json'
+            };
+
+            // Add CSRF token if available
+            if (csrfToken && csrfHeader) {
+                headers[csrfHeader] = csrfToken;
+            }
+
+            // Fetch active alerts for the current company
+            fetch('/api/website-alerts/list-active', {
+                method: 'POST',
+                headers: headers,
+                body: JSON.stringify({ companyId: companyId }),
+                credentials: 'same-origin'
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to fetch alerts');
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Dashboard alerts data:', data);
+
+                if (data.success && data.data) {
+                    const alerts = data.data;
+
+                    // Update the counter
+                    alertsCountDashboard.textContent = alerts.length > 0 ? 
+                        (alerts.length > 99 ? '99+' : alerts.length) : '0';
+                } else {
+                    console.error('Failed to fetch alerts for dashboard:', data.message || 'Unknown error');
+                    alertsCountDashboard.textContent = '0';
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching alerts for dashboard:', error ? error.message || error : 'Unknown error');
+                alertsCountDashboard.textContent = '0';
+            });
+        }
+    </script>
 </body>
 </html> 
