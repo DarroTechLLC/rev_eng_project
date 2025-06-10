@@ -94,4 +94,22 @@ public class Farm {
         this.isTempSource = isTempSource;
     }
 
+    /**
+     * Getter for farmName - returns the name property
+     * Added to maintain compatibility with templates using farm.farmName
+     * @return the farm name
+     */
+    public String getFarmName() {
+        return name;
+    }
+
+    /**
+     * Getter for farmId - returns the id property
+     * Added to maintain compatibility with templates using farm.farmId
+     * @return the farm id
+     */
+    public String getFarmId() {
+        return id;
+    }
+
 }
