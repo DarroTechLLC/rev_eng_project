@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import com.darro_tech.revengproject.models.Company;
 import com.darro_tech.revengproject.models.Farm;
 import com.darro_tech.revengproject.models.User;
+import com.darro_tech.revengproject.dto.BudgetComparison;
 import com.darro_tech.revengproject.services.CompanyService;
 import com.darro_tech.revengproject.services.FarmService;
 import com.darro_tech.revengproject.services.UserRoleService;
@@ -545,6 +546,12 @@ public class RoutingController extends BaseController {
 
         // Load common data
         loadCommonData(model, company.getId(), user);
+
+        // Add default BudgetComparison object for weekly-report to prevent null pointer exception
+        if ("weekly-report".equals(dashboardType)) {
+            logger.debug("📊 Adding default BudgetComparison object for weekly report");
+            model.addAttribute("budgetComparison", new BudgetComparison());
+        }
 
         logger.info("🔄 Returning dashboard view: dashboard/{}", dashboardType);
         return view("dashboard/" + dashboardType, model);
