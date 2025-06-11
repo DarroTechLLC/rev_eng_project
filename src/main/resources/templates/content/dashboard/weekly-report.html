@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
-      layout:decorate="~{layouts/main}">
+      layout:decorate="~{layouts/main-layout}">
 <head>
     <title>Weekly Report</title>
     
@@ -529,15 +529,14 @@
     <i class="fas fa-angle-up"></i>
 </a>
 
-<!-- Scripts -->
-<th:block th:replace="~{fragments/scripts :: scripts}"></th:block>
+<!-- Page-specific scripts -->
+<th:block layout:fragment="scripts">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.4/dist/Chart.min.js"></script>
 
-<!-- Chart.js -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.4/dist/Chart.min.js"></script>
-
-<!-- DataTables -->
-<script src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/1.10.24/js/dataTables.bootstrap4.min.js"></script>
+    <!-- DataTables -->
+    <script src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.24/js/dataTables.bootstrap4.min.js"></script>
 
 <!-- Custom JavaScript for Weekly Report -->
 <script th:inline="javascript">
@@ -864,6 +863,7 @@
         });
     }
 </script>
+</th:block>
     </div>
 </div>
 </body>
