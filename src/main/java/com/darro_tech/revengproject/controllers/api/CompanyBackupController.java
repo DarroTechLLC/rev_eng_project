@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.darro_tech.revengproject.exception.ApiError;
 import com.darro_tech.revengproject.models.Company;
 import com.darro_tech.revengproject.models.User;
 import com.darro_tech.revengproject.services.CompanyService;

@@ -68,8 +68,8 @@
                 <!-- Page Heading -->
                 <div class="d-sm-flex align-items-center justify-content-between mb-4">
                     <h1 class="h3 mb-0 text-gray-800">Weekly Report</h1>
-                    <div class="d-none d-sm-inline-block">
-                        <div class="input-group">
+                    <div class="d-flex align-items-center">
+                        <div class="input-group mr-2">
                             <input type="date" id="reportDate" class="form-control" th:value="${reportDate}">
                             <div class="input-group-append">
                                 <button class="btn btn-primary" type="button" id="updateReportBtn">
@@ -77,10 +77,10 @@
                                 </button>
                             </div>
                         </div>
+                        <a href="#" class="btn btn-sm btn-primary shadow-sm" id="downloadPdfBtn">
+                            <i class="fas fa-download fa-sm text-white-50"></i> Download PDF
+                        </a>
                     </div>
-                    <a href="#" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm" id="downloadPdfBtn">
-                        <i class="fas fa-download fa-sm text-white-50"></i> Download PDF
-                    </a>
                 </div>
 
                 <!-- Alert Messages -->
@@ -538,333 +538,331 @@
     <script src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.10.24/js/dataTables.bootstrap4.min.js"></script>
 
-<!-- Custom JavaScript for Weekly Report -->
-<script th:inline="javascript">
-    $(document).ready(function() {
-        // Initialize DataTables
-        $('#dailyProductionTable, #weeklyTrendTable, #monthlyTrendTable, #lagoonInflationTable, #ftAboveBermTable').DataTable({
-            "paging": false,
-            "info": false,
-            "searching": false,
-            "ordering": false,
-            "responsive": true
-        });
+    <!-- Custom JavaScript for Weekly Report -->
+    <script th:inline="javascript">
+        $(document).ready(function() {
+            // Initialize DataTables
+            $('#dailyProductionTable, #weeklyTrendTable, #monthlyTrendTable, #lagoonInflationTable, #ftAboveBermTable').DataTable({
+                "paging": false,
+                "info": false,
+                "searching": false,
+                "ordering": false,
+                "responsive": true
+            });
 
-        // Initialize all charts
-        initCharts();
+            // Initialize all charts
+            initCharts();
 
-        // Handle report date change
-        $('#updateReportBtn').click(function() {
-            const selectedDate = $('#reportDate').val();
-            if (selectedDate) {
+            // Handle report date change
+            $('#updateReportBtn').click(function() {
+                const selectedDate = $('#reportDate').val();
+                if (selectedDate) {
+                    const companyName = /*[[${selectedCompany.name.toLowerCase().replace(' ', '-')}]]*/;
+                    window.location.href = `/${companyName}/weekly-report?date=${selectedDate}`;
+                }
+            });
+
+            // Handle PDF download
+            $('#downloadPdfBtn').click(function(e) {
+                e.preventDefault();
+                const companyId = /*[[${selectedCompany.id}]]*/;
+                const reportDate = /*[[${reportDate}]]*/;
                 const companyName = /*[[${selectedCompany.name.toLowerCase().replace(' ', '-')}]]*/;
-                window.location.href = `/${companyName}/weekly-report?date=${selectedDate}`;
-            }
+
+                window.open(`/api/reports/weekly-pdf/${companyName}?company_id=${companyId}&date=${reportDate}`, '_blank');
+            });
         });
 
-        // Handle PDF download
-        $('#downloadPdfBtn').click(function(e) {
-            e.preventDefault();
-            const companyId = /*[[${selectedCompany.id}]]*/;
-            const reportDate = /*[[${reportDate}]]*/;
-            const companyName = /*[[${selectedCompany.name.toLowerCase().replace(' ', '-')}]]*/;
+        function initCharts() {
+            // Get chart data from Thymeleaf
+            const dailyProductionData = /*[[${dailyChartData}]]*/;
+            const weeklyProductionData = /*[[${weeklyChartData}]]*/;
+            const monthlyProductionData = /*[[${monthlyChartData}]]*/;
+            const ytdProductionData = /*[[${ytdChartData}]]*/;
+            const lagoonInflationData = /*[[${lagoonInflationChartData}]]*/;
+            const ftAboveBermData = /*[[${ftAboveBermChartData}]]*/;
 
-            window.open(`/api/reports/weekly-pdf/${companyName}?company_id=${companyId}&date=${reportDate}`, '_blank');
-        });
-    });
+            // Initialize Daily Production Chart
+            initDailyProductionChart(dailyProductionData);
 
-    function initCharts() {
-        // Get chart data from Thymeleaf
-        const dailyProductionData = /*[[${dailyChartData}]]*/;
-        const weeklyProductionData = /*[[${weeklyChartData}]]*/;
-        const monthlyProductionData = /*[[${monthlyChartData}]]*/;
-        const ytdProductionData = /*[[${ytdChartData}]]*/;
-        const lagoonInflationData = /*[[${lagoonInflationChartData}]]*/;
-        const ftAboveBermData = /*[[${ftAboveBermChartData}]]*/;
+            // Initialize Weekly Production Chart
+            initWeeklyProductionChart(weeklyProductionData);
 
-        // Initialize Daily Production Chart
-        initDailyProductionChart(dailyProductionData);
+            // Initialize Monthly Production Chart
+            initMonthlyProductionChart(monthlyProductionData);
 
-        // Initialize Weekly Production Chart
-        initWeeklyProductionChart(weeklyProductionData);
+            // Initialize YTD Production Pie Chart
+            initYtdProductionPieChart(ytdProductionData);
 
-        // Initialize Monthly Production Chart
-        initMonthlyProductionChart(monthlyProductionData);
+            // Initialize Lagoon Inflation Chart
+            initLagoonInflationChart(lagoonInflationData);
 
-        // Initialize YTD Production Pie Chart
-        initYtdProductionPieChart(ytdProductionData);
+            // Initialize FT Above Berm Chart
+            initFtAboveBermChart(ftAboveBermData);
+        }
 
-        // Initialize Lagoon Inflation Chart
-        initLagoonInflationChart(lagoonInflationData);
-
-        // Initialize FT Above Berm Chart
-        initFtAboveBermChart(ftAboveBermData);
-    }
-
-    function initDailyProductionChart(data) {
-        const ctx = document.getElementById('dailyProductionChart').getContext('2d');
-        new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: data.labels,
-                datasets: data.datasets
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                title: {
-                    display: true,
-                    text: 'Daily Production Volume'
+        function initDailyProductionChart(data) {
+            const ctx = document.getElementById('dailyProductionChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.labels,
+                    datasets: data.datasets
                 },
-                tooltips: {
-                    mode: 'index',
-                    intersect: false
-                },
-                legend: {
-                    position: 'bottom'
-                },
-                scales: {
-                    xAxes: [{
-                        stacked: true
-                    }],
-                    yAxes: [{
-                        stacked: true,
-                        ticks: {
-                            beginAtZero: true
-                        },
-                        scaleLabel: {
-                            display: true,
-                            labelString: 'Volume'
-                        }
-                    }]
-                }
-            }
-        });
-    }
-
-    function initWeeklyProductionChart(data) {
-        const ctx = document.getElementById('weeklyProductionChart').getContext('2d');
-        new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: data.labels,
-                datasets: data.datasets
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                title: {
-                    display: true,
-                    text: 'Weekly Production Trend'
-                },
-                tooltips: {
-                    mode: 'index',
-                    intersect: false
-                },
-                legend: {
-                    position: 'bottom'
-                },
-                scales: {
-                    yAxes: [{
-                        ticks: {
-                            beginAtZero: true
-                        },
-                        scaleLabel: {
-                            display: true,
-                            labelString: 'Volume'
-                        }
-                    }]
-                }
-            }
-        });
-    }
-
-    function initMonthlyProductionChart(data) {
-        const ctx = document.getElementById('monthlyProductionChart').getContext('2d');
-        new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: data.labels,
-                datasets: data.datasets
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                title: {
-                    display: true,
-                    text: 'Monthly Production Comparison'
-                },
-                tooltips: {
-                    mode: 'index',
-                    intersect: false
-                },
-                legend: {
-                    position: 'bottom'
-                },
-                scales: {
-                    yAxes: [{
-                        ticks: {
-                            beginAtZero: true
-                        },
-                        scaleLabel: {
-                            display: true,
-                            labelString: 'Volume'
-                        }
-                    }]
-                }
-            }
-        });
-    }
-
-    function initYtdProductionPieChart(data) {
-        const ctx = document.getElementById('ytdProductionPieChart').getContext('2d');
-        new Chart(ctx, {
-            type: 'pie',
-            data: {
-                labels: data.labels,
-                datasets: [{
-                    data: data.values,
-                    backgroundColor: data.colors,
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                title: {
-                    display: true,
-                    text: 'YTD Production by Farm'
-                },
-                legend: {
-                    position: 'bottom'
-                }
-            }
-        });
-    }
-
-    function initLagoonInflationChart(data) {
-        const ctx = document.getElementById('lagoonInflationChart').getContext('2d');
-        new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: data.labels,
-                datasets: [
-                    {
-                        label: 'Current Week',
-                        data: data.currentValues,
-                        backgroundColor: 'rgba(75, 192, 192, 0.6)',
-                        borderColor: 'rgba(75, 192, 192, 1)',
-                        borderWidth: 1
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    title: {
+                        display: true,
+                        text: 'Daily Production Volume'
                     },
-                    {
-                        label: 'Previous Week',
-                        data: data.previousValues,
-                        backgroundColor: 'rgba(153, 102, 255, 0.6)',
-                        borderColor: 'rgba(153, 102, 255, 1)',
-                        borderWidth: 1
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                title: {
-                    display: true,
-                    text: 'Lagoon Inflation Levels'
-                },
-                tooltips: {
-                    mode: 'index',
-                    intersect: false,
-                    callbacks: {
-                        label: function(tooltipItem, data) {
-                            return data.datasets[tooltipItem.datasetIndex].label + ': ' + tooltipItem.yLabel + '%';
-                        }
-                    }
-                },
-                legend: {
-                    position: 'bottom'
-                },
-                scales: {
-                    yAxes: [{
-                        ticks: {
-                            beginAtZero: true,
-                            max: 100,
-                            callback: function(value) {
-                                return value + '%';
-                            }
-                        },
-                        scaleLabel: {
-                            display: true,
-                            labelString: 'Inflation Level (%)'
-                        }
-                    }]
-                }
-            }
-        });
-    }
-
-    function initFtAboveBermChart(data) {
-        const ctx = document.getElementById('ftAboveBermChart').getContext('2d');
-        new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: data.labels,
-                datasets: [
-                    {
-                        label: 'Current Week',
-                        data: data.currentValues,
-                        backgroundColor: 'rgba(255, 159, 64, 0.6)',
-                        borderColor: 'rgba(255, 159, 64, 1)',
-                        borderWidth: 1
+                    tooltips: {
+                        mode: 'index',
+                        intersect: false
                     },
-                    {
-                        label: 'Previous Week',
-                        data: data.previousValues,
-                        backgroundColor: 'rgba(54, 162, 235, 0.6)',
-                        borderColor: 'rgba(54, 162, 235, 1)',
-                        borderWidth: 1
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                title: {
-                    display: true,
-                    text: 'FT Above the Berm Measurements'
-                },
-                tooltips: {
-                    mode: 'index',
-                    intersect: false,
-                    callbacks: {
-                        label: function(tooltipItem, data) {
-                            return data.datasets[tooltipItem.datasetIndex].label + ': ' + tooltipItem.yLabel + ' ft';
-                        }
-                    }
-                },
-                legend: {
-                    position: 'bottom'
-                },
-                scales: {
-                    yAxes: [{
-                        ticks: {
-                            beginAtZero: true,
-                            callback: function(value) {
-                                return value + ' ft';
+                    legend: {
+                        position: 'bottom'
+                    },
+                    scales: {
+                        xAxes: [{
+                            stacked: true
+                        }],
+                        yAxes: [{
+                            stacked: true,
+                            ticks: {
+                                beginAtZero: true
+                            },
+                            scaleLabel: {
+                                display: true,
+                                labelString: 'Volume'
                             }
-                        },
-                        scaleLabel: {
-                            display: true,
-                            labelString: 'Height (ft)'
-                        }
-                    }]
+                        }]
+                    }
                 }
-            }
-        });
-    }
-</script>
+            });
+        }
+
+        function initWeeklyProductionChart(data) {
+            const ctx = document.getElementById('weeklyProductionChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.labels,
+                    datasets: data.datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    title: {
+                        display: true,
+                        text: 'Weekly Production Trend'
+                    },
+                    tooltips: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    legend: {
+                        position: 'bottom'
+                    },
+                    scales: {
+                        yAxes: [{
+                            ticks: {
+                                beginAtZero: true
+                            },
+                            scaleLabel: {
+                                display: true,
+                                labelString: 'Volume'
+                            }
+                        }]
+                    }
+                }
+            });
+        }
+
+        function initMonthlyProductionChart(data) {
+            const ctx = document.getElementById('monthlyProductionChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.labels,
+                    datasets: data.datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    title: {
+                        display: true,
+                        text: 'Monthly Production Comparison'
+                    },
+                    tooltips: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    legend: {
+                        position: 'bottom'
+                    },
+                    scales: {
+                        yAxes: [{
+                            ticks: {
+                                beginAtZero: true
+                            },
+                            scaleLabel: {
+                                display: true,
+                                labelString: 'Volume'
+                            }
+                        }]
+                    }
+                }
+            });
+        }
+
+        function initYtdProductionPieChart(data) {
+            const ctx = document.getElementById('ytdProductionPieChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        data: data.values,
+                        backgroundColor: data.colors,
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    title: {
+                        display: true,
+                        text: 'YTD Production by Farm'
+                    },
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            });
+        }
+
+        function initLagoonInflationChart(data) {
+            const ctx = document.getElementById('lagoonInflationChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.labels,
+                    datasets: [
+                        {
+                            label: 'Current Week',
+                            data: data.currentValues,
+                            backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Previous Week',
+                            data: data.previousValues,
+                            backgroundColor: 'rgba(153, 102, 255, 0.6)',
+                            borderColor: 'rgba(153, 102, 255, 1)',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    title: {
+                        display: true,
+                        text: 'Lagoon Inflation Levels'
+                    },
+                    tooltips: {
+                        mode: 'index',
+                        intersect: false,
+                        callbacks: {
+                            label: function(tooltipItem, data) {
+                                return data.datasets[tooltipItem.datasetIndex].label + ': ' + tooltipItem.yLabel + '%';
+                            }
+                        }
+                    },
+                    legend: {
+                        position: 'bottom'
+                    },
+                    scales: {
+                        yAxes: [{
+                            ticks: {
+                                beginAtZero: true,
+                                max: 100,
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            },
+                            scaleLabel: {
+                                display: true,
+                                labelString: 'Inflation Level (%)'
+                            }
+                        }]
+                    }
+                }
+            });
+        }
+
+        function initFtAboveBermChart(data) {
+            const ctx = document.getElementById('ftAboveBermChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.labels,
+                    datasets: [
+                        {
+                            label: 'Current Week',
+                            data: data.currentValues,
+                            backgroundColor: 'rgba(255, 159, 64, 0.6)',
+                            borderColor: 'rgba(255, 159, 64, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Previous Week',
+                            data: data.previousValues,
+                            backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    title: {
+                        display: true,
+                        text: 'FT Above the Berm Measurements'
+                    },
+                    tooltips: {
+                        mode: 'index',
+                        intersect: false,
+                        callbacks: {
+                            label: function(tooltipItem, data) {
+                                return data.datasets[tooltipItem.datasetIndex].label + ': ' + tooltipItem.yLabel + ' ft';
+                            }
+                        }
+                    },
+                    legend: {
+                        position: 'bottom'
+                    },
+                    scales: {
+                        yAxes: [{
+                            ticks: {
+                                beginAtZero: true,
+                                callback: function(value) {
+                                    return value + ' ft';
+                                }
+                            },
+                            scaleLabel: {
+                                display: true,
+                                labelString: 'Height (ft)'
+                            }
+                        }]
+                    }
+                }
+            });
+        }
+    </script>
 </th:block>
-    </div>
-</div>
 </body>
 </html>
