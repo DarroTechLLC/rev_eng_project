@@ -1,4 +1,4 @@
-package com.darro_tech.revengproject.exception;
+package com.darro_tech.revengproject.exceptions;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;

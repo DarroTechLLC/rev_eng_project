@@ -1,4 +1,4 @@
-package com.darro_tech.revengproject.exception;
+package com.darro_tech.revengproject.exceptions;
 
 import java.util.HashMap;
 import java.util.Map;

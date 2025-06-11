@@ -26,6 +26,7 @@ dependencies {
     implementation 'io.github.cdimascio:dotenv-java:3.0.0' // dotenv-java dependency
     implementation 'org.springframework.security:spring-security-crypto'//for password encryption
     implementation 'org.projectlombok:lombok:1.18.28'//for getters and setters
+    implementation 'com.itextpdf:itextpdf:5.5.13.3'  // For PDF generation
     annotationProcessor 'org.projectlombok:lombok:1.18.28'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
     runtimeOnly 'com.mysql:mysql-connector-j'//mysql db connection
