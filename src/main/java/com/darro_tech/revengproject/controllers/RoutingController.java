@@ -2,8 +2,11 @@ package com.darro_tech.revengproject.controllers;
 
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.slf4j.Logger;
@@ -547,10 +550,60 @@ public class RoutingController extends BaseController {
         // Load common data
         loadCommonData(model, company.getId(), user);
 
-        // Add default BudgetComparison object for weekly-report to prevent null pointer exception
+        // Add default objects for weekly-report to prevent null pointer exceptions
         if ("weekly-report".equals(dashboardType)) {
-            logger.debug("📊 Adding default BudgetComparison object for weekly report");
+            logger.debug("📊 Adding default objects for weekly report");
+            
+            // Add BudgetComparison object
             model.addAttribute("budgetComparison", new BudgetComparison());
+            
+            // Initialize dailyTotals map
+            Map<String, Double> dailyTotals = new HashMap<>();
+            List<Farm> farms = farmService.getFarmsByCompanyId(company.getId());
+            for (Farm farm : farms) {
+                dailyTotals.put(farm.getId(), 0.0);
+            }
+            model.addAttribute("dailyTotals", dailyTotals);
+            
+            // Add dailyGrandTotal
+            model.addAttribute("dailyGrandTotal", 0.0);
+            
+            // Initialize weeklyAverages map (similar to dailyTotals)
+            Map<String, Double> weeklyAverages = new HashMap<>();
+            for (Farm farm : farms) {
+                weeklyAverages.put(farm.getId(), 0.0);
+            }
+            model.addAttribute("weeklyAverages", weeklyAverages);
+            model.addAttribute("weeklyGrandAverage", 0.0);
+            
+            // Initialize monthlyAverages map
+            Map<String, Double> monthlyAverages = new HashMap<>();
+            for (Farm farm : farms) {
+                monthlyAverages.put(farm.getId(), 0.0);
+            }
+            model.addAttribute("monthlyAverages", monthlyAverages);
+            model.addAttribute("monthlyGrandAverage", 0.0);
+            
+            // Initialize empty dailyProduction list
+            model.addAttribute("dailyProduction", new ArrayList<>());
+            
+            // Initialize empty weeklyProduction list
+            model.addAttribute("weeklyProduction", new ArrayList<>());
+            
+            // Initialize empty monthlyProduction list
+            model.addAttribute("monthlyProduction", new ArrayList<>());
+            
+            // Add other period totals
+            model.addAttribute("wtdProduction", new ArrayList<>());
+            model.addAttribute("mtdProduction", new ArrayList<>());
+            model.addAttribute("ytdProduction", new ArrayList<>());
+            model.addAttribute("wtdTotal", 0.0);
+            model.addAttribute("mtdTotal", 0.0);
+            model.addAttribute("ytdTotal", 0.0);
+            
+            model.addAttribute("reportDate", java.time.LocalDate.now().toString());
+            
+            logger.debug("📊 Added empty data structures for weekly report to prevent null pointer exceptions");
         }
 
         logger.info("🔄 Returning dashboard view: dashboard/{}", dashboardType);
