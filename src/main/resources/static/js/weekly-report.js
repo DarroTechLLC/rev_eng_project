@@ -1,23 +1,30 @@
 // Weekly report PDF download functionality
 document.addEventListener('DOMContentLoaded', function() {
-    const downloadPdfBtn = document.getElementById('downloadPdfBtn');
+    console.log('Weekly report script loaded'); // Debug log
     
+    const downloadPdfBtn = document.getElementById('downloadPdfBtn');
     if (downloadPdfBtn) {
+        console.log('Download button found'); // Debug log
         downloadPdfBtn.addEventListener('click', handlePdfDownload);
+    } else {
+        console.error('Download button not found'); // Debug log
     }
 });
 
 function handlePdfDownload(e) {
     e.preventDefault();
+    console.log('Download button clicked'); // Debug log
     
     // Get the current date from the date input
     const reportDate = document.getElementById('reportDate')?.value;
+    console.log('Report date:', reportDate); // Debug log
     
     // Build the URL with parameters
     let url = '/align/weekly-report/pdf';
     if (reportDate) {
         url += `?date=${reportDate}`;
     }
+    console.log('Download URL:', url); // Debug log
     
     // Show loading state
     const icon = this.querySelector('i');
@@ -27,12 +34,15 @@ function handlePdfDownload(e) {
     // Download the PDF
     fetch(url)
         .then(response => {
+            console.log('Response status:', response.status); // Debug log
             if (!response.ok) {
-                throw new Error('Network response was not ok');
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
             return response.blob();
         })
         .then(blob => {
+            console.log('PDF blob received'); // Debug log
+            
             // Create a URL for the blob
             const url = window.URL.createObjectURL(blob);
             
@@ -51,7 +61,7 @@ function handlePdfDownload(e) {
             showAlert('info', 'PDF downloaded successfully!');
         })
         .catch(error => {
-            console.error('Error:', error);
+            console.error('Error:', error); // Debug log
             showAlert('error', 'Failed to download PDF. Please try again.');
         })
         .finally(() => {
@@ -61,6 +71,8 @@ function handlePdfDownload(e) {
 }
 
 function showAlert(type, message) {
+    console.log('Showing alert:', type, message); // Debug log
+    
     const alertId = type === 'error' ? 'errorAlert' : 'infoAlert';
     const messageId = type === 'error' ? 'errorMessage' : 'infoMessage';
     
@@ -75,5 +87,7 @@ function showAlert(type, message) {
         setTimeout(() => {
             alertElement.classList.add('d-none');
         }, 5000);
+    } else {
+        console.error('Alert elements not found:', alertId, messageId); // Debug log
     }
 } 
