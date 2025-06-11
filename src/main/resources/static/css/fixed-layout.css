@@ -1,0 +1,80 @@
+/* Fixed Layout Styles */
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+}
+
+#page-top {
+    height: 100%;
+}
+
+#wrapper {
+    min-height: 100%;
+    display: flex;
+}
+
+/* Fixed Sidebar */
+.navbar-nav.sidebar {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    width: 225px;
+    height: 100vh;
+    overflow-y: auto;
+    z-index: 1040;
+    transition: all 0.3s;
+}
+
+/* Fixed Topbar */
+.navbar.topbar {
+    position: fixed !important;
+    top: 0;
+    right: 0;
+    left: 225px;
+    height: 4.375rem;
+    z-index: 1030;
+    background-color: #fff;
+    box-shadow: 0 .15rem 1.75rem 0 rgba(58,59,69,.15);
+}
+
+/* Content Area */
+#content-wrapper {
+    margin-left: 225px;
+    width: calc(100% - 225px);
+    min-height: 100vh;
+}
+
+#content {
+    padding-top: 4.375rem;
+}
+
+.container-fluid {
+    padding: 1.5rem;
+}
+
+/* Sidebar Toggle States */
+.sidebar.toggled .navbar-nav.sidebar {
+    width: 0;
+}
+
+.sidebar.toggled #content-wrapper {
+    margin-left: 0;
+    width: 100%;
+}
+
+.sidebar.toggled .navbar.topbar {
+    left: 0;
+}
+
+/* Ensure dropdowns work with fixed positioning */
+.dropdown-menu {
+    position: absolute !important;
+}
+
+/* Footer positioning */
+footer.sticky-footer {
+    padding: 2rem 0;
+    flex-shrink: 0;
+} 

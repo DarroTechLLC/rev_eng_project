@@ -30,45 +30,11 @@
 
     <!-- Company Selector Styles -->
     <link rel="stylesheet" th:href="@{/css/company-selector.css}">
+    
+    <!-- Fixed Layout Styles -->
+    <link rel="stylesheet" th:href="@{/css/fixed-layout.css}">
 
-    <!-- Custom dropdown styles -->
-    <style>
-        /* Ensure dropdowns show properly */
-        .dropdown-menu.show {
-            display: block !important;
-        }
-
-        /* Smooth transitions for dropdowns */
-        .dropdown-menu {
-            transition: opacity 0.2s, transform 0.2s;
-            opacity: 0;
-            transform: translateY(-10px);
-            display: none;
-        }
-
-        .dropdown-menu.show {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        /* Better styling for user dropdown items */
-        .dropdown-item {
-            padding: 0.5rem 1.5rem;
-            transition: background-color 0.2s;
-        }
-
-        .dropdown-item:hover {
-            background-color: #f8f9fa;
-        }
-
-        /* Fix for admin-only items */
-        .admin-only, .super-admin-only {
-            display: none;
-        }
-    </style>
-
-    <!-- Custom styles for this template-->
-    <link th:href="@{/css/sb-admin-2.min.css}" rel="stylesheet">
+    <!-- Custom styles -->
     <link th:href="@{/css/farm-modal.css}" rel="stylesheet">
 </head>
 
