@@ -54,13 +54,15 @@
                 <h6 class="m-0 font-weight-bold text-primary">Forecasting Controls</h6>
             </div>
             <div class="card-body">
-                <div class="row">
+                <div class="row" id="forecastControls">
                     <div class="col-md-4">
                         <div class="form-group">
                             <label for="farmSelector">Select Farm</label>
                             <select id="farmSelector" class="form-control">
                                 <option value="">-- Select Farm --</option>
-                                <option th:each="farm : ${farms}" th:value="${farm.id}" th:text="${farm.name}"></option>
+                                <option th:each="farm : ${farms}" th:value="${farm.id}" 
+                                        th:text="${farm.name}"
+                                        th:selected="${farm.id == selectedFarmKey}"></option>
                             </select>
                         </div>
                     </div>
@@ -144,6 +146,10 @@
         document.addEventListener('DOMContentLoaded', function() {
             // Add event listener to forecast button
             document.getElementById('forecastButton').addEventListener('click', generateForecast);
+            
+            // Add event listeners to selectors for auto-update
+            document.getElementById('metricSelector').addEventListener('change', generateForecast);
+            document.getElementById('historyPeriod').addEventListener('change', generateForecast);
         });
 
         function showLoading() {
@@ -164,7 +170,8 @@
         }
 
         function generateForecast() {
-            const farmId = document.getElementById('farmSelector').value;
+            const farmSelector = document.getElementById('farmSelector');
+            const farmId = farmSelector.value;
             const metric = document.getElementById('metricSelector').value;
             const historyDays = document.getElementById('historyPeriod').value;
 
@@ -239,6 +246,7 @@
                 .catch(error => {
                     hideLoading();
                     showError('Error generating forecast: ' + error.message);
+                    console.error('[ERROR_LOG] Forecast error:', error);
                 });
         }
 

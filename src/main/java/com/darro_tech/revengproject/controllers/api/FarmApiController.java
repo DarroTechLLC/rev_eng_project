@@ -4,6 +4,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.logging.Logger;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -291,5 +292,69 @@ public class FarmApiController {
                 .toList();
 
         return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Select a farm and update session
+     */
+    @PostMapping("/farms/select")
+    public ResponseEntity<Map<String, Object>> selectFarm(
+            @RequestBody Map<String, String> request,
+            HttpSession session) {
+        String farmId = request.get("farmId");
+        logger.info("🔄 Selecting farm with ID: " + farmId);
+
+        try {
+            // Validate farm exists
+            Optional<Farm> farmOpt = farmService.getFarmById(farmId);
+            if (!farmOpt.isPresent()) {
+                logger.warning("❌ Farm not found with ID: " + farmId);
+                return ResponseEntity.ok(Map.of(
+                        "success", false,
+                        "message", "Farm not found"
+                ));
+            }
+
+            Farm farm = farmOpt.get();
+
+            // Get selected company from session
+            String selectedCompanyId = (String) session.getAttribute("selectedCompanyId");
+            if (selectedCompanyId == null) {
+                logger.warning("❌ No company selected in session");
+                return ResponseEntity.ok(Map.of(
+                        "success", false,
+                        "message", "No company selected"
+                ));
+            }
+
+            // Verify farm belongs to selected company
+            List<Farm> companyFarms = farmService.getFarmsByCompanyId(selectedCompanyId);
+            boolean farmBelongsToCompany = companyFarms.stream()
+                    .anyMatch(f -> f.getId().equals(farmId));
+
+            if (!farmBelongsToCompany) {
+                logger.warning("❌ Farm does not belong to selected company");
+                return ResponseEntity.ok(Map.of(
+                        "success", false,
+                        "message", "Farm does not belong to selected company"
+                ));
+            }
+
+            // Update session
+            session.setAttribute("selectedFarmKey", farmId);
+            logger.info("✅ Updated session with farm: " + farm.getName());
+
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "farm", farm,
+                    "message", "Farm selected successfully"
+            ));
+        } catch (Exception e) {
+            logger.severe("❌ Error selecting farm: " + e.getMessage());
+            return ResponseEntity.ok(Map.of(
+                    "success", false,
+                    "message", "Error selecting farm: " + e.getMessage()
+            ));
+        }
     }
 }
