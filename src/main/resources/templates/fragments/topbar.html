@@ -103,6 +103,62 @@
                 </div>
             </li>
 
+            <!-- Nav Item - Reports & Data -->
+            <li class="nav-item dropdown no-arrow mx-1">
+                <a class="nav-link dropdown-toggle" href="#" id="reportsDropdown" role="button"
+                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <i class="fas fa-file-alt fa-fw"></i>
+                    <span class="d-none d-lg-inline">Reports & Data</span>
+                </a>
+                <!-- Dropdown - Reports & Data -->
+                <div class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in"
+                    aria-labelledby="reportsDropdown">
+                    <h6 class="dropdown-header">
+                        Reports & Data
+                    </h6>
+                    <a class="dropdown-item d-flex align-items-center" th:href="${selectedCompany != null ? '/' + selectedCompany.name.toLowerCase().replace(' ', '-') + '/weekly-report' : '/dashboard'}">
+                        <div class="mr-3">
+                            <div class="icon-circle bg-primary">
+                                <i class="fas fa-file-alt text-white"></i>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="font-weight-bold">Weekly Report</span>
+                        </div>
+                    </a>
+                    <a class="dropdown-item d-flex align-items-center" th:href="${selectedCompany != null ? '/' + selectedCompany.name.toLowerCase().replace(' ', '-') + '/daily-report' : '/dashboard'}">
+                        <div class="mr-3">
+                            <div class="icon-circle bg-success">
+                                <i class="fas fa-file text-white"></i>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="font-weight-bold">Daily Report</span>
+                        </div>
+                    </a>
+                    <a class="dropdown-item d-flex align-items-center" th:href="${selectedCompany != null ? '/' + selectedCompany.name.toLowerCase().replace(' ', '-') + '/production-detail' : '/dashboard'}">
+                        <div class="mr-3">
+                            <div class="icon-circle bg-info">
+                                <i class="fas fa-info-circle text-white"></i>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="font-weight-bold">Production Detail</span>
+                        </div>
+                    </a>
+                    <a class="dropdown-item d-flex align-items-center" th:href="${selectedCompany != null ? '/' + selectedCompany.name.toLowerCase().replace(' ', '-') + '/market-data' : '/dashboard'}">
+                        <div class="mr-3">
+                            <div class="icon-circle bg-warning">
+                                <i class="fas fa-chart-line text-white"></i>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="font-weight-bold">Market Data</span>
+                        </div>
+                    </a>
+                </div>
+            </li>
+
             <!-- Nav Item - User Information -->
             <li class="nav-item dropdown no-arrow">
                 <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"

@@ -42,18 +42,6 @@
                 <a class="collapse-item" th:href="${selectedCompany != null ? '/' + selectedCompany.name.toLowerCase().replace(' ', '-') + '/dashboard/animal-headcount' : '/dashboard'}">
                     <i class="fas fa-fw fa-paw"></i> Animal Headcount
                 </a>
-                <a class="collapse-item" th:href="${selectedCompany != null ? '/' + selectedCompany.name.toLowerCase().replace(' ', '-') + '/weekly-report' : '/dashboard'}">
-                    <i class="fas fa-fw fa-file-alt"></i> Weekly Report
-                </a>
-                <a class="collapse-item" th:href="${selectedCompany != null ? '/' + selectedCompany.name.toLowerCase().replace(' ', '-') + '/daily-report' : '/dashboard'}">
-                    <i class="fas fa-fw fa-file"></i> Daily Report
-                </a>
-                <a class="collapse-item" th:href="${selectedCompany != null ? '/' + selectedCompany.name.toLowerCase().replace(' ', '-') + '/production-detail' : '/dashboard'}">
-                    <i class="fas fa-fw fa-info-circle"></i> Production Detail
-                </a>
-                <a class="collapse-item" th:href="${selectedCompany != null ? '/' + selectedCompany.name.toLowerCase().replace(' ', '-') + '/market-data' : '/dashboard'}">
-                    <i class="fas fa-fw fa-chart-line"></i> Market Data
-                </a>
             </div>
         </div>
     </li>
