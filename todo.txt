@@ -81,3 +81,8 @@ Would you like me to:
 3. Modify the queries to look at different metrics or time periods?
 
 The goal would be to provide actionable insights that help optimize both environmental and economic outcomes for the biogas production facilities.
+-----------------
+------------
+-website alerts
+-forgotpassword functionality
+-link on bottom
