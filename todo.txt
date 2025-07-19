@@ -87,4 +87,4 @@ The goal would be to provide actionable insights that help optimize both environ
 -forgotpassword functionality
 -link on bottom
 -icon refresh
--
+-sidenav links not responsive
