@@ -86,3 +86,5 @@ The goal would be to provide actionable insights that help optimize both environ
 -website alerts
 -forgotpassword functionality
 -link on bottom
+-icon refresh
+-
