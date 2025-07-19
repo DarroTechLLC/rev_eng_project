@@ -75,6 +75,19 @@ function initWebsiteAlerts() {
 
                 console.log(`👤 User is ${isAdmin ? 'an admin' : 'not an admin'} and ${isSuperAdmin ? 'a super admin' : 'not a super admin'}`);
 
+                // Set the href attribute of the alertsDropdown link based on user role
+                const alertsDropdown = document.getElementById('alertsDropdown');
+                if (alertsDropdown) {
+                    if (isAdmin || isSuperAdmin) {
+                        // For admin users, make the bell icon clickable to go to the alerts page
+                        alertsDropdown.href = '/admin/alerts';
+                        console.log('🔔 Bell icon set to link to alerts page for admin user');
+                    } else {
+                        // For regular users, keep the default '#' to just toggle the dropdown
+                        console.log('🔔 Bell icon set to not link anywhere for regular user');
+                    }
+                }
+
                 // Fetch alerts based on user role
                 if (isAdmin || isSuperAdmin) {
                     console.log('👑 Admin user detected - fetching all active alerts');
@@ -213,8 +226,13 @@ function processAlerts(alerts, isAdminView) {
     console.log(`🔔 Processing ${isAdminView ? 'all' : 'company'} alerts:`, alerts);
     console.log(`🔢 Total alerts: ${alerts.length}, Active alerts: ${activeAlerts.length}`);
 
+    // Check if user is admin or super admin
+    const isAdmin = document.body.getAttribute('data-is-admin') === 'true';
+    const isSuperAdmin = document.body.getAttribute('data-is-super-admin') === 'true';
+    const isAdminUser = isAdmin || isSuperAdmin;
+
     // Display the active alerts
-    displayAlerts(activeAlerts, isAdminView);
+    displayAlerts(activeAlerts, isAdminView, isAdminUser);
 
     // Update the tooltip to show counts
     updateAlertTooltip(activeAlerts, isAdminView);
@@ -224,13 +242,15 @@ function processAlerts(alerts, isAdminView) {
  * Display alerts in the dropdown
  * @param {Array} activeAlerts - The active alerts to display
  * @param {boolean} isAdminView - Whether this is an admin view (all alerts)
+ * @param {boolean} isAdminUser - Whether the current user is an admin or super admin
  */
-function displayAlerts(activeAlerts, isAdminView) {
+function displayAlerts(activeAlerts, isAdminView, isAdminUser) {
     const alertCount = document.getElementById('alertCount');
     const companyName = document.body.getAttribute('data-company-name') || '';
 
     console.log('🔔 Displaying alerts:', activeAlerts);
     console.log('🔢 Number of active alerts:', activeAlerts.length);
+    console.log('👤 Is admin user:', isAdminUser);
 
     // Update alert count - show the actual number of active alerts
     alertCount.textContent = activeAlerts.length > 0 ? activeAlerts.length : '';
@@ -263,8 +283,18 @@ function displayAlerts(activeAlerts, isAdminView) {
 
     // Add each active alert message to the dropdown
     activeAlerts.forEach(alert => {
-        const messageRow = document.createElement('div');
+        // For admin users, create a clickable link to edit the alert
+        // For regular users, create a non-clickable div
+        const messageRow = document.createElement(isAdminUser ? 'a' : 'div');
         messageRow.className = 'dropdown-item d-flex align-items-center';
+
+        // Only set href for admin users
+        if (isAdminUser) {
+            messageRow.href = '/admin/alerts';
+            console.log('[DEBUG_LOG] Created clickable alert for admin user (links to alerts page)');
+        } else {
+            console.log('[DEBUG_LOG] Created non-clickable alert for regular user');
+        }
 
         const iconDiv = document.createElement('div');
         iconDiv.className = 'mr-3';
@@ -287,12 +317,16 @@ function displayAlerts(activeAlerts, isAdminView) {
     console.log('[DEBUG_LOG] Added ' + activeAlerts.length + ' active alerts to dropdown');
 
     // Add "View All Alerts" link if there are active alerts and user has permission
-    const viewAllLink = document.createElement('a');
-    viewAllLink.className = 'dropdown-item text-center small text-gray-500';
-    viewAllLink.href = '/admin/alerts';
-    viewAllLink.textContent = 'View All Alerts';
-    messagesPanel.appendChild(viewAllLink);
-    console.log('[DEBUG_LOG] Added "View All Alerts" link to dropdown');
+    if (isAdminUser) {
+        const viewAllLink = document.createElement('a');
+        viewAllLink.className = 'dropdown-item text-center small text-gray-500';
+        viewAllLink.href = '/admin/alerts';
+        viewAllLink.textContent = 'View All Alerts';
+        messagesPanel.appendChild(viewAllLink);
+        console.log('[DEBUG_LOG] Added "View All Alerts" link to dropdown (admin user)');
+    } else {
+        console.log('[DEBUG_LOG] Skipped "View All Alerts" link for non-admin user');
+    }
 }
 
 /**
