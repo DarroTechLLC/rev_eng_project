@@ -47,6 +47,15 @@ public class HomeController extends BaseController {
     @Transactional
     public String index(Model model, HttpSession session) {
         LoggerUtils.logRequest(logger, "GET", "/");
+        logger.debug("🏠 Redirecting to daily volume dashboard");
+
+        return "redirect:/align/dashboard/daily-volume";
+    }
+
+    @GetMapping("/home")  // Keep original functionality under /home
+    @Transactional
+    public String home(Model model, HttpSession session) {
+        LoggerUtils.logRequest(logger, "GET", "/home");
         logger.debug("🏠 Rendering home page");
 
         // Performance tracking
@@ -124,7 +133,7 @@ public class HomeController extends BaseController {
             long endTime = System.currentTimeMillis();
             LoggerUtils.logPerformance(logger, "Home page preparation", endTime - startTime);
 
-            LoggerUtils.logResponse(logger, "/", "Rendered home page successfully");
+            LoggerUtils.logResponse(logger, "/home", "Rendered home page successfully");
             return view("dashboard", model);  // Use view method from BaseController
         } catch (Exception e) {
             LoggerUtils.logException(logger, e, "rendering home page");
