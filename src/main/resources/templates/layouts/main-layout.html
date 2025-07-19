@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Application</title>
+    <title th:with="viewName=${content != null ? content.substring(content.lastIndexOf('/') + 1) : 'Application'}">RAE/[[${viewName}]]</title>
 
     <!-- CSRF token for Ajax requests -->
     <meta name="_csrf" th:content="${_csrf != null ? _csrf.token : ''}" />
@@ -108,6 +108,18 @@
         console.log('🚀 Main layout loaded');
         document.addEventListener('DOMContentLoaded', function() {
             console.log('📄 DOM fully loaded and parsed');
+
+            // Capitalize title words
+            var title = document.title;
+            if (title.startsWith('RAE/')) {
+                var viewName = title.substring(4); // Remove 'RAE/'
+                var parts = viewName.split('-');
+                var capitalizedParts = parts.map(function(part) {
+                    return part.charAt(0).toUpperCase() + part.slice(1);
+                });
+                var formattedName = capitalizedParts.join('-');
+                document.title = 'RAE/' + formattedName;
+            }
         });
     </script>
 
