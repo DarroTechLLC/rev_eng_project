@@ -84,6 +84,6 @@ The goal would be to provide actionable insights that help optimize both environ
 -----------------
 ------------
 -forgotpassword functionality
--link on bottom-just copy from live site
 -icon refresh for company, find way to save state
--sidenav links not responsive, adjust for mobile
+-sidenav links not responsive, adjust for mobile-
+-name in title
