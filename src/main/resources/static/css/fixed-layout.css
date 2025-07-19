@@ -48,6 +48,7 @@ html, body {
 
 #content {
     padding-top: 4.375rem;
+    padding-bottom: 6rem; /* Add padding to prevent content from being hidden behind the fixed footer */
 }
 
 .container-fluid {
@@ -77,4 +78,15 @@ html, body {
 footer.sticky-footer {
     padding: 2rem 0;
     flex-shrink: 0;
+    position: fixed;
+    bottom: 0;
+    width: calc(100% - 225px);
+    background-color: #fff;
+    z-index: 1020;
+    margin-left: 0;
 } 
+
+/* Footer positioning when sidebar is toggled */
+.sidebar.toggled footer.sticky-footer {
+    width: 100%;
+}

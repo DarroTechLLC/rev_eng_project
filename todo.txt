@@ -83,8 +83,7 @@ Would you like me to:
 The goal would be to provide actionable insights that help optimize both environmental and economic outcomes for the biogas production facilities.
 -----------------
 ------------
--website alerts
 -forgotpassword functionality
--link on bottom
--icon refresh
--sidenav links not responsive
+-link on bottom-just copy from live site
+-icon refresh for company, find way to save state
+-sidenav links not responsive, adjust for mobile
