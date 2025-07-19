@@ -21,11 +21,17 @@
             display: none;
         }
 
-        /* Custom styling for the vertical divider to make it black and more visible */
+        /* Custom styling for the vertical divider to make it more visible */
         .topbar-divider {
-            border-right: 1px solid #000000 !important;
+            border-right: 1px solid #4e73df !important;
             margin: 0 0.5rem;
             height: 1.5rem;
+        }
+
+        /* Custom styling for the tooltip to display company name on a new line */
+        .tooltip-inner {
+            white-space: pre-line;
+            text-align: center;
         }
     </style>
 </head>
@@ -149,7 +155,7 @@
                 <a class="nav-link dropdown-toggle" href="/admin/alerts" id="alertsDropdown" role="button"
                     data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"
                     data-placement="bottom" title="Website Alerts">
-                    <i class="fas fa-bell fa-fw"></i>
+                    <i class="fas fa-bell fa-lg" style="color: #4e73df; filter: drop-shadow(0px 0px 2px rgba(78, 115, 223, 0.3));"></i>
                     <!-- Counter - Alerts -->
                     <span id="alertCount" class="badge badge-danger badge-counter"></span>
                 </a>
@@ -164,7 +170,7 @@
             </li>
 
             <!-- Vertical Divider -->
-            <div class="topbar-divider d-none d-sm-block"></div>
+            <div class="topbar-divider d-flex"></div>
 
             <!-- Nav Item - User Information -->
             <li class="nav-item dropdown no-arrow">
