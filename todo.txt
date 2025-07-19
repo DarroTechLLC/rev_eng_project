@@ -85,5 +85,5 @@ The goal would be to provide actionable insights that help optimize both environ
 ------------
 -forgotpassword functionality
 -icon refresh for company, find way to save state
--sidenav links not responsive, adjust for mobile-
 -name in title
+-modify topnav fro mobile positioning, no hamburger remove search make sure bell and initials and separator bar still visible, i want same view just smaller on moble
