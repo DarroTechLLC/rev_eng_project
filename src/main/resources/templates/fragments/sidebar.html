@@ -20,26 +20,26 @@
 
     <!-- Dashboard Section with SEO-friendly URLs -->
     <li class="nav-item">
-        <a class="nav-link" th:href="${selectedCompany != null ? '/' + selectedCompany.name.toLowerCase().replace(' ', '-') + '/dashboard/daily-volume' : '/dashboard'}">
+        <a class="nav-link section-header" href="#" data-section="dashboard">
             <i class="fas fa-fw fa-tachometer-alt"></i>
             <span>Dashboard</span>
         </a>
         <!-- Dashboard Sub-items -->
-        <div class="collapse show" id="dashboardSubmenu">
-            <div class="bg-white py-2 collapse-inner rounded">
-                <a class="collapse-item" th:href="${selectedCompany != null ? '/' + selectedCompany.name.toLowerCase().replace(' ', '-') + '/dashboard/daily-volume' : '/dashboard'}">
+        <div class="section-content" id="dashboardSubmenu">
+            <div class="py-2 section-links">
+                <a class="nav-link-item" th:href="${selectedCompany != null ? '/' + selectedCompany.name.toLowerCase().replace(' ', '-') + '/dashboard/daily-volume' : '/dashboard'}">
                     <i class="fas fa-fw fa-chart-bar"></i> Daily Volume
                 </a>
-                <a class="collapse-item" th:href="${selectedCompany != null ? '/' + selectedCompany.name.toLowerCase().replace(' ', '-') + '/dashboard/mtd-volume' : '/dashboard'}">
+                <a class="nav-link-item" th:href="${selectedCompany != null ? '/' + selectedCompany.name.toLowerCase().replace(' ', '-') + '/dashboard/mtd-volume' : '/dashboard'}">
                     <i class="fas fa-fw fa-calendar-week"></i> MTD Volume
                 </a>
-                <a class="collapse-item" th:href="${selectedCompany != null ? '/' + selectedCompany.name.toLowerCase().replace(' ', '-') + '/dashboard/ytd-volume' : '/dashboard'}">
+                <a class="nav-link-item" th:href="${selectedCompany != null ? '/' + selectedCompany.name.toLowerCase().replace(' ', '-') + '/dashboard/ytd-volume' : '/dashboard'}">
                     <i class="fas fa-fw fa-calendar"></i> YTD Volume
                 </a>
-                <a class="collapse-item" th:href="${selectedCompany != null ? '/' + selectedCompany.name.toLowerCase().replace(' ', '-') + '/dashboard/production-headcount' : '/dashboard'}">
+                <a class="nav-link-item" th:href="${selectedCompany != null ? '/' + selectedCompany.name.toLowerCase().replace(' ', '-') + '/dashboard/production-headcount' : '/dashboard'}">
                     <i class="fas fa-fw fa-users"></i> Production Headcount
                 </a>
-                <a class="collapse-item" th:href="${selectedCompany != null ? '/' + selectedCompany.name.toLowerCase().replace(' ', '-') + '/dashboard/animal-headcount' : '/dashboard'}">
+                <a class="nav-link-item" th:href="${selectedCompany != null ? '/' + selectedCompany.name.toLowerCase().replace(' ', '-') + '/dashboard/animal-headcount' : '/dashboard'}">
                     <i class="fas fa-fw fa-paw"></i> Animal Headcount
                 </a>
             </div>
@@ -51,14 +51,14 @@
 
     <!-- Projects Section with SEO-friendly URL -->
     <li class="nav-item">
-        <a class="nav-link" th:href="${selectedCompany != null ? '/' + selectedCompany.name.toLowerCase().replace(' ', '-') + '/projects' : '/dashboard'}">
+        <a class="nav-link section-header" href="#" data-section="projects">
             <i class="fas fa-fw fa-project-diagram"></i>
             <span>Projects</span>
         </a>
 
         <!-- Projects Sub-items (with Farm Selector) -->
-        <div class="collapse show" id="projectsSubmenu">
-            <div class="bg-white py-2 collapse-inner rounded">
+        <div class="section-content" id="projectsSubmenu">
+            <div class="py-2 section-links">
                 <!-- Farm Selector Placeholder -->
                 <div class="px-3 mb-2">
                     <span class="text-xs font-weight-bold text-primary mb-1">Select Farm</span>
@@ -70,25 +70,25 @@
                 </div>
 
                 <!-- Project Links with SEO-friendly URLs -->
-                <a class="collapse-item" th:href="${(selectedCompany != null && selectedFarm != null) ? 
+                <a class="nav-link-item" th:href="${(selectedCompany != null && selectedFarm != null) ? 
                           '/' + selectedCompany.name.toLowerCase().replace(' ', '-') + 
                           '/projects/' + selectedFarm.name.toLowerCase().replace(' ', '-') + '/production' : 
                           (selectedCompany != null ? '/' + selectedCompany.name.toLowerCase().replace(' ', '-') + '/projects' : '/dashboard')}">
                     <i class="fas fa-fw fa-industry"></i> Production
                 </a>
-                <a class="collapse-item" th:href="${(selectedCompany != null && selectedFarm != null) ? 
+                <a class="nav-link-item" th:href="${(selectedCompany != null && selectedFarm != null) ? 
                           '/' + selectedCompany.name.toLowerCase().replace(' ', '-') + 
                           '/projects/' + selectedFarm.name.toLowerCase().replace(' ', '-') + '/livestock' : 
                           (selectedCompany != null ? '/' + selectedCompany.name.toLowerCase().replace(' ', '-') + '/projects' : '/dashboard')}">
                     <i class="fas fa-fw fa-cow"></i> Livestock
                 </a>
-                <a class="collapse-item" th:href="${(selectedCompany != null && selectedFarm != null) ? 
+                <a class="nav-link-item" th:href="${(selectedCompany != null && selectedFarm != null) ? 
                           '/' + selectedCompany.name.toLowerCase().replace(' ', '-') + 
                           '/projects/' + selectedFarm.name.toLowerCase().replace(' ', '-') + '/digesters' : 
                           (selectedCompany != null ? '/' + selectedCompany.name.toLowerCase().replace(' ', '-') + '/projects' : '/dashboard')}">
                     <i class="fas fa-fw fa-flask"></i> Digesters
                 </a>
-                <a class="collapse-item" th:href="${(selectedCompany != null && selectedFarm != null) ? 
+                <a class="nav-link-item" th:href="${(selectedCompany != null && selectedFarm != null) ? 
                           '/' + selectedCompany.name.toLowerCase().replace(' ', '-') + 
                           '/projects/' + selectedFarm.name.toLowerCase().replace(' ', '-') + '/metrics' : 
                           (selectedCompany != null ? '/' + selectedCompany.name.toLowerCase().replace(' ', '-') + '/projects' : '/dashboard')}">
@@ -103,19 +103,19 @@
 
     <!-- AI Insights Section -->
     <li class="nav-item">
-        <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#aiSubmenu" aria-expanded="false">
+        <a class="nav-link section-header" href="#" data-section="ai">
             <i class="fas fa-fw fa-brain"></i>
             <span>AI Insights</span>
         </a>
-        <div id="aiSubmenu" class="collapse" aria-labelledby="headingAI" data-parent="#accordionSidebar">
-            <div class="bg-white py-2 collapse-inner rounded">
-                <a class="collapse-item" th:href="${selectedCompany != null ? '/' + selectedCompany.name.toLowerCase().replace(' ', '-') + '/ai/anomaly-detection' : '/dashboard'}">
+        <div class="section-content" id="aiSubmenu">
+            <div class="py-2 section-links">
+                <a class="nav-link-item" th:href="${selectedCompany != null ? '/' + selectedCompany.name.toLowerCase().replace(' ', '-') + '/ai/anomaly-detection' : '/dashboard'}">
                     <i class="fas fa-fw fa-exclamation-triangle"></i> Anomaly Detection
                 </a>
-                <a class="collapse-item" th:href="${selectedCompany != null ? '/' + selectedCompany.name.toLowerCase().replace(' ', '-') + '/ai/trend-analysis' : '/dashboard'}">
+                <a class="nav-link-item" th:href="${selectedCompany != null ? '/' + selectedCompany.name.toLowerCase().replace(' ', '-') + '/ai/trend-analysis' : '/dashboard'}">
                     <i class="fas fa-fw fa-chart-line"></i> Trend Analysis
                 </a>
-                <a class="collapse-item" th:href="${selectedCompany != null ? '/' + selectedCompany.name.toLowerCase().replace(' ', '-') + '/ai/production-forecasting' : '/dashboard'}">
+                <a class="nav-link-item" th:href="${selectedCompany != null ? '/' + selectedCompany.name.toLowerCase().replace(' ', '-') + '/ai/production-forecasting' : '/dashboard'}">
                     <i class="fas fa-fw fa-calendar-alt"></i> Production Forecasting
                 </a>
             </div>
@@ -126,7 +126,112 @@
     <hr class="sidebar-divider">
 </ul>
 
-<!-- JavaScript for Farm Selector -->
+<!-- Mobile Hamburger Menu -->
+<div th:fragment="mobile-menu" class="mobile-menu-overlay" id="mobileMenuOverlay">
+    <div class="mobile-menu-container">
+        <div class="mobile-menu-header">
+            <div class="mobile-brand">
+                <i class="fas fa-globe"></i>
+                <span>Roeslein</span>
+            </div>
+            <button id="mobileMenuClose" class="btn-close">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <div class="mobile-menu-content">
+            <!-- Dashboard Section -->
+            <div class="mobile-section">
+                <div class="mobile-section-header" data-section="dashboard">
+                    <i class="fas fa-fw fa-tachometer-alt"></i>
+                    <span>Dashboard</span>
+                </div>
+                <div class="mobile-section-content" id="mobileDashboard">
+                    <a class="mobile-link" th:href="${selectedCompany != null ? '/' + selectedCompany.name.toLowerCase().replace(' ', '-') + '/dashboard/daily-volume' : '/dashboard'}">
+                        <i class="fas fa-fw fa-chart-bar"></i> Daily Volume
+                    </a>
+                    <a class="mobile-link" th:href="${selectedCompany != null ? '/' + selectedCompany.name.toLowerCase().replace(' ', '-') + '/dashboard/mtd-volume' : '/dashboard'}">
+                        <i class="fas fa-fw fa-calendar-week"></i> MTD Volume
+                    </a>
+                    <a class="mobile-link" th:href="${selectedCompany != null ? '/' + selectedCompany.name.toLowerCase().replace(' ', '-') + '/dashboard/ytd-volume' : '/dashboard'}">
+                        <i class="fas fa-fw fa-calendar"></i> YTD Volume
+                    </a>
+                    <a class="mobile-link" th:href="${selectedCompany != null ? '/' + selectedCompany.name.toLowerCase().replace(' ', '-') + '/dashboard/production-headcount' : '/dashboard'}">
+                        <i class="fas fa-fw fa-users"></i> Production Headcount
+                    </a>
+                    <a class="mobile-link" th:href="${selectedCompany != null ? '/' + selectedCompany.name.toLowerCase().replace(' ', '-') + '/dashboard/animal-headcount' : '/dashboard'}">
+                        <i class="fas fa-fw fa-paw"></i> Animal Headcount
+                    </a>
+                </div>
+            </div>
+
+            <!-- Projects Section -->
+            <div class="mobile-section">
+                <div class="mobile-section-header" data-section="projects">
+                    <i class="fas fa-fw fa-project-diagram"></i>
+                    <span>Projects</span>
+                </div>
+                <div class="mobile-section-content" id="mobileProjects">
+                    <!-- Farm Selector -->
+                    <div class="mobile-farm-selector">
+                        <span class="text-xs font-weight-bold text-white mb-1">Select Farm</span>
+                        <select id="mobileFarmSelector" class="form-control form-control-sm">
+                            <option th:each="farm : ${farms}" th:value="${farm.id}"
+                                    th:text="${farm.name}"
+                                    th:selected="${farm.id == selectedFarmKey}"></option>
+                        </select>
+                    </div>
+
+                    <a class="mobile-link" th:href="${(selectedCompany != null && selectedFarm != null) ? 
+                              '/' + selectedCompany.name.toLowerCase().replace(' ', '-') + 
+                              '/projects/' + selectedFarm.name.toLowerCase().replace(' ', '-') + '/production' : 
+                              (selectedCompany != null ? '/' + selectedCompany.name.toLowerCase().replace(' ', '-') + '/projects' : '/dashboard')}">
+                        <i class="fas fa-fw fa-industry"></i> Production
+                    </a>
+                    <a class="mobile-link" th:href="${(selectedCompany != null && selectedFarm != null) ? 
+                              '/' + selectedCompany.name.toLowerCase().replace(' ', '-') + 
+                              '/projects/' + selectedFarm.name.toLowerCase().replace(' ', '-') + '/livestock' : 
+                              (selectedCompany != null ? '/' + selectedCompany.name.toLowerCase().replace(' ', '-') + '/projects' : '/dashboard')}">
+                        <i class="fas fa-fw fa-cow"></i> Livestock
+                    </a>
+                    <a class="mobile-link" th:href="${(selectedCompany != null && selectedFarm != null) ? 
+                              '/' + selectedCompany.name.toLowerCase().replace(' ', '-') + 
+                              '/projects/' + selectedFarm.name.toLowerCase().replace(' ', '-') + '/digesters' : 
+                              (selectedCompany != null ? '/' + selectedCompany.name.toLowerCase().replace(' ', '-') + '/projects' : '/dashboard')}">
+                        <i class="fas fa-fw fa-flask"></i> Digesters
+                    </a>
+                    <a class="mobile-link" th:href="${(selectedCompany != null && selectedFarm != null) ? 
+                              '/' + selectedCompany.name.toLowerCase().replace(' ', '-') + 
+                              '/projects/' + selectedFarm.name.toLowerCase().replace(' ', '-') + '/metrics' : 
+                              (selectedCompany != null ? '/' + selectedCompany.name.toLowerCase().replace(' ', '-') + '/projects' : '/dashboard')}">
+                        <i class="fas fa-fw fa-chart-pie"></i> Metrics
+                    </a>
+                </div>
+            </div>
+
+            <!-- AI Insights Section -->
+            <div class="mobile-section">
+                <div class="mobile-section-header" data-section="ai">
+                    <i class="fas fa-fw fa-brain"></i>
+                    <span>AI Insights</span>
+                </div>
+                <div class="mobile-section-content" id="mobileAI">
+                    <a class="mobile-link" th:href="${selectedCompany != null ? '/' + selectedCompany.name.toLowerCase().replace(' ', '-') + '/ai/anomaly-detection' : '/dashboard'}">
+                        <i class="fas fa-fw fa-exclamation-triangle"></i> Anomaly Detection
+                    </a>
+                    <a class="mobile-link" th:href="${selectedCompany != null ? '/' + selectedCompany.name.toLowerCase().replace(' ', '-') + '/ai/trend-analysis' : '/dashboard'}">
+                        <i class="fas fa-fw fa-chart-line"></i> Trend Analysis
+                    </a>
+                    <a class="mobile-link" th:href="${selectedCompany != null ? '/' + selectedCompany.name.toLowerCase().replace(' ', '-') + '/ai/production-forecasting' : '/dashboard'}">
+                        <i class="fas fa-fw fa-calendar-alt"></i> Production Forecasting
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript for Mobile Menu and Farm Selector -->
 <script th:fragment="sidebar-scripts">
     // Load jQuery first
     const jqueryScript = document.createElement('script');
@@ -136,6 +241,61 @@
         const farmSelectorScript = document.createElement('script');
         farmSelectorScript.src = '/js/farm-selector.js';
         document.head.appendChild(farmSelectorScript);
+
+        // Initialize mobile menu functionality
+        $(document).ready(function() {
+            // Function to handle mobile menu toggle
+            $('#sidebarToggleTop').on('click', function(e) {
+                e.preventDefault();
+                $('#mobileMenuOverlay').addClass('active');
+                $('body').addClass('mobile-menu-open');
+                console.log('🍔 Mobile menu opened');
+            });
+
+            // Function to handle mobile menu close
+            $('#mobileMenuClose').on('click', function(e) {
+                e.preventDefault();
+                $('#mobileMenuOverlay').removeClass('active');
+                $('body').removeClass('mobile-menu-open');
+                console.log('🍔 Mobile menu closed');
+            });
+
+            // Function to handle section toggles in mobile menu
+            $('.mobile-section-header').on('click', function(e) {
+                e.preventDefault();
+                const section = $(this).data('section');
+                const content = $(this).next('.mobile-section-content');
+
+                // Toggle this section
+                $(this).toggleClass('active');
+                content.slideToggle(300);
+
+                console.log(`🔄 Toggled mobile section: ${section}`);
+            });
+
+            // Sync mobile farm selector with desktop
+            $('#mobileFarmSelector').on('change', function() {
+                const selectedFarm = $(this).val();
+                $('#farmSelector').val(selectedFarm).trigger('change');
+                console.log(`🔄 Mobile farm selector changed to: ${selectedFarm}`);
+            });
+
+            // Initialize desktop sidebar section toggles
+            $('.sidebar .section-header').on('click', function(e) {
+                e.preventDefault();
+                const section = $(this).data('section');
+                const content = $(this).next('.section-content');
+
+                // Only toggle on desktop
+                if ($(window).width() > 768) {
+                    $(this).toggleClass('active');
+                    content.slideToggle(300);
+                    console.log(`🔄 Toggled desktop section: ${section}`);
+                }
+            });
+
+            console.log('✅ Mobile menu handlers initialized');
+        });
     };
     document.head.appendChild(jqueryScript);
 </script>
