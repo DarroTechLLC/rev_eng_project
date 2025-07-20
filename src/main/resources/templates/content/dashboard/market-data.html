@@ -4,12 +4,11 @@
       layout:decorate="~{layouts/main}">
 <head>
     <title>Market Data Dashboard</title>
-    <!-- Highcharts -->
-    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <!-- Enhanced Highcharts with all export functionality -->
+    <div th:replace="fragments/highcharts-scripts :: highcharts-with-utils"></div>
+    <div th:replace="fragments/highcharts-scripts :: chart-export-menu"></div>
     <!-- Luxon for date handling -->
     <script src="https://cdn.jsdelivr.net/npm/luxon@2.3.0/build/global/luxon.min.js"></script>
-    <!-- Chart Utils -->
-    <script src="/js/chart-utils/highcharts-utils.js"></script>
 </head>
 <body>
 <div layout:fragment="content">

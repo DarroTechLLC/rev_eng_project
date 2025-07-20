@@ -4,10 +4,8 @@
       layout:decorate="~{layouts/main}">
 <head>
     <title>Animal Headcount Dashboard</title>
-    <!-- Highcharts -->
-    <script src="https://code.highcharts.com/highcharts.js"></script>
-    <!-- Chart Utils -->
-    <script src="/js/chart-utils/highcharts-utils.js"></script>
+    <!-- Highcharts with Utils -->
+    <div th:replace="fragments/highcharts-scripts :: highcharts-with-utils"></div>
 </head>
 <body>
 <div layout:fragment="content">

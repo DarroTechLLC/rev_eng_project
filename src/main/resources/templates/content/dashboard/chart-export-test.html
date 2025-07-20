@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/main-layout}">
+<head>
+    <title>Chart Export Test</title>
+    
+    <!-- Enhanced Highcharts with all export functionality -->
+    <div th:replace="fragments/highcharts-scripts :: highcharts-with-utils"></div>
+    <div th:replace="fragments/highcharts-scripts :: chart-export-menu"></div>
+    
+    <style>
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin-bottom: 20px;
+        }
+        .test-panel {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="container-fluid">
+        <!-- Page Heading -->
+        <div class="d-sm-flex align-items-center justify-content-between mb-4">
+            <h1 class="h3 mb-0 text-gray-800">Chart Export Error Test</h1>
+            <p class="text-muted">Testing error handling fixes for chart export</p>
+        </div>
+
+        <!-- Test Chart -->
+        <div class="test-panel">
+            <h5>Test Chart with Enhanced Export</h5>
+            <div class="chart-container" id="testChart"></div>
+        </div>
+
+        <!-- Error Log Display -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-primary">Console Log</h6>
+            </div>
+            <div class="card-body">
+                <div id="consoleLog" style="background: #f8f9fa; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 12px; max-height: 200px; overflow-y: auto;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<th:block layout:fragment="scripts">
+    <script th:inline="javascript">
+        // Capture console logs for display
+        const originalLog = console.log;
+        const originalWarn = console.warn;
+        const originalError = console.error;
+        const logContainer = document.getElementById('consoleLog');
+        
+        function addToLog(type, message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.style.color = type === 'error' ? '#dc3545' : type === 'warn' ? '#ffc107' : '#28a745';
+            logEntry.textContent = `[${timestamp}] ${type.toUpperCase()}: ${message}`;
+            logContainer.appendChild(logEntry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addToLog('log', args.join(' '));
+        };
+        
+        console.warn = function(...args) {
+            originalWarn.apply(console, args);
+            addToLog('warn', args.join(' '));
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            addToLog('error', args.join(' '));
+        };
+
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Starting chart export test');
+            
+            // Sample data
+            const sampleData = [
+                ['Farm A', 1200],
+                ['Farm B', 1800],
+                ['Farm C', 900]
+            ];
+
+            // Chart configuration with potential error cases
+            const chartOptions = {
+                chart: {
+                    type: 'bar',
+                    height: 350
+                },
+                title: {
+                    text: 'Test Chart Title'
+                },
+                xAxis: {
+                    type: 'category'
+                },
+                yAxis: {
+                    title: {
+                        text: 'Volume (MMBTUs)'
+                    }
+                },
+                series: [{
+                    name: 'Production Volume',
+                    data: sampleData
+                }],
+                exporting: {
+                    enabled: true
+                }
+            };
+
+            try {
+                // Create chart
+                const chart = Highcharts.chart('testChart', chartOptions);
+                console.log('✅ Chart created successfully');
+                
+                // Initialize enhanced export menu
+                const exportMenu = initChartExportMenu(chart, document.getElementById('testChart'));
+                console.log('✅ Export menu initialized');
+                
+                // Test export functions
+                setTimeout(() => {
+                    console.log('🧪 Testing export functions...');
+                    
+                    // Test filename generation
+                    const testFilename = exportMenu.getDefaultFileName();
+                    console.log('📝 Test filename:', testFilename);
+                    
+                    // Test chart data access
+                    if (chart.getDataRows) {
+                        const dataRows = chart.getDataRows();
+                        console.log('📊 Chart data rows:', dataRows ? dataRows.length : 'N/A');
+                    }
+                    
+                }, 1000);
+                
+            } catch (error) {
+                console.error('❌ Error creating chart:', error);
+            }
+        });
+    </script>
+</th:block>
+</body>
+</html> 

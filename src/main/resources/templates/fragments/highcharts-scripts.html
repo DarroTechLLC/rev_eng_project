@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+    <!-- Highcharts Scripts Fragment -->
+    <div th:fragment="highcharts-basic">
+        <!-- Highcharts Core -->
+        <script src="https://code.highcharts.com/highcharts.js"></script>
+        <!-- Highcharts Export Modules Loader -->
+        <script th:src="@{/js/chart-utils/highcharts-export-loader.js}"></script>
+        <!-- Enhanced XLSX Support -->
+        <script th:src="@{/js/chart-utils/highcharts-xlsx-support.js}"></script>
+    </div>
+
+    <!-- Highcharts with Utils Fragment -->
+    <div th:fragment="highcharts-with-utils">
+        <!-- Highcharts Core -->
+        <script src="https://code.highcharts.com/highcharts.js"></script>
+        <!-- Highcharts Export Modules Loader -->
+        <script th:src="@{/js/chart-utils/highcharts-export-loader.js}"></script>
+        <!-- Enhanced XLSX Support -->
+        <script th:src="@{/js/chart-utils/highcharts-xlsx-support.js}"></script>
+        <!-- Highcharts Utils -->
+        <script th:src="@{/js/chart-utils/highcharts-utils.js}"></script>
+    </div>
+
+    <!-- Highcharts with All Modules Fragment -->
+    <div th:fragment="highcharts-all-modules">
+        <!-- Highcharts Core -->
+        <script src="https://code.highcharts.com/highcharts.js"></script>
+        <!-- Highcharts Modules -->
+        <script src="https://code.highcharts.com/modules/exporting.js"></script>
+        <script src="https://code.highcharts.com/modules/export-data.js"></script>
+        <script src="https://code.highcharts.com/modules/accessibility.js"></script>
+        <!-- Enhanced XLSX Support -->
+        <script th:src="@{/js/chart-utils/highcharts-xlsx-support.js}"></script>
+        <!-- Highcharts Utils -->
+        <script th:src="@{/js/chart-utils/highcharts-utils.js}"></script>
+    </div>
+
+    <!-- Chart Export Menu Fragment -->
+    <div th:fragment="chart-export-menu">
+        <script th:src="@{/js/chart-utils/chart-export-menu.js}"></script>
+    </div>
+</body>
+</html>
