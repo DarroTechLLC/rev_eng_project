@@ -106,18 +106,14 @@ function fixSectionCardsLayout() {
         // Get the parent element
         const parent = card.parentElement;
 
-        // Clone the card to avoid reference issues
-        const cardClone = card.cloneNode(true);
-
-        // Insert the new structure
+        // Insert the new structure without cloning
         try {
-            // Remove the original card
-            parent.removeChild(card);
+            // Insert the row before the card
+            parent.insertBefore(row, card);
 
-            // Add the new structure
-            parent.appendChild(row);
+            // Move the card into the column and the column into the row
+            col.appendChild(card);
             row.appendChild(col);
-            col.appendChild(cardClone);
 
             console.log('Fixed layout for section card', index);
         } catch (e) {
