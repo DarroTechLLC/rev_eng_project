@@ -14,13 +14,13 @@
 function formatNumber(number, decimals = 0, decPoint = '.', thousandsSep = ',') {
     const n = !isFinite(+number) ? 0 : +number;
     const prec = !isFinite(+decimals) ? 0 : Math.abs(decimals);
-    
+
     // Fix for IE parseFloat(0.55).toFixed(0) = 0;
     const toFixedFix = function(n, prec) {
         const k = Math.pow(10, prec);
         return '' + Math.round(n * k) / k;
     };
-    
+
     // Format the number
     let s = (prec ? toFixedFix(n, prec) : '' + Math.round(n)).split('.');
     if (s[0].length > 3) {
@@ -128,19 +128,162 @@ const highchartsTheme = {
         enabled: false
     },
     exporting: {
+        enabled: true,
         buttons: {
             contextButton: {
                 symbolStroke: '#858796',
                 theme: {
                     fill: 'transparent'
-                }
+                },
+                menuItems: [
+                    'viewFullscreen',
+                    'printChart',
+                    'separator',
+                    'downloadPNG',
+                    'downloadJPEG',
+                    'downloadPDF',
+                    'downloadSVG',
+                    'separator',
+                    'downloadCSV',
+                    'downloadXLS',
+                    'viewData'
+                ]
             }
+        },
+        // Enhanced filename handling matching Next.js implementation
+        filename: function(chart) {
+            const title = chart.title ? chart.title.textStr : 'chart-data';
+            return title.replace(/[^a-zA-Z0-9\s-]/g, '').replace(/\s+/g, '-').toLowerCase();
         }
     }
 };
 
 // Apply theme globally
 Highcharts.setOptions(highchartsTheme);
+
+// Add global error handling for Highcharts
+if (typeof Highcharts !== 'undefined') {
+    // Override Highcharts error handling to prevent .replace errors
+    const originalError = Highcharts.error;
+    Highcharts.error = function(code, stop) {
+        console.warn('Highcharts error:', code);
+        
+        // Handle specific exporting errors
+        if (code === 16) { // Export server error
+            console.warn('Highcharts export server error - falling back to client-side export');
+            return false; // Don't stop execution
+        }
+        
+        // For other errors, log but don't stop
+        if (stop) {
+            console.error('Highcharts error (stopping):', code);
+        }
+        return false;
+    };
+    
+    // Override the getFilename function to prevent .replace errors
+    if (Highcharts.exporting && Highcharts.exporting.Exporter) {
+        const originalGetFilename = Highcharts.exporting.Exporter.prototype.getFilename;
+        if (originalGetFilename) {
+            Highcharts.exporting.Exporter.prototype.getFilename = function() {
+                try {
+                    const filename = originalGetFilename.call(this);
+                    return typeof filename === 'string' ? filename : 'chart-export';
+                } catch (error) {
+                    console.warn('Error getting filename, using default:', error);
+                    return 'chart-export';
+                }
+            };
+        }
+    }
+    
+    console.log('✅ Highcharts error handling initialized');
+}
+
+/**
+ * Initialize Highcharts with error handling for exporting
+ */
+function initializeHighchartsWithErrorHandling() {
+    // Override Highcharts error handling for exporting
+    if (typeof Highcharts !== 'undefined') {
+        // Add error handling for exporting
+        Highcharts.error = function(code, stop) {
+            console.warn('Highcharts error:', code);
+            
+            // Handle specific exporting errors
+            if (code === 16) { // Export server error
+                console.warn('Highcharts export server error - falling back to client-side export');
+                return false; // Don't stop execution
+            }
+            
+            // For other errors, log but don't stop
+            if (stop) {
+                console.error('Highcharts error (stopping):', code);
+            }
+            return false;
+        };
+        
+        // Override the getFilename function to prevent .replace errors
+        if (Highcharts.exporting && Highcharts.exporting.Exporter) {
+            const originalGetFilename = Highcharts.exporting.Exporter.prototype.getFilename;
+            if (originalGetFilename) {
+                Highcharts.exporting.Exporter.prototype.getFilename = function() {
+                    try {
+                        const filename = originalGetFilename.call(this);
+                        return typeof filename === 'string' ? filename : 'chart-export';
+                    } catch (error) {
+                        console.warn('Error getting filename, using default:', error);
+                        return 'chart-export';
+                    }
+                };
+            }
+        }
+        
+        console.log('✅ Highcharts error handling initialized');
+    }
+}
+
+/**
+ * Create a chart with enhanced error handling
+ * @param {string} containerId - Chart container ID
+ * @param {Object} options - Chart options
+ * @returns {Object} Highcharts chart instance
+ */
+function createChartWithErrorHandling(containerId, options) {
+    try {
+        // Initialize error handling
+        initializeHighchartsWithErrorHandling();
+        
+        // Verify container exists
+        const container = document.getElementById(containerId);
+        if (!container) {
+            throw new Error(`Chart container with ID '${containerId}' not found`);
+        }
+        
+        // Create the chart
+        const chart = Highcharts.chart(containerId, options);
+        
+        // Verify chart was created successfully
+        if (!chart || typeof chart !== 'object') {
+            throw new Error('Chart creation failed - invalid chart object returned');
+        }
+        
+        // Add error event listener only if the chart has the 'on' method
+        if (chart && typeof chart.on === 'function') {
+            chart.on('error', function(e) {
+                console.warn('Chart error:', e);
+            });
+        } else {
+            console.warn('⚠️ Chart object does not have "on" method, skipping error listener');
+        }
+        
+        console.log('✅ Chart created successfully with error handling');
+        return chart;
+    } catch (error) {
+        console.error('❌ Error creating chart:', error);
+        throw error;
+    }
+}
 
 /**
  * Create a line chart showing daily production trends
@@ -333,20 +476,20 @@ function generateSampleFarmDistribution(farmNames = ['Farm A', 'Farm B', 'Farm C
  */
 function hexToRgba(hex, alpha) {
     if (!hex) return 'rgba(0, 0, 0, ' + alpha + ')';
-    
+
     // Remove # if present
     hex = hex.replace('#', '');
-    
+
     // Convert 3-digit hex to 6-digit
     if (hex.length === 3) {
         hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
     }
-    
+
     // Parse the hex values
     const r = parseInt(hex.substring(0, 2), 16);
     const g = parseInt(hex.substring(2, 4), 16);
     const b = parseInt(hex.substring(4, 6), 16);
-    
+
     return 'rgba(' + r + ', ' + g + ', ' + b + ', ' + alpha + ')';
 }
 
@@ -369,9 +512,15 @@ function getRandomColor() {
  * @returns {Function} Tooltip formatter function
  */
 function createTooltipFormatter(unit) {
+    const safeUnit = String(unit || '');
+    
     return function() {
-        return `<b>${this.series.name}</b><br/>
-                ${this.key}: ${Highcharts.numberFormat(this.y, 0)} ${unit}`;
+        const seriesName = this.series && this.series.name ? this.series.name : 'Series';
+        const key = this.key || 'Unknown';
+        const value = typeof this.y === 'number' && !isNaN(this.y) ? this.y : 0;
+        
+        return `<b>${seriesName}</b><br/>
+                ${key}: ${Highcharts.numberFormat(value, 0)} ${safeUnit}`;
     };
 }
 
@@ -383,12 +532,113 @@ function createTooltipFormatter(unit) {
  * @returns {Object} Highcharts title configuration
  */
 function createTitleWithTotal(title, total, unit) {
+    // Validate and sanitize inputs
+    const safeTitle = String(title || 'Chart');
+    const safeTotal = typeof total === 'number' && !isNaN(total) ? total : 0;
+    const safeUnit = String(unit || '');
+    
+    // Format the total with proper number formatting
+    const formattedTotal = Math.round(safeTotal).toLocaleString();
+    
     return {
-        text: `${title}: (${Math.round(total).toLocaleString()} ${unit})`,
+        text: `${safeTitle}: (${formattedTotal} ${safeUnit})`,
         style: {
             fontSize: '16px',
             fontWeight: 'bold'
         },
         margin: 20
     };
+}
+
+/**
+ * Safely format chart data for Highcharts
+ * @param {Array} data - Raw data array
+ * @param {string} nameKey - Key for the name property
+ * @param {string} valueKey - Key for the value property
+ * @returns {Array} Formatted data array for Highcharts
+ */
+function safelyFormatChartData(data, nameKey = 'name', valueKey = 'value') {
+    if (!Array.isArray(data)) {
+        console.warn('⚠️ Data is not an array:', data);
+        return [];
+    }
+    
+    return data
+        .filter(item => item && typeof item === 'object')
+        .map(item => {
+            const name = item[nameKey] || item.farm_name || item.farm_id || 'Unknown';
+            const value = parseFloat(item[valueKey] || item.volume || 0);
+            
+            return [
+                String(name),
+                isNaN(value) ? 0 : value
+            ];
+        })
+        .filter(([name, value]) => name && value >= 0);
+}
+
+/**
+ * Create a safe Highcharts chart configuration
+ * @param {string} containerId - Chart container ID
+ * @param {Object} options - Chart options
+ * @returns {Object} Safe Highcharts configuration
+ */
+function createSafeChartConfig(containerId, options = {}) {
+    const defaultConfig = {
+        chart: {
+            type: 'column',
+            height: 400
+        },
+        title: {
+            text: 'Chart',
+            style: {
+                fontSize: '16px',
+                fontWeight: 'bold'
+            },
+            margin: 20
+        },
+        xAxis: {
+            type: 'category',
+            title: {
+                text: 'Category'
+            }
+        },
+        yAxis: {
+            min: 0,
+            title: {
+                text: 'Value'
+            },
+            labels: {
+                formatter: function() {
+                    return Highcharts.numberFormat(this.value, 0);
+                }
+            }
+        },
+        tooltip: {
+            formatter: function() {
+                const seriesName = this.series && this.series.name ? this.series.name : 'Series';
+                const key = this.key || 'Unknown';
+                const value = typeof this.y === 'number' && !isNaN(this.y) ? this.y : 0;
+                
+                return `<b>${seriesName}</b><br/>
+                        ${key}: ${Highcharts.numberFormat(value, 0)}`;
+            }
+        },
+        legend: {
+            enabled: false
+        },
+        series: [],
+        exporting: {
+            enabled: true,
+            filename: 'chart-export',
+            buttons: {
+                contextButton: {
+                    menuItems: ['downloadPNG', 'downloadPDF', 'downloadCSV', 'downloadXLS']
+                }
+            }
+        }
+    };
+    
+    // Merge options with defaults
+    return Object.assign({}, defaultConfig, options);
 }

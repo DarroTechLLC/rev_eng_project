@@ -6,6 +6,9 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <!-- Highcharts -->
     <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.highcharts.com/modules/exporting.js"></script>
+    <script src="https://code.highcharts.com/modules/export-data.js"></script>
+    <script src="https://code.highcharts.com/modules/accessibility.js"></script>
     <!-- Chart Utils -->
     <script src="/js/chart-utils/highcharts-utils.js"></script>
 </head>
@@ -112,7 +115,7 @@
             // Set default dates
             const today = new Date();
             const ninetyDaysAgo = new Date(today.getTime() - (90 * 24 * 60 * 60 * 1000));
-            
+
             document.getElementById('startDate').value = ninetyDaysAgo.toISOString().split('T')[0];
             document.getElementById('endDate').value = today.toISOString().split('T')[0];
 
@@ -150,7 +153,7 @@
                 .then(response => response.json())
                 .then(data => {
                     loadingIndicator.hide();
-                    
+
                     if (data.success && data.trend) {
                         displayTrendResults(data.trend);
                     } else {
@@ -188,14 +191,14 @@
                 const startDate = new Date(document.getElementById('startDate').value);
                 const endDate = new Date(document.getElementById('endDate').value);
                 const daysDiff = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
-                
+
                 const dates = [];
                 const trendLine = [];
-                
+
                 for (let i = 0; i <= daysDiff; i++) {
                     const date = new Date(startDate.getTime() + (i * 24 * 60 * 60 * 1000));
                     dates.push(date.getTime());
-                    
+
                     // Calculate trend line value using slope and intercept
                     const trendValue = trend.slope * i + (trend.r2Value || 0);
                     trendLine.push(trendValue);

@@ -4,10 +4,8 @@
       layout:decorate="~{layouts/main}">
 <head>
     <title>Daily Volume Dashboard</title>
-    <!-- Highcharts -->
-    <script src="https://code.highcharts.com/highcharts.js"></script>
-    <!-- Chart Utils -->
-    <script src="/js/chart-utils/highcharts-utils.js"></script>
+    <!-- Highcharts with Utils -->
+    <div th:replace="fragments/highcharts-scripts :: highcharts-with-utils"></div>
 </head>
 <body>
 <div layout:fragment="content">
@@ -106,7 +104,7 @@
 
                 const data = response.data;
                 data.forEach(item => {
-                    console.log(`✓ Farm ${item.farm_name || item.farm_id} (ID: ${item.farm_id}): Volume = ${item.volume}`);
+                    console.log(`✓ Farm ${item.farm_name || item.farm_id} (ID: ${item.farm_id}): Volume = ${item.volume} (type: ${typeof item.volume})`);
                 });
 
                 if (chart) {
@@ -124,57 +122,117 @@
         }
 
         function createChart(data) {
-            // Prepare data for Highcharts
-            const chartSeries = [{
-                name: 'Volume',
-                data: data.map(item => [item.farm_name || item.farm_id, item.volume || 0])
-            }];
+            // Validate and prepare data for Highcharts
+            if (!data || !Array.isArray(data) || data.length === 0) {
+                console.error('❌ Invalid data provided to createChart:', data);
+                showError('No data available for the selected date.');
+                hideLoading();
+                return;
+            }
 
-            const totalVolume = data.reduce((sum, item) => sum + (item.volume || 0), 0);
+            // Use the safe data formatting function if available, otherwise use basic formatting
+            let chartData;
+            if (typeof safelyFormatChartData === 'function') {
+                chartData = safelyFormatChartData(data, 'farm_name', 'volume');
+            } else {
+                console.warn('⚠️ safelyFormatChartData not available, using basic formatting');
+                chartData = data.map(item => [
+                    item.farm_name || item.farm_id || 'Unknown',
+                    parseFloat(item.volume) || 0
+                ]).filter(([name, value]) => name && value >= 0);
+            }
+            
+            if (chartData.length === 0) {
+                console.error('❌ No valid data points found after formatting');
+                showError('No valid data available for the selected date.');
+                hideLoading();
+                return;
+            }
+
+            // Calculate total volume
+            const totalVolume = chartData.reduce((sum, [name, value]) => sum + value, 0);
 
             console.log('📈 Chart Data Verification:');
-            console.log('✓ Data points present:', chartSeries[0].data.length);
+            console.log('✓ Valid data points:', chartData.length);
             console.log('✓ Total volume calculated:', totalVolume);
+            console.log('✓ Chart data:', chartData);
 
             // Get the selected chart type
             const chartType = chartTypeSelector.value;
             console.log('📊 Creating chart with type:', chartType);
 
-            // Create Highcharts chart
-            chart = Highcharts.chart(chartContainer, {
-                chart: {
-                    type: chartType,
-                    height: 400
-                },
-                title: createTitleWithTotal('Daily Production Volume', totalVolume, 'MMBTUs'),
-                xAxis: {
-                    type: 'category',
-                    title: {
-                        text: 'Farm'
-                    }
-                },
-                yAxis: {
-                    min: 0,
-                    title: {
-                        text: 'MMBTUs'
+            // Create Highcharts chart with proper error handling
+            try {
+                // Create chart configuration with fallbacks for utility functions
+                const chartConfig = {
+                    chart: {
+                        type: chartType,
+                        height: 400
                     },
-                    labels: {
-                        formatter: function() {
-                            return Highcharts.numberFormat(this.value, 0);
+                    title: typeof createTitleWithTotal === 'function' 
+                        ? createTitleWithTotal('Daily Production Volume', totalVolume, 'MMBTUs')
+                        : {
+                            text: `Daily Production Volume: (${Math.round(totalVolume).toLocaleString()} MMBTUs)`,
+                            style: { fontSize: '16px', fontWeight: 'bold' }
+                          },
+                    xAxis: {
+                        type: 'category',
+                        title: {
+                            text: 'Farm'
+                        }
+                    },
+                    yAxis: {
+                        min: 0,
+                        title: {
+                            text: 'MMBTUs'
+                        },
+                        labels: {
+                            formatter: function() {
+                                return Highcharts.numberFormat(this.value, 0);
+                            }
+                        }
+                    },
+                    tooltip: {
+                        formatter: typeof createTooltipFormatter === 'function' 
+                            ? createTooltipFormatter('MMBTUs')
+                            : function() {
+                                return `<b>${this.series.name}</b><br/>
+                                        ${this.key}: ${Highcharts.numberFormat(this.y, 0)} MMBTUs`;
+                              }
+                    },
+                    legend: {
+                        enabled: false
+                    },
+                    series: [{
+                        name: 'Volume',
+                        data: chartData
+                    }],
+                    exporting: {
+                        enabled: true,
+                        filename: 'daily-volume-chart',
+                        buttons: {
+                            contextButton: {
+                                menuItems: ['downloadPNG', 'downloadPDF', 'downloadCSV', 'downloadXLS']
+                            }
                         }
                     }
-                },
-                tooltip: {
-                    formatter: createTooltipFormatter('MMBTUs')
-                },
-                legend: {
-                    enabled: false
-                },
-                series: chartSeries
-            });
+                };
 
-            hideLoading();
-            console.log('✅ Chart successfully rendered');
+                // Use enhanced error handling if available, otherwise fallback to direct chart creation
+                if (typeof createChartWithErrorHandling === 'function') {
+                    chart = createChartWithErrorHandling('dailyVolumeChart', chartConfig);
+                } else {
+                    console.warn('⚠️ createChartWithErrorHandling not available, using direct chart creation');
+                    chart = Highcharts.chart('dailyVolumeChart', chartConfig);
+                }
+
+                hideLoading();
+                console.log('✅ Chart successfully rendered');
+            } catch (error) {
+                console.error('❌ Error creating Highcharts chart:', error);
+                showError('Failed to create chart. Please try again.');
+                hideLoading();
+            }
         }
 
         // Event listeners
@@ -185,7 +243,15 @@
         });
 
         // Initialize chart on page load
-        document.addEventListener('DOMContentLoaded', updateChart);
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize Highcharts error handling
+            if (typeof initializeHighchartsWithErrorHandling === 'function') {
+                initializeHighchartsWithErrorHandling();
+            }
+            
+            // Update chart
+            updateChart();
+        });
     </script>
 </th:block>
 </body>
