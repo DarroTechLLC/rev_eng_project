@@ -4,7 +4,7 @@
       layout:decorate="~{layouts/main-layout}">
 <head>
     <title>Daily Report</title>
-    
+
     <!-- Custom styles for this template -->
     <style>
         .section-card {
@@ -151,60 +151,9 @@
             <div class="section-body">
                 <div class="row">
                     <!-- Daily Trend Chart -->
-                    <div class="col-md-8">
+                    <div class="col-md-12">
                         <div class="chart-container">
                             <div id="dailyTrendChart"></div>
-                        </div>
-                    </div>
-
-                    <!-- Production Metrics -->
-                    <div class="col-md-4">
-                        <div class="card border-left-primary shadow h-100 py-2 mb-3">
-                            <div class="card-body">
-                                <div class="row no-gutters align-items-center">
-                                    <div class="col mr-2">
-                                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                            Daily Production
-                                        </div>
-                                        <div class="h5 mb-0 font-weight-bold text-gray-800" th:text="${#numbers.formatDecimal(dailyTotal, 1, 2)}">0.00</div>
-                                    </div>
-                                    <div class="col-auto">
-                                        <i class="fas fa-calendar fa-2x text-gray-300"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="card border-left-success shadow h-100 py-2 mb-3">
-                            <div class="card-body">
-                                <div class="row no-gutters align-items-center">
-                                    <div class="col mr-2">
-                                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                                            MTD Production
-                                        </div>
-                                        <div class="h5 mb-0 font-weight-bold text-gray-800" th:text="${#numbers.formatDecimal(mtdTotal, 1, 2)}">0.00</div>
-                                    </div>
-                                    <div class="col-auto">
-                                        <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="card border-left-info shadow h-100 py-2">
-                            <div class="card-body">
-                                <div class="row no-gutters align-items-center">
-                                    <div class="col mr-2">
-                                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
-                                            YTD Production
-                                        </div>
-                                        <div class="h5 mb-0 font-weight-bold text-gray-800" th:text="${#numbers.formatDecimal(ytdTotal, 1, 2)}">0.00</div>
-                                    </div>
-                                    <div class="col-auto">
-                                        <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
-                                    </div>
-                                </div>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -250,6 +199,73 @@
                                 </tr>
                                 </tbody>
                             </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Production Metrics Section -->
+        <div class="section-card">
+            <div class="section-header">
+                <h2 class="h5 m-0">Production Metrics</h2>
+            </div>
+            <div class="section-body">
+                <div class="row">
+                    <!-- Daily Production -->
+                    <div class="col-md-4">
+                        <div class="card border-left-primary shadow h-100 py-2">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                            Daily Production
+                                        </div>
+                                        <div class="h5 mb-0 font-weight-bold text-gray-800" th:text="${#numbers.formatDecimal(dailyTotal, 1, 2)}">0.00</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="fas fa-calendar fa-2x text-gray-300"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- MTD Production -->
+                    <div class="col-md-4">
+                        <div class="card border-left-success shadow h-100 py-2">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                            MTD Production
+                                        </div>
+                                        <div class="h5 mb-0 font-weight-bold text-gray-800" th:text="${#numbers.formatDecimal(mtdTotal, 1, 2)}">0.00</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- YTD Production -->
+                    <div class="col-md-4">
+                        <div class="card border-left-info shadow h-100 py-2">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                            YTD Production
+                                        </div>
+                                        <div class="h5 mb-0 font-weight-bold text-gray-800" th:text="${#numbers.formatDecimal(ytdTotal, 1, 2)}">0.00</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -353,7 +369,7 @@
             });
         }
     </script>
-    
+
     <!-- Daily Report Layout Fix Script -->
     <script th:src="@{/js/daily-report-fix.js}"></script>
 </th:block>
