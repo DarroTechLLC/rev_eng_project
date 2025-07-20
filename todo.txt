@@ -83,7 +83,9 @@ Would you like me to:
 The goal would be to provide actionable insights that help optimize both environmental and economic outcomes for the biogas production facilities.
 -----------------
 ------------
--forgotpassword functionality
--icon refresh for company, find way to save state
--name in title
--modify topnav fro mobile positioning, no hamburger remove search make sure bell and initials and separator bar still visible, i want same view just smaller on moble
+-forgotpassword functionality-scope out from comparison: user submits username or email, db gets checked
+if eiher is present, email is sent to email by user from company email: for sending email use anthony@unlockedlabs.org, if user
+name or email found email sent to user with a link that has a timeline, the link
+sends user to reset pwd page and are allowed to reset it
+
+-icon refresh for company, find way to save state-see if there is assistance in reference

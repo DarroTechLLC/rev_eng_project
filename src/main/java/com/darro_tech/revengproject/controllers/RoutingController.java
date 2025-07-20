@@ -17,10 +17,10 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
+import com.darro_tech.revengproject.dto.BudgetComparison;
 import com.darro_tech.revengproject.models.Company;
 import com.darro_tech.revengproject.models.Farm;
 import com.darro_tech.revengproject.models.User;
-import com.darro_tech.revengproject.dto.BudgetComparison;
 import com.darro_tech.revengproject.services.CompanyService;
 import com.darro_tech.revengproject.services.FarmService;
 import com.darro_tech.revengproject.services.UserRoleService;
@@ -553,10 +553,10 @@ public class RoutingController extends BaseController {
         // Add default objects for weekly-report to prevent null pointer exceptions
         if ("weekly-report".equals(dashboardType)) {
             logger.debug("📊 Adding default objects for weekly report");
-            
+
             // Add BudgetComparison object
             model.addAttribute("budgetComparison", new BudgetComparison());
-            
+
             // Initialize dailyTotals map
             Map<String, Double> dailyTotals = new HashMap<>();
             List<Farm> farms = farmService.getFarmsByCompanyId(company.getId());
@@ -564,10 +564,10 @@ public class RoutingController extends BaseController {
                 dailyTotals.put(farm.getId(), 0.0);
             }
             model.addAttribute("dailyTotals", dailyTotals);
-            
+
             // Add dailyGrandTotal
             model.addAttribute("dailyGrandTotal", 0.0);
-            
+
             // Initialize weeklyAverages map (similar to dailyTotals)
             Map<String, Double> weeklyAverages = new HashMap<>();
             for (Farm farm : farms) {
@@ -575,7 +575,7 @@ public class RoutingController extends BaseController {
             }
             model.addAttribute("weeklyAverages", weeklyAverages);
             model.addAttribute("weeklyGrandAverage", 0.0);
-            
+
             // Initialize monthlyAverages map
             Map<String, Double> monthlyAverages = new HashMap<>();
             for (Farm farm : farms) {
@@ -583,16 +583,16 @@ public class RoutingController extends BaseController {
             }
             model.addAttribute("monthlyAverages", monthlyAverages);
             model.addAttribute("monthlyGrandAverage", 0.0);
-            
+
             // Initialize empty dailyProduction list
             model.addAttribute("dailyProduction", new ArrayList<>());
-            
+
             // Initialize empty weeklyProduction list
             model.addAttribute("weeklyProduction", new ArrayList<>());
-            
+
             // Initialize empty monthlyProduction list
             model.addAttribute("monthlyProduction", new ArrayList<>());
-            
+
             // Add other period totals
             model.addAttribute("wtdProduction", new ArrayList<>());
             model.addAttribute("mtdProduction", new ArrayList<>());
@@ -600,12 +600,30 @@ public class RoutingController extends BaseController {
             model.addAttribute("wtdTotal", 0.0);
             model.addAttribute("mtdTotal", 0.0);
             model.addAttribute("ytdTotal", 0.0);
-            
+
             model.addAttribute("reportDate", java.time.LocalDate.now().toString());
-            
+
             logger.debug("📊 Added empty data structures for weekly report to prevent null pointer exceptions");
         }
 
+        // Add default objects for daily-report to prevent null pointer exceptions
+        if ("daily-report".equals(dashboardType)) {
+            logger.debug("📊 Adding default objects for daily report");
+
+            // Initialize empty production lists
+            model.addAttribute("dailyProduction", new ArrayList<>());
+            model.addAttribute("mtdProduction", new ArrayList<>());
+            model.addAttribute("farmPerformance", new ArrayList<>());
+
+            // Initialize totals
+            model.addAttribute("dailyTotal", 0.0);
+            model.addAttribute("mtdTotal", 0.0);
+            model.addAttribute("ytdTotal", 0.0);
+
+            model.addAttribute("reportDate", java.time.LocalDate.now().toString());
+
+            logger.debug("📊 Added empty data structures for daily report to prevent null pointer exceptions");
+        }
         logger.info("🔄 Returning dashboard view: dashboard/{}", dashboardType);
         return view("dashboard/" + dashboardType, model);
     }
