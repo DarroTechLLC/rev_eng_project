@@ -134,7 +134,7 @@ public class HomeController extends BaseController {
             LoggerUtils.logPerformance(logger, "Home page preparation", endTime - startTime);
 
             LoggerUtils.logResponse(logger, "/home", "Rendered home page successfully");
-            return view("dashboard", model);  // Use view method from BaseController
+            return view("content/content-container", model);  // Use view method from BaseController
         } catch (Exception e) {
             LoggerUtils.logException(logger, e, "rendering home page");
             throw e; // Re-throw to let Spring's exception handlers deal with it

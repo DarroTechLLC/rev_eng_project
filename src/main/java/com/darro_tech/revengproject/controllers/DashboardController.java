@@ -83,7 +83,7 @@ public class DashboardController extends BaseController {
             LoggerUtils.logPerformance(logger, "Dashboard page preparation", endTime - startTime);
 
             LoggerUtils.logResponse(logger, "/dashboard", "Dashboard rendered successfully");
-            return view("dashboard", model);
+            return view("content/content-container", model);
         } catch (Exception e) {
             LoggerUtils.logException(logger, e, "processing dashboard request");
             throw e; // Re-throw to let Spring's exception handlers deal with it
