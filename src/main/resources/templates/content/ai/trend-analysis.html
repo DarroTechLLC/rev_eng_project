@@ -213,53 +213,102 @@
                 trendSummary.style.display = 'none';
                 trendStats.style.display = 'none';
 
-                // Simulate API call (replace with actual endpoint)
-                setTimeout(() => {
+                // Get form values
+                const farmId = document.getElementById('farmSelect').value;
+                const trendType = document.getElementById('trendType').value;
+                const startDate = document.getElementById('startDate').value;
+                const endDate = document.getElementById('endDate').value;
+
+                if (!startDate || !endDate) {
+                    errorMessage.textContent = 'Please select both start and end dates.';
+                    errorMessage.style.display = 'block';
+                    loadingIndicator.style.display = 'none';
+                    return;
+                }
+
+                // Convert dates to ISO format for API
+                const startDateISO = new Date(startDate + 'T00:00:00Z').toISOString();
+                const endDateISO = new Date(endDate + 'T23:59:59Z').toISOString();
+
+                // Call real trend analysis API
+                fetch(`/api/ai/trends/ch4-recovery?farmId=${farmId}&startDate=${startDateISO}&endDate=${endDateISO}&trendType=${trendType}`)
+                .then(response => response.json())
+                .then(data => {
                     loadingIndicator.style.display = 'none';
                     
-                    // Simulate trend analysis results
-                    const trendData = {
-                        direction: 'Upward',
-                        slope: '+2.3%',
-                        rSquared: '0.85',
-                        confidence: 'High',
-                        summary: 'Strong upward trend detected with 85% confidence level. Production has increased by 2.3% per day on average.'
-                    };
-
-                    displayTrendResults(trendData);
-                }, 2000);
+                    if (data.success && data.trend) {
+                        displayTrendResults(data.trend);
+                    } else {
+                        errorMessage.textContent = 'No trend data available for the selected parameters.';
+                        errorMessage.style.display = 'block';
+                    }
+                })
+                .catch(error => {
+                    loadingIndicator.style.display = 'none';
+                    errorMessage.textContent = 'Error analyzing trends: ' + error.message;
+                    errorMessage.style.display = 'block';
+                    console.error('Trend analysis error:', error);
+                });
             });
 
-            function displayTrendResults(data) {
+            function displayTrendResults(trend) {
+                // Check if trend data is valid
+                if (!trend || !trend.direction || trend.slope === null || trend.r2Value === null) {
+                    errorMessage.textContent = 'Invalid trend data received from server.';
+                    errorMessage.style.display = 'block';
+                    return;
+                }
+
                 // Update summary
-                trendSummary.innerHTML = `<strong>${data.summary}</strong>`;
+                trendSummary.innerHTML = `<strong>${trend.interpretation || 'Trend analysis completed'}</strong>`;
                 trendSummary.style.display = 'block';
 
-                // Update statistics
-                document.getElementById('trendDirection').textContent = data.direction;
-                document.getElementById('trendSlope').textContent = data.slope;
-                document.getElementById('trendRSquared').textContent = data.rSquared;
-                document.getElementById('trendConfidence').textContent = data.confidence;
+                // Update statistics with null checks
+                document.getElementById('trendDirection').textContent = trend.direction || 'Unknown';
+                document.getElementById('trendSlope').textContent = trend.slope !== null ? 
+                    `${trend.slope > 0 ? '+' : ''}${(trend.slope * 100).toFixed(1)}%` : 'N/A';
+                document.getElementById('trendRSquared').textContent = trend.r2Value !== null ? 
+                    trend.r2Value.toFixed(3) : 'N/A';
+                
+                // Determine confidence level based on R² value
+                let confidence = 'Low';
+                if (trend.r2Value !== null) {
+                    if (trend.r2Value >= 0.7) confidence = 'High';
+                    else if (trend.r2Value >= 0.3) confidence = 'Medium';
+                }
+                
+                document.getElementById('trendConfidence').textContent = confidence;
                 trendStats.style.display = 'block';
 
-                // Create trend chart
-                createTrendChart();
+                // Create trend chart with real data
+                createTrendChart(trend);
             }
 
-            function createTrendChart() {
-                // Simulate trend data
-                const dates = [];
-                const values = [];
-                const trendLine = [];
-                
+            function createTrendChart(trend) {
+                // Check if trend data is valid
+                if (!trend || trend.slope === null) {
+                    console.warn('Invalid trend data for chart:', trend);
+                    return;
+                }
+
+                // We'll need to fetch the actual data points for the chart
+                // For now, we'll create a simplified trend line based on the slope
                 const startDate = new Date(document.getElementById('startDate').value);
                 const endDate = new Date(document.getElementById('endDate').value);
                 
-                for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
-                    dates.push(d.getTime());
-                    const baseValue = 1000 + Math.random() * 200;
-                    values.push(baseValue);
-                    trendLine.push(950 + (d.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000) * 2.3);
+                const dates = [];
+                const trendLine = [];
+                const daysDiff = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
+                
+                // Create trend line based on slope and R²
+                for (let i = 0; i <= daysDiff; i++) {
+                    const date = new Date(startDate);
+                    date.setDate(date.getDate() + i);
+                    dates.push(date.getTime());
+                    
+                    // Calculate trend line value based on slope
+                    const trendValue = 1000 + (trend.slope * i); // Base value + slope progression
+                    trendLine.push(trendValue);
                 }
 
                 Highcharts.chart(trendChart, {
@@ -270,14 +319,12 @@
                     tooltip: {
                         formatter: function() {
                             return `<b>Date:</b> ${Highcharts.dateFormat('%Y-%m-%d', this.x)}<br/>
-                                    <b>Value:</b> ${this.y.toFixed(1)} MMBTUs`;
+                                    <b>Trend Value:</b> ${this.y.toFixed(1)} MMBTUs<br/>
+                                    <b>Slope:</b> ${(trend.slope * 100).toFixed(1)}% per day<br/>
+                                    <b>R²:</b> ${trend.r2Value ? trend.r2Value.toFixed(3) : 'N/A'}`;
                         }
                     },
                     series: [{
-                        name: 'Actual Data',
-                        data: dates.map((date, i) => [date, values[i]]),
-                        color: '#4e73df'
-                    }, {
                         name: 'Trend Line',
                         data: dates.map((date, i) => [date, trendLine[i]]),
                         color: '#e74a3b',

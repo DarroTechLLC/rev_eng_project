@@ -214,41 +214,75 @@
                 forecastSummary.style.display = 'none';
                 forecastStats.style.display = 'none';
 
-                // Simulate API call (replace with actual endpoint)
-                setTimeout(() => {
+                // Get form values
+                const farmId = document.getElementById('farmSelect').value;
+                const forecastDays = parseInt(document.getElementById('forecastDays').value);
+                const confidenceLevel = parseFloat(document.getElementById('confidenceLevel').value);
+                const startDate = document.getElementById('startDate').value;
+
+                if (!farmId) {
+                    errorMessage.textContent = 'Please select a farm.';
+                    errorMessage.style.display = 'block';
+                    loadingIndicator.style.display = 'none';
+                    return;
+                }
+
+                // Calculate date range (last 30 days for historical data)
+                const endDate = new Date(startDate);
+                const historicalStartDate = new Date(endDate);
+                historicalStartDate.setDate(historicalStartDate.getDate() - 30);
+
+                // Convert dates to ISO format for API
+                const startDateISO = historicalStartDate.toISOString();
+                const endDateISO = endDate.toISOString();
+
+                // Call real forecasting API
+                fetch(`/api/ai/forecasts/ch4-recovery?farmId=${farmId}&startDate=${startDateISO}&endDate=${endDateISO}&forecastDays=${forecastDays}&confidenceLevel=${confidenceLevel}`)
+                .then(response => response.json())
+                .then(data => {
                     loadingIndicator.style.display = 'none';
                     
-                    // Simulate forecast results
-                    const forecastData = {
-                        avgForecast: '1,250 MMBTUs',
-                        minForecast: '1,100 MMBTUs',
-                        maxForecast: '1,400 MMBTUs',
-                        confidence: '85%',
-                        summary: 'Forecast predicts average daily production of 1,250 MMBTUs over the next 30 days with 85% confidence.'
-                    };
-
-                    displayForecastResults(forecastData);
-                }, 2000);
+                    if (data.success && data.forecast) {
+                        displayForecastResults(data.forecast);
+                    } else {
+                        errorMessage.textContent = 'No forecast data available for the selected parameters.';
+                        errorMessage.style.display = 'block';
+                    }
+                })
+                .catch(error => {
+                    loadingIndicator.style.display = 'none';
+                    errorMessage.textContent = 'Error generating forecast: ' + error.message;
+                    errorMessage.style.display = 'block';
+                    console.error('Forecast error:', error);
+                });
             });
 
-            function displayForecastResults(data) {
+            function displayForecastResults(forecast) {
+                // Calculate statistics from real forecast data
+                const forecastValues = forecast.forecastData.map(point => point.value);
+                const avgForecast = forecastValues.reduce((sum, val) => sum + val, 0) / forecastValues.length;
+                const minForecast = Math.min(...forecastValues);
+                const maxForecast = Math.max(...forecastValues);
+                const confidence = (forecast.confidenceLevel * 100).toFixed(0);
+
                 // Update summary
-                forecastSummary.innerHTML = `<strong>${data.summary}</strong>`;
+                const summary = `Forecast predicts average daily production of ${avgForecast.toFixed(0)} MMBTUs over the next ${forecast.forecastData.length} days with ${confidence}% confidence.`;
+                forecastSummary.innerHTML = `<strong>${summary}</strong>`;
                 forecastSummary.style.display = 'block';
 
                 // Update statistics
-                document.getElementById('avgForecast').textContent = data.avgForecast;
-                document.getElementById('minForecast').textContent = data.minForecast;
-                document.getElementById('maxForecast').textContent = data.maxForecast;
-                document.getElementById('forecastConfidence').textContent = data.confidence;
+                document.getElementById('avgForecast').textContent = `${avgForecast.toFixed(0)} MMBTUs`;
+                document.getElementById('minForecast').textContent = `${minForecast.toFixed(0)} MMBTUs`;
+                document.getElementById('maxForecast').textContent = `${maxForecast.toFixed(0)} MMBTUs`;
+                document.getElementById('forecastConfidence').textContent = `${confidence}%`;
                 forecastStats.style.display = 'block';
 
-                // Create forecast chart
-                createForecastChart();
+                // Create forecast chart with real data
+                createForecastChart(forecast);
             }
 
-            function createForecastChart() {
-                // Simulate historical and forecast data
+            function createForecastChart(forecast) {
+                // Use real historical and forecast data
                 const historicalDates = [];
                 const historicalValues = [];
                 const forecastDates = [];
@@ -256,24 +290,22 @@
                 const confidenceUpper = [];
                 const confidenceLower = [];
                 
-                const today = new Date();
-                const startDate = new Date(today.getTime() - (30 * 24 * 60 * 60 * 1000));
-                const endDate = new Date(today.getTime() + (30 * 24 * 60 * 60 * 1000));
+                // Process historical data
+                forecast.historicalData.forEach(point => {
+                    historicalDates.push(new Date(point.timestamp).getTime());
+                    historicalValues.push(point.value);
+                });
                 
-                // Historical data (last 30 days)
-                for (let d = new Date(startDate); d < today; d.setDate(d.getDate() + 1)) {
-                    historicalDates.push(d.getTime());
-                    historicalValues.push(1000 + Math.random() * 200);
-                }
-                
-                // Forecast data (next 30 days)
-                for (let d = new Date(today); d <= endDate; d.setDate(d.getDate() + 1)) {
-                    forecastDates.push(d.getTime());
-                    const baseValue = 1250 + Math.random() * 150;
-                    forecastValues.push(baseValue);
-                    confidenceUpper.push(baseValue + 100);
-                    confidenceLower.push(baseValue - 100);
-                }
+                // Process forecast data
+                forecast.forecastData.forEach(point => {
+                    forecastDates.push(new Date(point.timestamp).getTime());
+                    forecastValues.push(point.value);
+                    
+                    // Calculate confidence intervals (simplified)
+                    const confidenceRange = point.value * 0.1; // 10% confidence range
+                    confidenceUpper.push(point.value + confidenceRange);
+                    confidenceLower.push(point.value - confidenceRange);
+                });
 
                 Highcharts.chart(forecastChart, {
                     chart: { type: 'line' },

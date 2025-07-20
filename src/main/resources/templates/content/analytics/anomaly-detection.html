@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Statistical Anomaly Detection</title>
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Highcharts -->
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <!-- Chart Utils -->
+    <script src="/js/chart-utils/highcharts-utils.js"></script>
+</head>
+<body>
+    <div class="container-fluid">
+        <!-- Page Heading -->
+        <div class="d-sm-flex align-items-center justify-content-between mb-4">
+            <div>
+                <h1 class="h3 mb-0 text-gray-800">Statistical Anomaly Detection</h1>
+            </div>
+        </div>
+
+        <!-- Explanation Card -->
+        <div class="card bg-light mb-4">
+            <div class="card-header bg-warning text-white">
+                <h5 class="m-0"><i class="fas fa-exclamation-triangle mr-2"></i>About Statistical Anomaly Detection</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item">
+                        <strong>What it does:</strong> Uses statistical analysis (Z-score method) to identify unusual patterns in CH4 recovery data that may indicate equipment issues, operational problems, or data quality concerns.
+                    </li>
+                    <li class="list-group-item">
+                        <strong>How it works:</strong> Compares current production values against historical averages using standard deviation analysis to identify deviations beyond normal thresholds.
+                    </li>
+                    <li class="list-group-item">
+                        <strong>Why it's useful:</strong> Helps prevent equipment failures, optimize operations, and maintain consistent production quality through early warning detection.
+                    </li>
+                    <li class="list-group-item">
+                        <strong>Detection method:</strong> Statistical analysis using Z-scores with configurable sensitivity levels (2-3 standard deviations).
+                    </li>
+                    <li class="list-group-item">
+                        <strong>Limitations:</strong> Requires sufficient historical data for accurate baseline calculations. May generate false positives during planned maintenance or operational changes.
+                    </li>
+                    <li class="list-group-item">
+                        <strong>Data Requirements:</strong> Minimum 2 historical data points needed for baseline calculation. More data points provide more accurate statistical analysis.
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Controls Card -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Analysis Parameters</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="farmSelect">Select Farm</label>
+                            <select id="farmSelect" class="form-control">
+                                <option value="">Choose a farm...</option>
+                                <option th:each="farm : ${farms}" th:value="${farm.id}" th:text="${farm.name}"></option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="startDate">Start Date</label>
+                            <input type="date" id="startDate" class="form-control" />
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="endDate">End Date</label>
+                            <input type="date" id="endDate" class="form-control" />
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-12 text-center">
+                        <button id="detectButton" class="btn btn-warning">Detect Anomalies</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Card -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Statistical Anomaly Detection Results</h6>
+            </div>
+            <div class="card-body">
+                <div id="loadingIndicator" style="display: none;" class="text-center">
+                    <div class="spinner-border text-warning" role="status">
+                        <span class="sr-only">Loading...</span>
+                    </div>
+                    <p class="mt-2">Analyzing data for statistical anomalies...</p>
+                </div>
+                <div id="errorMessage" class="alert alert-danger" style="display: none;"></div>
+
+                <!-- Anomaly Summary -->
+                <div id="anomalySummary" class="alert alert-warning" style="display: none;"></div>
+
+                <!-- Chart for visualizing anomalies -->
+                <div id="anomalyChart" style="min-height: 400px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            // Set default dates
+            const today = new Date();
+            const thirtyDaysAgo = new Date(today.getTime() - (30 * 24 * 60 * 60 * 1000));
+            
+            document.getElementById('startDate').value = thirtyDaysAgo.toISOString().split('T')[0];
+            document.getElementById('endDate').value = today.toISOString().split('T')[0];
+
+            // Handle detect button click
+            $('#detectButton').on('click', function() {
+                const farmId = $('#farmSelect').val();
+                const startDate = $('#startDate').val();
+                const endDate = $('#endDate').val();
+
+                if (!farmId) {
+                    alert('Please select a farm');
+                    return;
+                }
+
+                if (!startDate || !endDate) {
+                    alert('Please select start and end dates');
+                    return;
+                }
+
+                const startDateISO = new Date(startDate + 'T00:00:00').toISOString();
+                const endDateISO = new Date(endDate + 'T23:59:59').toISOString();
+
+                const loadingIndicator = $('#loadingIndicator');
+                const errorMessage = $('#errorMessage');
+                const anomalySummary = $('#anomalySummary');
+                const anomalyChart = $('#anomalyChart');
+
+                loadingIndicator.show();
+                errorMessage.hide();
+                anomalySummary.hide();
+                anomalyChart.empty();
+
+                // Call real statistical anomaly detection API
+                Promise.all([
+                    fetch(`/api/analytics/anomalies/ch4-recovery?farmId=${farmId}&startDate=${startDateISO}&endDate=${endDateISO}`),
+                    fetch(`/api/analytics/anomalies/temperature?farmId=${farmId}&startDate=${startDateISO}&endDate=${endDateISO}`),
+                    fetch(`/api/analytics/anomalies/mass-balance?farmId=${farmId}&startDate=${startDateISO}&endDate=${endDateISO}`)
+                ])
+                .then(responses => Promise.all(responses.map(r => r.json())))
+                .then(data => {
+                    loadingIndicator.hide();
+                    
+                    const allAnomalies = [];
+                    data.forEach(response => {
+                        if (response.success && response.anomalies) {
+                            allAnomalies.push(...response.anomalies);
+                        }
+                    });
+
+                    if (allAnomalies.length > 0) {
+                        displayAnomalyResults(allAnomalies);
+                    } else {
+                        $('#anomalySummary').html('<strong>No statistical anomalies detected in the selected time period.</strong>');
+                        $('#anomalySummary').show();
+                    }
+                })
+                .catch(error => {
+                    loadingIndicator.hide();
+                    errorMessage.text('Error detecting anomalies: ' + error.message);
+                    errorMessage.show();
+                    console.error('Anomaly detection error:', error);
+                });
+            });
+
+            function displayAnomalyResults(anomalies) {
+                // Check if we have any anomalies
+                if (!anomalies || anomalies.length === 0) {
+                    $('#anomalySummary').html(`<strong>📊 No Statistical Anomalies Detected</strong><br/>
+                        <strong>Analysis Period:</strong> ${document.getElementById('startDate').value} to ${document.getElementById('endDate').value}<br/>
+                        <strong>Result:</strong> All data points fall within normal statistical ranges.<br/>
+                        <strong>Note:</strong> This could mean stable production or insufficient data for baseline calculation.`);
+                    $('#anomalySummary').removeClass('alert-warning').addClass('alert-info').show();
+                    return;
+                }
+
+                // Update summary
+                $('#anomalySummary').html(`<strong>Found ${anomalies.length} statistical anomalies in the selected time period.</strong>`);
+                $('#anomalySummary').removeClass('alert-info').addClass('alert-warning').show();
+
+                // Prepare chart data
+                const chartData = anomalies.map(anomaly => ({
+                    x: new Date(anomaly.timestamp).getTime(),
+                    y: anomaly.value,
+                    name: `${anomaly.metricType} - ${anomaly.severity}`,
+                    color: anomaly.severity === 'HIGH' ? '#e74a3b' : '#f6c23e',
+                    expectedValue: anomaly.expectedValue,
+                    deviationPercent: anomaly.deviationPercent
+                }));
+
+                // Create chart
+                Highcharts.chart('anomalyChart', {
+                    chart: { type: 'scatter' },
+                    title: { text: 'Statistical Anomaly Detection Results' },
+                    xAxis: { 
+                        type: 'datetime',
+                        title: { text: 'Date' }
+                    },
+                    yAxis: { 
+                        title: { text: 'Value' }
+                    },
+                    tooltip: {
+                        formatter: function() {
+                            return `<b>${this.point.name}</b><br/>
+                                    <b>Date:</b> ${Highcharts.dateFormat('%Y-%m-%d', this.x)}<br/>
+                                    <b>Value:</b> ${this.y.toFixed(2)}<br/>
+                                    <b>Expected:</b> ${this.point.expectedValue ? this.point.expectedValue.toFixed(2) : 'N/A'}<br/>
+                                    <b>Deviation:</b> ${this.point.deviationPercent ? this.point.deviationPercent.toFixed(1) + '%' : 'N/A'}`;
+                        }
+                    },
+                    series: [{
+                        name: 'Anomalies',
+                        data: chartData
+                    }]
+                });
+            }
+        });
+    </script>
+</body>
+</html> 

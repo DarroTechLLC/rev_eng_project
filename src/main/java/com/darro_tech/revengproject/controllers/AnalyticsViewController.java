@@ -14,8 +14,8 @@ import com.darro_tech.revengproject.models.Farm;
 import com.darro_tech.revengproject.repositories.FarmRepository;
 
 @Controller
-@RequestMapping("/{companyName}/ai")
-public class AiViewController extends BaseController {
+@RequestMapping("/{companyName}/analytics")
+public class AnalyticsViewController extends BaseController {
 
     @Autowired
     private FarmRepository farmRepository;
@@ -27,7 +27,7 @@ public class AiViewController extends BaseController {
         model.addAttribute("farms", farms);
         model.addAttribute("selectedDate", new Date());
 
-        return view("ai/anomaly-detection", model);
+        return view("analytics/anomaly-detection", model);
     }
 
     @GetMapping("/trend-analysis")
@@ -37,7 +37,7 @@ public class AiViewController extends BaseController {
         model.addAttribute("farms", farms);
         model.addAttribute("selectedDate", new Date());
 
-        return view("ai/trend-analysis", model);
+        return view("analytics/trend-analysis", model);
     }
 
     @GetMapping("/production-forecasting")
@@ -47,6 +47,6 @@ public class AiViewController extends BaseController {
         model.addAttribute("farms", farms);
         model.addAttribute("selectedDate", new Date());
 
-        return view("ai/production-forecasting", model);
+        return view("analytics/production-forecasting", model);
     }
 }

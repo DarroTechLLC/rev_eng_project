@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Production Forecasting</title>
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Highcharts -->
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <!-- Chart Utils -->
+    <script src="/js/chart-utils/highcharts-utils.js"></script>
+</head>
+<body>
+    <div class="container-fluid">
+        <!-- Page Heading -->
+        <div class="d-sm-flex align-items-center justify-content-between mb-4">
+            <div>
+                <h1 class="h3 mb-0 text-gray-800">Production Forecasting</h1>
+            </div>
+        </div>
+
+        <!-- Explanation Card -->
+        <div class="card bg-light mb-4">
+            <div class="card-header bg-success text-white">
+                <h5 class="m-0"><i class="fas fa-calendar-alt mr-2"></i>About Production Forecasting</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item">
+                        <strong>What it does:</strong> Predicts future CH4 recovery values for the next 30 days using statistical moving average analysis of historical data patterns.
+                    </li>
+                    <li class="list-group-item">
+                        <strong>How it works:</strong> Uses a moving average algorithm that calculates the average of the last 7 data points to predict future values.
+                    </li>
+                    <li class="list-group-item">
+                        <strong>Why it's useful:</strong> Helps with production planning, resource allocation, and financial forecasting for biogas operations.
+                    </li>
+                    <li class="list-group-item">
+                        <strong>Accuracy:</strong> 70% confidence level for short-term predictions (1-7 days), decreasing for longer-term forecasts.
+                    </li>
+                    <li class="list-group-item">
+                        <strong>Limitations:</strong> This statistical forecasting model assumes stable conditions and doesn't account for seasonal variations or planned maintenance activities.
+                    </li>
+                    <li class="list-group-item">
+                        <strong>Data Requirements:</strong> Minimum 10 historical data points needed for reliable forecasting. Select farms with sufficient production history.
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Controls Card -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Forecasting Parameters</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="farmSelect">Select Farm</label>
+                            <select id="farmSelect" class="form-control">
+                                <option value="">Choose a farm...</option>
+                                <option th:each="farm : ${farms}" th:value="${farm.id}" th:text="${farm.name}"></option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="startDate">Start Date</label>
+                            <input type="date" id="startDate" class="form-control" />
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="endDate">End Date</label>
+                            <input type="date" id="endDate" class="form-control" />
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="forecastDays">Forecast Days</label>
+                            <input type="number" id="forecastDays" class="form-control" value="30" min="1" max="90" />
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-12 text-center">
+                        <button id="forecastButton" class="btn btn-success">Generate Forecast</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Card -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Production Forecasting Results</h6>
+            </div>
+            <div class="card-body">
+                <div id="loadingIndicator" style="display: none;" class="text-center">
+                    <div class="spinner-border text-success" role="status">
+                        <span class="sr-only">Loading...</span>
+                    </div>
+                    <p class="mt-2">Generating production forecast...</p>
+                </div>
+                <div id="errorMessage" class="alert alert-danger" style="display: none;"></div>
+
+                <!-- Forecast Summary -->
+                <div id="forecastSummary" class="alert alert-success" style="display: none;"></div>
+
+                <!-- Chart for visualizing forecast -->
+                <div id="forecastChart" style="min-height: 400px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            // Set default dates
+            const today = new Date();
+            const sixtyDaysAgo = new Date(today.getTime() - (60 * 24 * 60 * 60 * 1000));
+            
+            document.getElementById('startDate').value = sixtyDaysAgo.toISOString().split('T')[0];
+            document.getElementById('endDate').value = today.toISOString().split('T')[0];
+
+            // Handle forecast button click
+            $('#forecastButton').on('click', function() {
+                const farmId = $('#farmSelect').val();
+                const startDate = $('#startDate').val();
+                const endDate = $('#endDate').val();
+                const forecastDays = $('#forecastDays').val();
+
+                if (!farmId) {
+                    alert('Please select a farm');
+                    return;
+                }
+
+                if (!startDate || !endDate) {
+                    alert('Please select start and end dates');
+                    return;
+                }
+
+                if (!forecastDays || forecastDays < 1 || forecastDays > 90) {
+                    alert('Please enter a valid number of forecast days (1-90)');
+                    return;
+                }
+
+                const startDateISO = new Date(startDate + 'T00:00:00').toISOString();
+                const endDateISO = new Date(endDate + 'T23:59:59').toISOString();
+
+                const loadingIndicator = $('#loadingIndicator');
+                const errorMessage = $('#errorMessage');
+                const forecastSummary = $('#forecastSummary');
+                const forecastChart = $('#forecastChart');
+
+                loadingIndicator.show();
+                errorMessage.hide();
+                forecastSummary.hide();
+                forecastChart.empty();
+
+                // Call real production forecasting API
+                fetch(`/api/analytics/forecasts/ch4-recovery?farmId=${farmId}&startDate=${startDateISO}&endDate=${endDateISO}&forecastDays=${forecastDays}&confidenceLevel=0.7`)
+                .then(response => response.json())
+                .then(data => {
+                    loadingIndicator.hide();
+                    
+                    if (data.success && data.forecast) {
+                        displayForecastResults(data.forecast);
+                    } else {
+                        $('#errorMessage').text('No forecast data available for the selected parameters.');
+                        $('#errorMessage').show();
+                    }
+                })
+                .catch(error => {
+                    loadingIndicator.hide();
+                    $('#errorMessage').text('Error generating forecast: ' + error.message);
+                    $('#errorMessage').show();
+                    console.error('Forecast error:', error);
+                });
+            });
+
+            function displayForecastResults(forecast) {
+                // Check if forecast data is valid
+                if (!forecast || !forecast.forecastData || forecast.forecastData.length === 0) {
+                    $('#forecastSummary').html(`<strong>⚠️ Insufficient Data for Forecasting</strong><br/>
+                        <strong>Reason:</strong> No historical CH4 recovery data found for the selected farm and date range.<br/>
+                        <strong>Required:</strong> At least 10 data points needed for statistical forecasting.<br/>
+                        <strong>Recommendation:</strong> Try selecting a different farm or a longer date range with more historical data.`);
+                    $('#forecastSummary').removeClass('alert-success').addClass('alert-warning').show();
+                    return;
+                }
+
+                // Update summary
+                $('#forecastSummary').html(`<strong>Production forecast generated successfully</strong><br/>
+                    <strong>Forecast Period:</strong> ${forecast.forecastData.length} days<br/>
+                    <strong>Confidence Level:</strong> ${forecast.confidenceLevel ? (forecast.confidenceLevel * 100).toFixed(1) + '%' : 'N/A'}<br/>
+                    <strong>Method:</strong> Moving Average Analysis`);
+                $('#forecastSummary').removeClass('alert-warning').addClass('alert-success').show();
+
+                // Prepare chart data
+                const historicalData = forecast.historicalData || [];
+                const forecastData = forecast.forecastData || [];
+
+                const historicalSeries = historicalData.map(point => ({
+                    x: new Date(point.timestamp).getTime(),
+                    y: point.value,
+                    name: 'Historical Data'
+                }));
+
+                const forecastSeries = forecastData.map(point => ({
+                    x: new Date(point.timestamp).getTime(),
+                    y: point.value,
+                    name: 'Forecast'
+                }));
+
+                // Create chart
+                Highcharts.chart('forecastChart', {
+                    chart: { type: 'line' },
+                    title: { text: 'CH4 Recovery Production Forecast' },
+                    xAxis: { type: 'datetime' },
+                    yAxis: { title: { text: 'CH4 Recovery (MMBTUs)' } },
+                    tooltip: {
+                        formatter: function() {
+                            return `<b>${this.series.name}</b><br/>
+                                    <b>Date:</b> ${Highcharts.dateFormat('%Y-%m-%d', this.x)}<br/>
+                                    <b>Value:</b> ${this.y.toFixed(2)} MMBTUs`;
+                        }
+                    },
+                    legend: {
+                        enabled: true,
+                        align: 'center',
+                        verticalAlign: 'bottom'
+                    },
+                    series: [
+                        {
+                            name: 'Historical Data',
+                            data: historicalSeries,
+                            color: '#4e73df'
+                        },
+                        {
+                            name: 'Forecast',
+                            data: forecastSeries,
+                            color: '#1cc88a',
+                            dashStyle: 'dash'
+                        }
+                    ]
+                });
+            }
+        });
+    </script>
+</body>
+</html> 
