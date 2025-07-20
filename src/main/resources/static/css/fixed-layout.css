@@ -25,6 +25,8 @@ html, body {
     overflow-y: auto;
     z-index: 1040;
     transition: all 0.3s;
+    display: flex;
+    flex-direction: column;
 }
 
 /* Fixed Topbar */
@@ -53,6 +55,54 @@ html, body {
 
 .container-fluid {
     padding: 1.5rem;
+}
+
+/* Back Button Styling */
+.sidebar .back-button {
+    margin-top: auto;
+    padding: 1rem;
+    color: rgba(255, 255, 255, 0.8) !important;
+    text-decoration: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+}
+
+.sidebar .back-button:hover {
+    color: white !important;
+    background-color: rgba(255, 255, 255, 0.1);
+    text-decoration: none;
+}
+
+.sidebar .back-button i {
+    margin-right: 0.5rem;
+    width: 1.25rem;
+    text-align: center;
+}
+
+/* Mobile back button styling */
+.mobile-menu-content .back-button {
+    margin-top: auto;
+    padding: 1rem 1.5rem;
+    color: rgba(255, 255, 255, 0.8);
+    text-decoration: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+}
+
+.mobile-menu-content .back-button:hover {
+    color: white;
+    background-color: rgba(255, 255, 255, 0.1);
+    text-decoration: none;
+}
+
+.mobile-menu-content .back-button i {
+    margin-right: 0.5rem;
+    width: 1.25rem;
+    text-align: center;
 }
 
 /* Sidebar Toggle States - Only apply on mobile */
@@ -195,6 +245,8 @@ footer.sticky-footer {
     flex: 1;
     padding: 1rem 0;
     overflow-y: auto;
+    display: flex;
+    flex-direction: column;
 }
 
 .mobile-section {

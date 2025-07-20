@@ -124,6 +124,14 @@
 
     <!-- Divider -->
     <hr class="sidebar-divider">
+
+    <!-- Back Button at Bottom -->
+    <li class="nav-item mt-auto">
+        <a class="nav-link back-button" href="javascript:history.back()" title="Go Back">
+            <i class="fas fa-fw fa-arrow-left"></i>
+            <span>Back</span>
+        </a>
+    </li>
 </ul>
 
 <!-- Mobile Hamburger Menu -->
@@ -227,6 +235,13 @@
                     </a>
                 </div>
             </div>
+
+            <!-- Back Button for Mobile -->
+            <div class="mobile-section">
+                <a class="mobile-link back-button" href="javascript:history.back()">
+                    <i class="fas fa-fw fa-arrow-left"></i> Back
+                </a>
+            </div>
         </div>
     </div>
 </div>
@@ -292,6 +307,13 @@
                     content.slideToggle(300);
                     console.log(`🔄 Toggled desktop section: ${section}`);
                 }
+            });
+
+            // Back button functionality
+            $('.back-button').on('click', function(e) {
+                e.preventDefault();
+                console.log('⬅️ Back button clicked');
+                history.back();
             });
 
             console.log('✅ Mobile menu handlers initialized');
