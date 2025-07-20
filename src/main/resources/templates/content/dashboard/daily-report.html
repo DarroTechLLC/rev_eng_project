@@ -4,7 +4,15 @@
       layout:decorate="~{layouts/main-layout}">
 <head>
     <title>Daily Report</title>
-    
+
+    <!-- Highcharts -->
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.highcharts.com/modules/exporting.js"></script>
+    <script src="https://code.highcharts.com/modules/export-data.js"></script>
+    <script src="https://code.highcharts.com/modules/accessibility.js"></script>
+    <script src="/js/chart-utils/highcharts-utils.js"></script>
+    <script src="/js/report-layout-fix.js"></script>
+
     <!-- Custom styles for this template -->
     <style>
         .section-card {
@@ -59,6 +67,31 @@
         .negative-change {
             color: #e74a3b;
         }
+        /* Bootstrap row and column fixes */
+        .row {
+            display: flex;
+            flex-wrap: wrap;
+            margin-right: -15px;
+            margin-left: -15px;
+        }
+        .col-12 {
+            position: relative;
+            width: 100%;
+            padding-right: 15px;
+            padding-left: 15px;
+            flex: 0 0 100%;
+            max-width: 100%;
+        }
+        /* Highcharts container */
+        .highcharts-container {
+            width: 100% !important;
+            height: 100% !important;
+            display: block;
+        }
+        .highcharts-root {
+            width: 100% !important;
+            height: 100% !important;
+        }
     </style>
 </head>
 <body>
@@ -97,184 +130,193 @@
                     </button>
                 </div>
 
-                <!-- Daily Production Summary Section -->
-                <div class="section-card">
-                    <div class="section-header">
-                        <h2 class="h5 m-0">Daily Production Summary</h2>
-                    </div>
-                    <div class="section-body">
-                        <div class="row">
-                            <!-- Daily Production -->
-                            <div class="col-md-6">
-                                <h3 class="h6">Daily Production</h3>
-                                <table class="table table-sm table-bordered table-hover">
-                                    <thead class="thead-light">
-                                    <tr>
-                                        <th>Farm</th>
-                                        <th>Volume</th>
-                                        <th>% of Total</th>
-                                    </tr>
-                                    </thead>
-                                    <tbody>
-                                    <tr th:each="farm : ${dailyProduction}">
-                                        <td th:text="${farm.farmName}">Farm Name</td>
-                                        <td class="text-right" th:text="${#numbers.formatDecimal(farm.volume, 1, 2)}">0.00</td>
-                                        <td class="text-right" th:text="${#numbers.formatDecimal(farm.percentOfTotal, 1, 1) + '%'}">0.0%</td>
-                                    </tr>
-                                    <tr th:if="${dailyProduction == null || dailyProduction.isEmpty()}">
-                                        <td colspan="3" class="text-center">No data available</td>
-                                    </tr>
-                                    </tbody>
-                                    <tfoot>
-                                    <tr class="font-weight-bold">
-                                        <td>Total</td>
-                                        <td class="text-right" th:text="${#numbers.formatDecimal(dailyTotal, 1, 2)}">0.00</td>
-                                        <td class="text-right">100.0%</td>
-                                    </tr>
-                                    </tfoot>
-                                </table>
+                <!-- Report Sections - Wrapped in Bootstrap Grid -->
+                <div class="row">
+                    <!-- Daily Production Summary Section -->
+                    <div class="col-12">
+                        <div class="section-card">
+                            <div class="section-header">
+                                <h2 class="h5 m-0">Daily Production Summary</h2>
                             </div>
-
-                            <!-- MTD Production -->
-                            <div class="col-md-6">
-                                <h3 class="h6">Month-to-Date Production</h3>
-                                <table class="table table-sm table-bordered table-hover">
-                                    <thead class="thead-light">
-                                    <tr>
-                                        <th>Farm</th>
-                                        <th>Volume</th>
-                                        <th>% of Total</th>
-                                    </tr>
-                                    </thead>
-                                    <tbody>
-                                    <tr th:each="farm : ${mtdProduction}">
-                                        <td th:text="${farm.farmName}">Farm Name</td>
-                                        <td class="text-right" th:text="${#numbers.formatDecimal(farm.volume, 1, 2)}">0.00</td>
-                                        <td class="text-right" th:text="${#numbers.formatDecimal(farm.percentOfTotal, 1, 1) + '%'}">0.0%</td>
-                                    </tr>
-                                    <tr th:if="${mtdProduction == null || mtdProduction.isEmpty()}">
-                                        <td colspan="3" class="text-center">No data available</td>
-                                    </tr>
-                                    </tbody>
-                                    <tfoot>
-                                    <tr class="font-weight-bold">
-                                        <td>Total</td>
-                                        <td class="text-right" th:text="${#numbers.formatDecimal(mtdTotal, 1, 2)}">0.00</td>
-                                        <td class="text-right">100.0%</td>
-                                    </tr>
-                                    </tfoot>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Production Trends Section -->
-                <div class="section-card">
-                    <div class="section-header">
-                        <h2 class="h5 m-0">Production Trends</h2>
-                    </div>
-                    <div class="section-body">
-                        <div class="row">
-                            <!-- Daily Trend Chart -->
-                            <div class="col-md-8">
-                                <div class="chart-container">
-                                    <canvas id="dailyTrendChart"></canvas>
-                                </div>
-                            </div>
-                            
-                            <!-- Production Metrics -->
-                            <div class="col-md-4">
-                                <div class="card border-left-primary shadow h-100 py-2">
-                                    <div class="card-body">
-                                        <div class="row no-gutters align-items-center">
-                                            <div class="col mr-2">
-                                                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                                    Daily Production
-                                                </div>
-                                                <div class="h5 mb-0 font-weight-bold text-gray-800" th:text="${#numbers.formatDecimal(dailyTotal, 1, 2)}">0.00</div>
-                                            </div>
-                                            <div class="col-auto">
-                                                <i class="fas fa-calendar fa-2x text-gray-300"></i>
-                                            </div>
-                                        </div>
+                            <div class="section-body">
+                                <div class="row">
+                                    <!-- Daily Production -->
+                                    <div class="col-md-6">
+                                        <h3 class="h6">Daily Production</h3>
+                                        <table class="table table-sm table-bordered table-hover">
+                                            <thead class="thead-light">
+                                            <tr>
+                                                <th>Farm</th>
+                                                <th>Volume</th>
+                                                <th>% of Total</th>
+                                            </tr>
+                                            </thead>
+                                            <tbody>
+                                            <tr th:each="farm : ${dailyProduction}">
+                                                <td th:text="${farm.farmName}">Farm Name</td>
+                                                <td class="text-right" th:text="${#numbers.formatDecimal(farm.volume, 1, 2)}">0.00</td>
+                                                <td class="text-right" th:text="${#numbers.formatDecimal(farm.percentOfTotal, 1, 1) + '%'}">0.0%</td>
+                                            </tr>
+                                            <tr th:if="${dailyProduction == null || dailyProduction.isEmpty()}">
+                                                <td colspan="3" class="text-center">No data available</td>
+                                            </tr>
+                                            </tbody>
+                                            <tfoot>
+                                            <tr class="font-weight-bold">
+                                                <td>Total</td>
+                                                <td class="text-right" th:text="${#numbers.formatDecimal(dailyTotal, 1, 2)}">0.00</td>
+                                                <td class="text-right">100.0%</td>
+                                            </tr>
+                                            </tfoot>
+                                        </table>
                                     </div>
-                                </div>
-                                
-                                <div class="card border-left-success shadow h-100 py-2 mt-3">
-                                    <div class="card-body">
-                                        <div class="row no-gutters align-items-center">
-                                            <div class="col mr-2">
-                                                <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                                                    MTD Production
-                                                </div>
-                                                <div class="h5 mb-0 font-weight-bold text-gray-800" th:text="${#numbers.formatDecimal(mtdTotal, 1, 2)}">0.00</div>
-                                            </div>
-                                            <div class="col-auto">
-                                                <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="card border-left-info shadow h-100 py-2 mt-3">
-                                    <div class="card-body">
-                                        <div class="row no-gutters align-items-center">
-                                            <div class="col mr-2">
-                                                <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
-                                                    YTD Production
-                                                </div>
-                                                <div class="h5 mb-0 font-weight-bold text-gray-800" th:text="${#numbers.formatDecimal(ytdTotal, 1, 2)}">0.00</div>
-                                            </div>
-                                            <div class="col-auto">
-                                                <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
-                                            </div>
-                                        </div>
+
+                                    <!-- MTD Production -->
+                                    <div class="col-md-6">
+                                        <h3 class="h6">Month-to-Date Production</h3>
+                                        <table class="table table-sm table-bordered table-hover">
+                                            <thead class="thead-light">
+                                            <tr>
+                                                <th>Farm</th>
+                                                <th>Volume</th>
+                                                <th>% of Total</th>
+                                            </tr>
+                                            </thead>
+                                            <tbody>
+                                            <tr th:each="farm : ${mtdProduction}">
+                                                <td th:text="${farm.farmName}">Farm Name</td>
+                                                <td class="text-right" th:text="${#numbers.formatDecimal(farm.volume, 1, 2)}">0.00</td>
+                                                <td class="text-right" th:text="${#numbers.formatDecimal(farm.percentOfTotal, 1, 1) + '%'}">0.0%</td>
+                                            </tr>
+                                            <tr th:if="${mtdProduction == null || mtdProduction.isEmpty()}">
+                                                <td colspan="3" class="text-center">No data available</td>
+                                            </tr>
+                                            </tbody>
+                                            <tfoot>
+                                            <tr class="font-weight-bold">
+                                                <td>Total</td>
+                                                <td class="text-right" th:text="${#numbers.formatDecimal(mtdTotal, 1, 2)}">0.00</td>
+                                                <td class="text-right">100.0%</td>
+                                            </tr>
+                                            </tfoot>
+                                        </table>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Farm Performance Section -->
-                <div class="section-card">
-                    <div class="section-header">
-                        <h2 class="h5 m-0">Farm Performance</h2>
-                    </div>
-                    <div class="section-body">
-                        <div class="row">
-                            <!-- Farm Distribution Chart -->
-                            <div class="col-md-6">
-                                <div class="chart-container">
-                                    <canvas id="farmDistributionChart"></canvas>
+                    <!-- Production Trends Section -->
+                    <div class="col-12">
+                        <div class="section-card">
+                            <div class="section-header">
+                                <h2 class="h5 m-0">Production Trends</h2>
+                            </div>
+                            <div class="section-body">
+                                <div class="row">
+                                    <!-- Daily Trend Chart -->
+                                    <div class="col-md-8">
+                                        <div class="chart-container">
+                                            <div id="dailyTrendChart"></div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Production Metrics -->
+                                    <div class="col-md-4">
+                                        <div class="card border-left-primary shadow h-100 py-2">
+                                            <div class="card-body">
+                                                <div class="row no-gutters align-items-center">
+                                                    <div class="col mr-2">
+                                                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                                            Daily Production
+                                                        </div>
+                                                        <div class="h5 mb-0 font-weight-bold text-gray-800" th:text="${#numbers.formatDecimal(dailyTotal, 1, 2)}">0.00</div>
+                                                    </div>
+                                                    <div class="col-auto">
+                                                        <i class="fas fa-calendar fa-2x text-gray-300"></i>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="card border-left-success shadow h-100 py-2 mt-3">
+                                            <div class="card-body">
+                                                <div class="row no-gutters align-items-center">
+                                                    <div class="col mr-2">
+                                                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                                            MTD Production
+                                                        </div>
+                                                        <div class="h5 mb-0 font-weight-bold text-gray-800" th:text="${#numbers.formatDecimal(mtdTotal, 1, 2)}">0.00</div>
+                                                    </div>
+                                                    <div class="col-auto">
+                                                        <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="card border-left-info shadow h-100 py-2 mt-3">
+                                            <div class="card-body">
+                                                <div class="row no-gutters align-items-center">
+                                                    <div class="col mr-2">
+                                                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                                            YTD Production
+                                                        </div>
+                                                        <div class="h5 mb-0 font-weight-bold text-gray-800" th:text="${#numbers.formatDecimal(ytdTotal, 1, 2)}">0.00</div>
+                                                    </div>
+                                                    <div class="col-auto">
+                                                        <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                            
-                            <!-- Farm Performance Table -->
-                            <div class="col-md-6">
-                                <h3 class="h6">Farm Performance Summary</h3>
-                                <table class="table table-sm table-bordered table-hover">
-                                    <thead class="thead-light">
-                                    <tr>
-                                        <th>Farm</th>
-                                        <th>Daily</th>
-                                        <th>MTD</th>
-                                        <th>YTD</th>
-                                    </tr>
-                                    </thead>
-                                    <tbody>
-                                    <tr th:each="farm : ${farmPerformance}">
-                                        <td th:text="${farm.farmName}">Farm Name</td>
-                                        <td class="text-right" th:text="${#numbers.formatDecimal(farm.dailyVolume, 1, 2)}">0.00</td>
-                                        <td class="text-right" th:text="${#numbers.formatDecimal(farm.mtdVolume, 1, 2)}">0.00</td>
-                                        <td class="text-right" th:text="${#numbers.formatDecimal(farm.ytdVolume, 1, 2)}">0.00</td>
-                                    </tr>
-                                    <tr th:if="${farmPerformance == null || farmPerformance.isEmpty()}">
-                                        <td colspan="4" class="text-center">No data available</td>
-                                    </tr>
-                                    </tbody>
-                                </table>
+                        </div>
+                    </div>
+
+                    <!-- Farm Performance Section -->
+                    <div class="col-12">
+                        <div class="section-card">
+                            <div class="section-header">
+                                <h2 class="h5 m-0">Farm Performance</h2>
+                            </div>
+                            <div class="section-body">
+                                <div class="row">
+                                    <!-- Farm Distribution Chart -->
+                                    <div class="col-md-6">
+                                        <div class="chart-container">
+                                            <div id="farmDistributionChart"></div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Farm Performance Table -->
+                                    <div class="col-md-6">
+                                        <h3 class="h6">Farm Performance Summary</h3>
+                                        <table class="table table-sm table-bordered table-hover">
+                                            <thead class="thead-light">
+                                            <tr>
+                                                <th>Farm</th>
+                                                <th>Daily</th>
+                                                <th>MTD</th>
+                                                <th>YTD</th>
+                                            </tr>
+                                            </thead>
+                                            <tbody>
+                                            <tr th:each="farm : ${farmPerformance}">
+                                                <td th:text="${farm.farmName}">Farm Name</td>
+                                                <td class="text-right" th:text="${#numbers.formatDecimal(farm.dailyVolume, 1, 2)}">0.00</td>
+                                                <td class="text-right" th:text="${#numbers.formatDecimal(farm.mtdVolume, 1, 2)}">0.00</td>
+                                                <td class="text-right" th:text="${#numbers.formatDecimal(farm.ytdVolume, 1, 2)}">0.00</td>
+                                            </tr>
+                                            <tr th:if="${farmPerformance == null || farmPerformance.isEmpty()}">
+                                                <td colspan="4" class="text-center">No data available</td>
+                                            </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -285,7 +327,7 @@
 
     <!-- Custom JavaScript for Daily Report -->
     <script th:inline="javascript">
-        $(document).ready(function() {
+        document.addEventListener('DOMContentLoaded', function() {
             // Initialize DataTables
             $('#dailyProductionTable, #mtdProductionTable, #farmPerformanceTable').DataTable({
                 "paging": false,
@@ -296,72 +338,113 @@
             });
 
             // Initialize charts
-            initCharts();
+            initializeCharts();
+
+            // Get company name from the URL
+            const pathParts = window.location.pathname.split('/');
+            const companyName = pathParts[1];
+            const selectedCompanyId = /*[[${selectedCompany?.id}]]*/ '';
+
+            // Handle special case for /align/ URLs
+            const isAlignRoute = companyName === 'align';
 
             // Handle report date change
             $('#updateReportBtn').click(function() {
                 const selectedDate = $('#reportDate').val();
                 if (selectedDate) {
-                    const companyName = /*[[${selectedCompany.name.toLowerCase().replace(' ', '-')}]]*/ '';
-                    window.location.href = `/${companyName}/daily-report?date=${selectedDate}`;
+                    if (isAlignRoute) {
+                        window.location.href = `/align/daily-report?date=${selectedDate}`;
+                    } else {
+                        window.location.href = `/${companyName}/daily-report?date=${selectedDate}`;
+                    }
                 }
             });
 
             // Handle PDF download
             $('#downloadPdfBtn').click(function(e) {
                 e.preventDefault();
-                const companyId = /*[[${selectedCompany.id}]]*/ '';
-                const reportDate = /*[[${reportDate}]]*/ '';
-                const companyName = /*[[${selectedCompany.name.toLowerCase().replace(' ', '-')}]]*/ '';
+                const selectedDate = $('#reportDate').val();
+                const url = `/api/reports/daily-pdf/${companyName}`;
+                const params = selectedDate ? `?date=${selectedDate}` : '';
 
-                window.open(`/api/reports/daily-pdf/${companyName}?company_id=${companyId}&date=${reportDate}`, '_blank');
+                // Create a temporary link to download the PDF
+                const link = document.createElement('a');
+                link.href = url + params;
+                link.download = `daily-report-${companyName}-${selectedDate || 'current'}.pdf`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
             });
         });
 
-        function initCharts() {
+        // Function to initialize all charts on the page
+        function initializeCharts() {
             // Initialize daily trend chart
-            const dailyTrendCtx = document.getElementById('dailyTrendChart').getContext('2d');
-            new Chart(dailyTrendCtx, {
-                type: 'line',
-                data: {
-                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-                    datasets: [{
-                        label: 'Daily Production',
-                        data: [12, 19, 3, 5, 2, 3],
-                        borderColor: 'rgb(75, 192, 192)',
-                        tension: 0.1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true
-                        }
-                    }
-                }
-            });
+            if (document.getElementById('dailyTrendChart')) {
+                // Generate sample data
+                const sampleData = generateSampleTimeSeriesData(7, 10, 40);
+                createProductionTrendChart('dailyTrendChart', sampleData, 'Daily Production Trend');
+            }
 
             // Initialize farm distribution chart
-            const farmDistributionCtx = document.getElementById('farmDistributionChart').getContext('2d');
-            new Chart(farmDistributionCtx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Farm A', 'Farm B', 'Farm C'],
-                    datasets: [{
-                        data: [300, 50, 100],
-                        backgroundColor: [
-                            'rgb(255, 99, 132)',
-                            'rgb(54, 162, 235)',
-                            'rgb(255, 205, 86)'
-                        ]
-                    }]
+            if (document.getElementById('farmDistributionChart')) {
+                // Generate sample farm data
+                const farmNames = ['Farm A', 'Farm B', 'Farm C', 'Farm D'];
+                const farmData = generateSampleFarmDistribution(farmNames);
+                createFarmDistributionChart('farmDistributionChart', farmData, 'Production by Farm');
+            }
+        }
+
+        /**
+         * Function to fetch real data from API (for production implementation)
+         */
+        function fetchDailyTrendData(companyId) {
+            const reportDate = document.getElementById('reportDate').value;
+            const today = new Date().toISOString().split('T')[0];
+            const date = reportDate || today;
+
+            // Calculate date range (7 days before the selected date)
+            const endDate = new Date(date);
+            const startDate = new Date(date);
+            startDate.setDate(startDate.getDate() - 6);
+
+            const from = startDate.toISOString().split('T')[0];
+            const to = endDate.toISOString().split('T')[0];
+
+            fetch('/api/reports/daily-trend', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false
+                body: JSON.stringify({
+                    company_id: companyId,
+                    from: from,
+                    to: to
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to fetch chart data');
                 }
+                return response.json();
+            })
+            .then(data => {
+                // Process and display the data
+                const chartData = data.map(item => [
+                    new Date(item.date).getTime(),
+                    item.value
+                ]);
+                createProductionTrendChart('dailyTrendChart', chartData, 'Daily Production Trend');
+            })
+            .catch(error => {
+                console.error('Error fetching chart data:', error);
+                // Show error message
+                document.getElementById('errorMessage').textContent = 'Failed to load chart data. Please try again later.';
+                document.getElementById('errorAlert').classList.remove('d-none');
+
+                // Fall back to sample data
+                const sampleData = generateSampleTimeSeriesData();
+                createProductionTrendChart('dailyTrendChart', sampleData, 'Daily Production Trend (Sample Data)');
             });
         }
     </script>
