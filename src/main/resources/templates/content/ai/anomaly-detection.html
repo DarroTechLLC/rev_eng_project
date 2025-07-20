@@ -161,32 +161,71 @@
                 anomalySummary.style.display = 'none';
                 anomalyTable.style.display = 'none';
 
-                // Simulate API call (replace with actual endpoint)
-                setTimeout(() => {
+                // Get form values
+                const farmId = document.getElementById('farmSelect').value;
+                const startDate = document.getElementById('startDate').value;
+                const endDate = document.getElementById('endDate').value;
+                const sensitivity = document.getElementById('sensitivity').value;
+
+                if (!startDate || !endDate) {
+                    errorMessage.textContent = 'Please select both start and end dates.';
+                    errorMessage.style.display = 'block';
+                    loadingIndicator.style.display = 'none';
+                    return;
+                }
+
+                if (new Date(startDate) >= new Date(endDate)) {
+                    errorMessage.textContent = 'Start date must be before end date.';
+                    errorMessage.style.display = 'block';
+                    loadingIndicator.style.display = 'none';
+                    return;
+                }
+
+                // Convert dates to ISO format for API
+                const startDateISO = new Date(startDate + 'T00:00:00Z').toISOString();
+                const endDateISO = new Date(endDate + 'T23:59:59Z').toISOString();
+
+                console.log("🔍 Calling AI anomaly detection API with parameters:", {
+                    farmId, startDateISO, endDateISO, sensitivity
+                });
+
+                // Call real API endpoints
+                Promise.all([
+                    fetch(`/api/ai/anomalies/ch4-recovery?farmId=${farmId}&startDate=${startDateISO}&endDate=${endDateISO}`),
+                    fetch(`/api/ai/anomalies/temperature?farmId=${farmId}&startDate=${startDateISO}&endDate=${endDateISO}`),
+                    fetch(`/api/ai/anomalies/mass-balance?farmId=${farmId}&startDate=${startDateISO}&endDate=${endDateISO}`)
+                ])
+                .then(responses => {
+                    // Check if any response is not ok
+                    const failedResponses = responses.filter(r => !r.ok);
+                    if (failedResponses.length > 0) {
+                        throw new Error(`API call failed: ${failedResponses[0].status} ${failedResponses[0].statusText}`);
+                    }
+                    return Promise.all(responses.map(r => r.json()));
+                })
+                .then(data => {
                     loadingIndicator.style.display = 'none';
                     
-                    // Simulate anomaly detection results
-                    const anomalies = [
-                        {
-                            date: '2024-01-15',
-                            farm: 'Monarch Southwest',
-                            expected: 1250,
-                            actual: 980,
-                            deviation: -270,
-                            severity: 'High'
-                        },
-                        {
-                            date: '2024-01-18',
-                            farm: 'Tuls Energy',
-                            expected: 1100,
-                            actual: 1350,
-                            deviation: 250,
-                            severity: 'Medium'
+                    // Combine all anomaly types
+                    const allAnomalies = [];
+                    data.forEach((response, index) => {
+                        if (response.success && response.anomalies) {
+                            allAnomalies.push(...response.anomalies);
+                            console.log(`✅ Received ${response.anomalies.length} anomalies from API ${index + 1}`);
+                        } else {
+                            console.warn(`⚠️ No anomalies from API ${index + 1}:`, response);
                         }
-                    ];
+                    });
 
-                    displayAnomalies(anomalies);
-                }, 2000);
+                    console.log(`🎯 Total anomalies found: ${allAnomalies.length}`);
+                    displayAnomalies(allAnomalies);
+                })
+                .catch(error => {
+                    loadingIndicator.style.display = 'none';
+                    errorMessage.textContent = 'Error fetching anomaly data: ' + error.message;
+                    errorMessage.style.display = 'block';
+                    console.error('Anomaly detection error:', error);
+                });
             });
 
             function displayAnomalies(anomalies) {
@@ -204,42 +243,62 @@
                 anomalyTableBody.innerHTML = '';
                 anomalies.forEach(anomaly => {
                     const row = document.createElement('tr');
+                    const date = new Date(anomaly.timestamp).toLocaleDateString();
+                    const deviation = anomaly.value - anomaly.expectedValue;
+                    const deviationPercent = anomaly.deviationPercent;
+                    
                     row.innerHTML = `
-                        <td>${anomaly.date}</td>
-                        <td>${anomaly.farm}</td>
-                        <td>${anomaly.expected} MMBTUs</td>
-                        <td>${anomaly.actual} MMBTUs</td>
-                        <td class="${anomaly.deviation > 0 ? 'text-success' : 'text-danger'}">${anomaly.deviation > 0 ? '+' : ''}${anomaly.deviation} MMBTUs</td>
-                        <td><span class="badge badge-${anomaly.severity === 'High' ? 'danger' : anomaly.severity === 'Medium' ? 'warning' : 'info'}">${anomaly.severity}</span></td>
+                        <td>${date}</td>
+                        <td>${anomaly.farmName}</td>
+                        <td>${anomaly.expectedValue.toFixed(2)} ${anomaly.metricType === 'CH4 Recovery' ? 'MMBTUs' : anomaly.metricType === 'Temperature' ? '°F' : 'units'}</td>
+                        <td>${anomaly.value.toFixed(2)} ${anomaly.metricType === 'CH4 Recovery' ? 'MMBTUs' : anomaly.metricType === 'Temperature' ? '°F' : 'units'}</td>
+                        <td class="${deviation > 0 ? 'text-success' : 'text-danger'}">${deviation > 0 ? '+' : ''}${deviation.toFixed(2)} (${deviationPercent > 0 ? '+' : ''}${deviationPercent.toFixed(1)}%)</td>
+                        <td><span class="badge badge-${anomaly.severity === 'Critical' ? 'danger' : anomaly.severity === 'Warning' ? 'warning' : 'info'}">${anomaly.severity}</span></td>
                     `;
                     anomalyTableBody.appendChild(row);
                 });
                 anomalyTable.style.display = 'block';
 
-                // Create chart (simplified)
+                // Create chart with real data
                 createAnomalyChart(anomalies);
             }
 
             function createAnomalyChart(anomalies) {
-                // Simple chart showing anomalies over time
-                const chartData = anomalies.map(a => ({
-                    x: new Date(a.date).getTime(),
-                    y: a.actual,
-                    name: a.farm,
-                    color: a.severity === 'High' ? '#dc3545' : a.severity === 'Medium' ? '#ffc107' : '#17a2b8'
+                // Create chart data from real anomalies
+                const chartData = anomalies.map(anomaly => ({
+                    x: new Date(anomaly.timestamp).getTime(),
+                    y: anomaly.value,
+                    name: anomaly.farmName,
+                    color: anomaly.severity === 'Critical' ? '#dc3545' : anomaly.severity === 'Warning' ? '#ffc107' : '#17a2b8',
+                    metricType: anomaly.metricType,
+                    expectedValue: anomaly.expectedValue,
+                    deviationPercent: anomaly.deviationPercent
                 }));
 
                 Highcharts.chart(anomalyChart, {
                     chart: { type: 'scatter' },
                     title: { text: 'Anomaly Detection Results' },
                     xAxis: { type: 'datetime' },
-                    yAxis: { title: { text: 'CH4 Recovery (MMBTUs)' } },
+                    yAxis: { 
+                        title: { text: 'Value' },
+                        labels: {
+                            formatter: function() {
+                                return this.value.toFixed(1);
+                            }
+                        }
+                    },
                     tooltip: {
                         formatter: function() {
-                            return `<b>${this.point.name}</b><br/>
-                                    Date: ${Highcharts.dateFormat('%Y-%m-%d', this.x)}<br/>
-                                    Value: ${this.y} MMBTUs<br/>
-                                    Severity: ${this.point.color === '#dc3545' ? 'High' : this.point.color === '#ffc107' ? 'Medium' : 'Low'}`;
+                            const point = this.point;
+                            const unit = point.metricType === 'CH4 Recovery' ? 'MMBTUs' : 
+                                        point.metricType === 'Temperature' ? '°F' : 'units';
+                            return `<b>${point.name}</b><br/>
+                                    <b>Metric:</b> ${point.metricType}<br/>
+                                    <b>Date:</b> ${Highcharts.dateFormat('%Y-%m-%d', this.x)}<br/>
+                                    <b>Value:</b> ${this.y.toFixed(2)} ${unit}<br/>
+                                    <b>Expected:</b> ${point.expectedValue.toFixed(2)} ${unit}<br/>
+                                    <b>Deviation:</b> ${point.deviationPercent > 0 ? '+' : ''}${point.deviationPercent.toFixed(1)}%<br/>
+                                    <b>Severity:</b> ${point.color === '#dc3545' ? 'Critical' : point.color === '#ffc107' ? 'Warning' : 'Info'}`;
                         }
                     },
                     series: [{

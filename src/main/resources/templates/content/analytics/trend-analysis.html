@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Production Trend Analysis</title>
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Highcharts -->
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <!-- Chart Utils -->
+    <script src="/js/chart-utils/highcharts-utils.js"></script>
+</head>
+<body>
+    <div class="container-fluid">
+        <!-- Page Heading -->
+        <div class="d-sm-flex align-items-center justify-content-between mb-4">
+            <div>
+                <h1 class="h3 mb-0 text-gray-800">Production Trend Analysis</h1>
+            </div>
+        </div>
+
+        <!-- Explanation Card -->
+        <div class="card bg-light mb-4">
+            <div class="card-header bg-info text-white">
+                <h5 class="m-0"><i class="fas fa-chart-line mr-2"></i>About Production Trend Analysis</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item">
+                        <strong>What it does:</strong> Analyzes historical CH4 recovery data using linear regression to identify patterns, trends, and seasonal variations in biogas production.
+                    </li>
+                    <li class="list-group-item">
+                        <strong>How it works:</strong> Uses statistical time series analysis and linear regression to detect upward, downward, or cyclical trends in production data.
+                    </li>
+                    <li class="list-group-item">
+                        <strong>Why it's useful:</strong> Helps understand production patterns, plan maintenance schedules, and optimize operational strategies.
+                    </li>
+                    <li class="list-group-item">
+                        <strong>Analysis methods:</strong> Linear regression analysis with R² correlation coefficients to measure trend strength.
+                    </li>
+                    <li class="list-group-item">
+                        <strong>Limitations:</strong> Requires sufficient historical data (minimum 30 days) for accurate trend detection. Short-term fluctuations may mask underlying trends.
+                    </li>
+                    <li class="list-group-item">
+                        <strong>Data Requirements:</strong> Minimum 5 historical data points needed for trend analysis. Select farms with sufficient production history.
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Controls Card -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Analysis Parameters</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="farmSelect">Select Farm</label>
+                            <select id="farmSelect" class="form-control">
+                                <option value="">Choose a farm...</option>
+                                <option th:each="farm : ${farms}" th:value="${farm.id}" th:text="${farm.name}"></option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="startDate">Start Date</label>
+                            <input type="date" id="startDate" class="form-control" />
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="endDate">End Date</label>
+                            <input type="date" id="endDate" class="form-control" />
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-12 text-center">
+                        <button id="analyzeButton" class="btn btn-info">Analyze Trend</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Card -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Production Trend Analysis Results</h6>
+            </div>
+            <div class="card-body">
+                <div id="loadingIndicator" style="display: none;" class="text-center">
+                    <div class="spinner-border text-info" role="status">
+                        <span class="sr-only">Loading...</span>
+                    </div>
+                    <p class="mt-2">Analyzing production trend data...</p>
+                </div>
+                <div id="errorMessage" class="alert alert-danger" style="display: none;"></div>
+
+                <!-- Trend Summary -->
+                <div id="trendSummary" class="alert alert-info" style="display: none;"></div>
+
+                <!-- Chart for visualizing trend -->
+                <div id="trendChart" style="min-height: 400px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            // Set default dates
+            const today = new Date();
+            const ninetyDaysAgo = new Date(today.getTime() - (90 * 24 * 60 * 60 * 1000));
+            
+            document.getElementById('startDate').value = ninetyDaysAgo.toISOString().split('T')[0];
+            document.getElementById('endDate').value = today.toISOString().split('T')[0];
+
+            // Handle analyze button click
+            $('#analyzeButton').on('click', function() {
+                const farmId = $('#farmSelect').val();
+                const startDate = $('#startDate').val();
+                const endDate = $('#endDate').val();
+
+                if (!farmId) {
+                    alert('Please select a farm');
+                    return;
+                }
+
+                if (!startDate || !endDate) {
+                    alert('Please select start and end dates');
+                    return;
+                }
+
+                const startDateISO = new Date(startDate + 'T00:00:00').toISOString();
+                const endDateISO = new Date(endDate + 'T23:59:59').toISOString();
+
+                const loadingIndicator = $('#loadingIndicator');
+                const errorMessage = $('#errorMessage');
+                const trendSummary = $('#trendSummary');
+                const trendChart = $('#trendChart');
+
+                loadingIndicator.show();
+                errorMessage.hide();
+                trendSummary.hide();
+                trendChart.empty();
+
+                // Call real trend analysis API
+                fetch(`/api/analytics/trends/ch4-recovery?farmId=${farmId}&startDate=${startDateISO}&endDate=${endDateISO}`)
+                .then(response => response.json())
+                .then(data => {
+                    loadingIndicator.hide();
+                    
+                    if (data.success && data.trend) {
+                        displayTrendResults(data.trend);
+                    } else {
+                        $('#errorMessage').text('No trend data available for the selected parameters.');
+                        $('#errorMessage').show();
+                    }
+                })
+                .catch(error => {
+                    loadingIndicator.hide();
+                    $('#errorMessage').text('Error analyzing trends: ' + error.message);
+                    $('#errorMessage').show();
+                    console.error('Trend analysis error:', error);
+                });
+            });
+
+            function displayTrendResults(trend) {
+                // Check if trend data is valid
+                if (!trend || !trend.direction || trend.slope === null || trend.r2Value === null) {
+                    $('#trendSummary').html(`<strong>⚠️ Insufficient Data for Trend Analysis</strong><br/>
+                        <strong>Reason:</strong> No historical CH4 recovery data found for the selected farm and date range.<br/>
+                        <strong>Required:</strong> At least 5 data points needed for statistical trend analysis.<br/>
+                        <strong>Recommendation:</strong> Try selecting a different farm or a longer date range with more historical data.`);
+                    $('#trendSummary').removeClass('alert-info').addClass('alert-warning').show();
+                    return;
+                }
+
+                // Update summary
+                $('#trendSummary').html(`<strong>${trend.interpretation || 'Trend analysis completed'}</strong><br/>
+                    <strong>Direction:</strong> ${trend.direction}<br/>
+                    <strong>Slope:</strong> ${trend.slope ? trend.slope.toFixed(4) : 'N/A'}<br/>
+                    <strong>R² Value:</strong> ${trend.r2Value ? trend.r2Value.toFixed(3) : 'N/A'}`);
+                $('#trendSummary').removeClass('alert-warning').addClass('alert-info').show();
+
+                // Create trend line data for visualization
+                const startDate = new Date(document.getElementById('startDate').value);
+                const endDate = new Date(document.getElementById('endDate').value);
+                const daysDiff = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
+                
+                const dates = [];
+                const trendLine = [];
+                
+                for (let i = 0; i <= daysDiff; i++) {
+                    const date = new Date(startDate.getTime() + (i * 24 * 60 * 60 * 1000));
+                    dates.push(date.getTime());
+                    
+                    // Calculate trend line value using slope and intercept
+                    const trendValue = trend.slope * i + (trend.r2Value || 0);
+                    trendLine.push(trendValue);
+                }
+
+                // Create chart
+                Highcharts.chart('trendChart', {
+                    chart: { type: 'line' },
+                    title: { text: 'CH4 Recovery Production Trend Analysis' },
+                    xAxis: { type: 'datetime' },
+                    yAxis: { title: { text: 'CH4 Recovery (MMBTUs)' } },
+                    tooltip: {
+                        formatter: function() {
+                            return `<b>Date:</b> ${Highcharts.dateFormat('%Y-%m-%d', this.x)}<br/>
+                                    <b>Trend Value:</b> ${this.y.toFixed(1)} MMBTUs<br/>
+                                    <b>Slope:</b> ${(trend.slope * 100).toFixed(1)}% per day<br/>
+                                    <b>R²:</b> ${trend.r2Value ? trend.r2Value.toFixed(3) : 'N/A'}`;
+                        }
+                    },
+                    series: [{
+                        name: 'Trend Line',
+                        data: dates.map((date, i) => [date, trendLine[i]]),
+                        color: '#e74a3b',
+                        dashStyle: 'dash'
+                    }]
+                });
+            }
+        });
+    </script>
+</body>
+</html> 
