@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/main-layout}">
+<head>
+    <title>Daily Report</title>
+    
+    <!-- Custom styles for this template -->
+    <style>
+        .section-card {
+            margin-bottom: 1.5rem;
+        }
+        .section-header {
+            background-color: #4e73df;
+            color: white;
+            padding: 0.75rem 1.25rem;
+            font-weight: 500;
+            border-radius: 0.35rem 0.35rem 0 0;
+        }
+        .section-body {
+            padding: 1.25rem;
+            background-color: #fff;
+            border: 1px solid #e3e6f0;
+            border-top: none;
+            border-radius: 0 0 0.35rem 0.35rem;
+        }
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-bottom: 1rem;
+        }
+        .table-sm th, .table-sm td {
+            padding: 0.3rem;
+        }
+    </style>
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="container-fluid">
+
+        <!-- Page Heading -->
+        <div class="d-sm-flex align-items-center justify-content-between mb-4">
+            <h1 class="h3 mb-0 text-gray-800">Daily Report</h1>
+            <div class="d-flex align-items-center">
+                <div class="input-group mr-2">
+                    <input type="date" id="reportDate" class="form-control" th:value="${reportDate}">
+                    <div class="input-group-append">
+                        <button class="btn btn-primary" type="button" id="updateReportBtn">
+                            <i class="fas fa-sync-alt fa-sm"></i> Update
+                        </button>
+                    </div>
+                </div>
+                <a href="#" class="btn btn-sm btn-primary shadow-sm" id="downloadPdfBtn">
+                    <i class="fas fa-download fa-sm text-white-50"></i> Download PDF
+                </a>
+            </div>
+        </div>
+
+        <!-- Alert Messages -->
+        <div class="alert alert-info alert-dismissible fade show d-none" role="alert" id="infoAlert">
+            <span id="infoMessage"></span>
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        <div class="alert alert-danger alert-dismissible fade show d-none" role="alert" id="errorAlert">
+            <span id="errorMessage"></span>
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+
+        <!-- Daily Production Summary Section -->
+        <div class="section-card">
+            <div class="section-header">
+                <h2 class="h5 m-0">Daily Production Summary</h2>
+            </div>
+            <div class="section-body">
+                <div class="row">
+                    <!-- Daily Production -->
+                    <div class="col-md-6">
+                        <h3 class="h6">Daily Production</h3>
+                        <table class="table table-sm table-bordered table-hover">
+                            <thead class="thead-light">
+                            <tr>
+                                <th>Farm</th>
+                                <th>Volume</th>
+                                <th>% of Total</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="farm : ${dailyProduction}">
+                                <td th:text="${farm.farmName}">Farm Name</td>
+                                <td class="text-right" th:text="${#numbers.formatDecimal(farm.volume, 1, 2)}">0.00</td>
+                                <td class="text-right" th:text="${#numbers.formatDecimal(farm.percentOfTotal, 1, 1) + '%'}">0.0%</td>
+                            </tr>
+                            <tr th:if="${dailyProduction == null || dailyProduction.isEmpty()}">
+                                <td colspan="3" class="text-center">No data available</td>
+                            </tr>
+                            </tbody>
+                            <tfoot>
+                            <tr class="font-weight-bold">
+                                <td>Total</td>
+                                <td class="text-right" th:text="${#numbers.formatDecimal(dailyTotal, 1, 2)}">0.00</td>
+                                <td class="text-right">100.0%</td>
+                            </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+
+                    <!-- MTD Production -->
+                    <div class="col-md-6">
+                        <h3 class="h6">Month-to-Date Production</h3>
+                        <table class="table table-sm table-bordered table-hover">
+                            <thead class="thead-light">
+                            <tr>
+                                <th>Farm</th>
+                                <th>Volume</th>
+                                <th>% of Total</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="farm : ${mtdProduction}">
+                                <td th:text="${farm.farmName}">Farm Name</td>
+                                <td class="text-right" th:text="${#numbers.formatDecimal(farm.volume, 1, 2)}">0.00</td>
+                                <td class="text-right" th:text="${#numbers.formatDecimal(farm.percentOfTotal, 1, 1) + '%'}">0.0%</td>
+                            </tr>
+                            <tr th:if="${mtdProduction == null || mtdProduction.isEmpty()}">
+                                <td colspan="3" class="text-center">No data available</td>
+                            </tr>
+                            </tbody>
+                            <tfoot>
+                            <tr class="font-weight-bold">
+                                <td>Total</td>
+                                <td class="text-right" th:text="${#numbers.formatDecimal(mtdTotal, 1, 2)}">0.00</td>
+                                <td class="text-right">100.0%</td>
+                            </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Production Trends Section -->
+        <div class="section-card">
+            <div class="section-header">
+                <h2 class="h5 m-0">Production Trends</h2>
+            </div>
+            <div class="section-body">
+                <div class="row">
+                    <!-- Daily Trend Chart -->
+                    <div class="col-md-8">
+                        <div class="chart-container">
+                            <canvas id="dailyTrendChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <!-- Production Metrics -->
+                    <div class="col-md-4">
+                        <div class="card border-left-primary shadow h-100 py-2">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                            Daily Production
+                                        </div>
+                                        <div class="h5 mb-0 font-weight-bold text-gray-800" th:text="${#numbers.formatDecimal(dailyTotal, 1, 2)}">0.00</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="fas fa-calendar fa-2x text-gray-300"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Farm Performance Section -->
+        <div class="section-card">
+            <div class="section-header">
+                <h2 class="h5 m-0">Farm Performance</h2>
+            </div>
+            <div class="section-body">
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered table-hover">
+                        <thead class="thead-light">
+                        <tr>
+                            <th>Farm</th>
+                            <th>Daily Volume</th>
+                            <th>MTD Volume</th>
+                            <th>YTD Volume</th>
+                            <th>Performance</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="farm : ${farmPerformance}">
+                            <td th:text="${farm.farmName}">Farm Name</td>
+                            <td class="text-right" th:text="${#numbers.formatDecimal(farm.dailyVolume, 1, 2)}">0.00</td>
+                            <td class="text-right" th:text="${#numbers.formatDecimal(farm.mtdVolume, 1, 2)}">0.00</td>
+                            <td class="text-right" th:text="${#numbers.formatDecimal(farm.ytdVolume, 1, 2)}">0.00</td>
+                            <td class="text-right">
+                                <span th:class="${farm.performance >= 0 ? 'text-success' : 'text-danger'}" 
+                                      th:text="${#numbers.formatDecimal(farm.performance, 1, 1) + '%'}">0.0%</span>
+                            </td>
+                        </tr>
+                        <tr th:if="${farmPerformance == null || farmPerformance.isEmpty()}">
+                            <td colspan="5" class="text-center">No data available</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- JavaScript for functionality -->
+<script th:inline="javascript">
+    // Get company name from the URL
+    const pathParts = window.location.pathname.split('/');
+    const companyName = pathParts[1];
+    
+    // Date picker functionality
+    document.getElementById('updateReportBtn').addEventListener('click', function() {
+        const selectedDate = document.getElementById('reportDate').value;
+        if (selectedDate) {
+            window.location.href = `/${companyName}/daily-report?date=${selectedDate}`;
+        }
+    });
+    
+    // PDF download functionality
+    document.getElementById('downloadPdfBtn').addEventListener('click', function(e) {
+        e.preventDefault();
+        const selectedDate = document.getElementById('reportDate').value;
+        const url = `/api/reports/daily-pdf/${companyName}`;
+        const params = selectedDate ? `?date=${selectedDate}` : '';
+        
+        // Create a temporary link to download the PDF
+        const link = document.createElement('a');
+        link.href = url + params;
+        link.download = `daily-report-${companyName}-${selectedDate || 'current'}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    });
+    
+    // Chart.js implementation for daily trend
+    const ctx = document.getElementById('dailyTrendChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+            datasets: [{
+                label: 'Daily Production',
+                data: [/* Sample data - replace with real data */],
+                borderColor: 'rgb(75, 192, 192)',
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+</script>
+</body>
+</html> 
