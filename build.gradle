@@ -23,6 +23,12 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-validation'  // Spring Boot validation starter
+
+    // Mail dependencies
+    implementation 'org.springframework.boot:spring-boot-starter-mail'
+    implementation 'com.sun.mail:jakarta.mail:2.0.1'
+    implementation 'jakarta.activation:jakarta.activation-api:2.1.2'
+
     implementation 'io.github.cdimascio:dotenv-java:3.0.0' // dotenv-java dependency
     implementation 'org.springframework.security:spring-security-crypto'//for password encryption
     implementation 'org.projectlombok:lombok:1.18.28'//for getters and setters
@@ -42,10 +48,10 @@ tasks.named('test') {
 bootRun {
     // Add a special SystemProperty to disable restart
     systemProperty 'spring.devtools.restart.enabled', 'false'
-    
+
     // Configure the main class
     mainClass = 'com.darro_tech.revengproject.RevEngProjectApplication'
-    
+
     // Ensure task doesn't fail on DevTools exit
     systemProperty 'spring.devtools.exit.hook.enabled', 'false'
 }

@@ -87,6 +87,9 @@ public class RevEngProjectApplication {
         setPropertyIfExists(dotenv, "spring.jpa.properties.hibernate.dialect", "SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT");
         setPropertyIfExists(dotenv, "spring.jpa.open-in-view", "SPRING_JPA_OPEN_IN_VIEW");
 
+        // Email configuration
+        setPropertyIfExists(dotenv, "spring.mail.password", "EMAIL_PASSWORD");
+
         // Servlet configuration
         setPropertyIfExists(dotenv, "spring.servlet.multipart.max-file-size", "SPRING_SERVLET_MULTIPART_MAX_FILE_SIZE");
         setPropertyIfExists(dotenv, "spring.servlet.multipart.max-request-size", "SPRING_SERVLET_MULTIPART_MAX_REQUEST_SIZE");

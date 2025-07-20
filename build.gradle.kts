@@ -30,6 +30,11 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-validation")
 
+    // Mail dependencies
+    implementation("org.springframework.boot:spring-boot-starter-mail")
+    implementation("com.sun.mail:jakarta.mail:2.0.1")
+    implementation("jakarta.activation:jakarta.activation-api:2.1.2")
+
     // Database
     runtimeOnly("org.postgresql:postgresql")
 
