@@ -269,6 +269,18 @@ public class RoutingController extends BaseController {
     }
 
     /**
+     * Special route for Align daily report
+     * Format: /align/daily-report
+     */
+    @GetMapping("/align/daily-report")
+    public String alignDailyReport(Model model, HttpSession session) {
+        logger.info("📆 Routing: Daily Report route accessed - /align/daily-report");
+
+        // Handle like a company dashboard but use 'align' as the company name
+        return handleDirectDashboardAccess("align", "daily-report", model, session);
+    }
+
+    /**
      * Company projects root page - shows list of farms Format:
      * /{companyName}/projects
      */
