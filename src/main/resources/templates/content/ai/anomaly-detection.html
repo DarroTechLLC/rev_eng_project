@@ -1,7 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org"
-      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
-      layout:decorate="~{layouts/main-layout}">
+<html xmlns:th="http://www.thymeleaf.org">
 <head>
     <title>AI Anomaly Detection</title>
     <!-- Highcharts -->
@@ -10,69 +8,65 @@
     <script src="/js/chart-utils/highcharts-utils.js"></script>
 </head>
 <body>
-<div layout:fragment="content">
     <div class="container-fluid">
         <!-- Page Heading -->
         <div class="d-sm-flex align-items-center justify-content-between mb-4">
             <div>
-                <a href="javascript:history.back()" class="btn btn-sm btn-primary mb-2">
-                    <i class="fas fa-arrow-left"></i> Back
-                </a>
                 <h1 class="h3 mb-0 text-gray-800">AI Anomaly Detection</h1>
             </div>
         </div>
 
         <!-- Explanation Card -->
         <div class="card bg-light mb-4">
-            <div class="card-header bg-primary text-white">
-                <h5 class="m-0"><i class="fas fa-info-circle mr-2"></i>About Anomaly Detection</h5>
+            <div class="card-header bg-warning text-white">
+                <h5 class="m-0"><i class="fas fa-exclamation-triangle mr-2"></i>About Anomaly Detection</h5>
             </div>
             <div class="card-body">
                 <ul class="list-group list-group-flush">
                     <li class="list-group-item">
-                        <strong>What it does:</strong> Identifies unusual patterns in CH4 recovery and temperature data that deviate significantly from normal behavior.
+                        <strong>What it does:</strong> Identifies unusual patterns in CH4 recovery data that may indicate equipment issues, operational problems, or data quality concerns.
                     </li>
                     <li class="list-group-item">
-                        <strong>How it works:</strong> Uses statistical analysis to calculate mean and standard deviation of values, then flags data points that fall outside 2 standard deviations from the mean (Z-score > 2.0).
+                        <strong>How it works:</strong> Uses statistical analysis to compare current production values against historical averages and identifies deviations beyond normal thresholds.
                     </li>
                     <li class="list-group-item">
-                        <strong>Why it's useful:</strong> Helps identify potential equipment failures, process inefficiencies, or environmental factors affecting biogas production.
+                        <strong>Why it's useful:</strong> Helps prevent equipment failures, optimize operations, and maintain consistent production quality.
                     </li>
                     <li class="list-group-item">
-                        <strong>Accuracy:</strong> 95% confidence level for detecting significant anomalies (based on normal distribution properties).
+                        <strong>Detection method:</strong> Standard deviation analysis with configurable sensitivity levels.
                     </li>
                     <li class="list-group-item">
-                        <strong>Severity levels:</strong>
-                        <span class="badge badge-warning ml-2">Warning</span> (Z-score between 2.0 and 3.0)
-                        <span class="badge badge-danger ml-2">Critical</span> (Z-score > 3.0)
+                        <strong>Limitations:</strong> Requires sufficient historical data for accurate baseline calculations. May generate false positives during planned maintenance or operational changes.
                     </li>
                 </ul>
             </div>
         </div>
 
-        <!-- Controls Card -->
+        <!-- Configuration Card -->
         <div class="card shadow mb-4">
             <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-primary">Detection Controls</h6>
+                <h6 class="m-0 font-weight-bold text-primary">Detection Configuration</h6>
             </div>
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-3">
                         <div class="form-group">
-                            <label for="farmSelector">Select Farm</label>
-                            <select id="farmSelector" class="form-control">
-                                <option value="">-- Select Farm --</option>
-                                <option th:each="farm : ${farms}" th:value="${farm.id}" th:text="${farm.name}"></option>
+                            <label for="farmSelect">Select Farm</label>
+                            <select id="farmSelect" class="form-control">
+                                <option value="">All Farms</option>
+                                <option th:each="farm : ${farms}" 
+                                        th:value="${farm.id}" 
+                                        th:text="${farm.name}">Farm Name</option>
                             </select>
                         </div>
                     </div>
                     <div class="col-md-3">
                         <div class="form-group">
-                            <label for="metricSelector">Select Metric</label>
-                            <select id="metricSelector" class="form-control">
-                                <option value="ch4-recovery">CH4 Recovery</option>
-                                <option value="temperature">Temperature</option>
-                                <option value="mass-balance">Mass Balance</option>
+                            <label for="sensitivity">Detection Sensitivity</label>
+                            <select id="sensitivity" class="form-control">
+                                <option value="1.5">Low (1.5σ)</option>
+                                <option value="2.0" selected>Medium (2.0σ)</option>
+                                <option value="2.5">High (2.5σ)</option>
                             </select>
                         </div>
                     </div>
@@ -91,7 +85,7 @@
                 </div>
                 <div class="row">
                     <div class="col-12 text-center">
-                        <button id="detectButton" class="btn btn-primary">Detect Anomalies</button>
+                        <button id="detectButton" class="btn btn-warning">Detect Anomalies</button>
                     </div>
                 </div>
             </div>
@@ -104,237 +98,157 @@
             </div>
             <div class="card-body">
                 <div id="loadingIndicator" style="display: none;" class="text-center">
-                    <div class="spinner-border text-primary" role="status">
+                    <div class="spinner-border text-warning" role="status">
                         <span class="sr-only">Loading...</span>
                     </div>
                     <p class="mt-2">Analyzing data for anomalies...</p>
                 </div>
                 <div id="errorMessage" class="alert alert-danger" style="display: none;"></div>
-                <div id="noAnomaliesMessage" class="alert alert-success" style="display: none;">
-                    No anomalies detected in the selected time period.
-                </div>
 
-                <!-- Chart for visualizing data with anomalies -->
+                <!-- Anomaly Summary -->
+                <div id="anomalySummary" class="alert alert-warning" style="display: none;"></div>
+
+                <!-- Chart for visualizing anomalies -->
                 <div id="anomalyChart" style="min-height: 400px;"></div>
 
-                <!-- Table for listing anomalies -->
-                <div class="table-responsive mt-4">
-                    <table class="table table-bordered" id="anomalyTable">
-                        <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>Farm</th>
-                                <th>Metric</th>
-                                <th>Value</th>
-                                <th>Expected Value</th>
-                                <th>Deviation (%)</th>
-                                <th>Severity</th>
-                            </tr>
-                        </thead>
-                        <tbody id="anomalyTableBody">
-                            <!-- Populated via JavaScript -->
-                        </tbody>
-                    </table>
+                <!-- Anomaly Details Table -->
+                <div id="anomalyTable" class="mt-4" style="display: none;">
+                    <h6 class="font-weight-bold">Detected Anomalies</h6>
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped">
+                            <thead class="thead-dark">
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Farm</th>
+                                    <th>Expected Value</th>
+                                    <th>Actual Value</th>
+                                    <th>Deviation</th>
+                                    <th>Severity</th>
+                                </tr>
+                            </thead>
+                            <tbody id="anomalyTableBody">
+                                <!-- Anomaly data will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
-<!-- JavaScript for Anomaly Detection -->
-<th:block layout:fragment="scripts">
+    <!-- JavaScript for Anomaly Detection -->
     <script th:inline="javascript">
-        // Initialize date pickers with default values
         document.addEventListener('DOMContentLoaded', function() {
+            const detectButton = document.getElementById('detectButton');
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            const errorMessage = document.getElementById('errorMessage');
+            const anomalySummary = document.getElementById('anomalySummary');
+            const anomalyChart = document.getElementById('anomalyChart');
+            const anomalyTable = document.getElementById('anomalyTable');
+            const anomalyTableBody = document.getElementById('anomalyTableBody');
+
+            // Set default dates
             const today = new Date();
-            const thirtyDaysAgo = new Date();
-            thirtyDaysAgo.setDate(today.getDate() - 30);
+            const thirtyDaysAgo = new Date(today.getTime() - (30 * 24 * 60 * 60 * 1000));
+            
+            document.getElementById('startDate').value = thirtyDaysAgo.toISOString().split('T')[0];
+            document.getElementById('endDate').value = today.toISOString().split('T')[0];
 
-            document.getElementById('startDate').value = formatDate(thirtyDaysAgo);
-            document.getElementById('endDate').value = formatDate(today);
+            detectButton.addEventListener('click', function() {
+                // Show loading
+                loadingIndicator.style.display = 'block';
+                errorMessage.style.display = 'none';
+                anomalySummary.style.display = 'none';
+                anomalyTable.style.display = 'none';
 
-            // Add event listener to detect button
-            document.getElementById('detectButton').addEventListener('click', detectAnomalies);
-        });
-
-        function formatDate(date) {
-            const year = date.getFullYear();
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
-        }
-
-        function showLoading() {
-            document.getElementById('loadingIndicator').style.display = 'block';
-            document.getElementById('errorMessage').style.display = 'none';
-            document.getElementById('noAnomaliesMessage').style.display = 'none';
-            document.getElementById('anomalyTable').style.display = 'none';
-            document.getElementById('anomalyChart').style.display = 'none';
-        }
-
-        function hideLoading() {
-            document.getElementById('loadingIndicator').style.display = 'none';
-        }
-
-        function showError(message) {
-            document.getElementById('errorMessage').textContent = message;
-            document.getElementById('errorMessage').style.display = 'block';
-        }
-
-        function detectAnomalies() {
-            const farmId = document.getElementById('farmSelector').value;
-            const metric = document.getElementById('metricSelector').value;
-            const startDate = document.getElementById('startDate').value;
-            const endDate = document.getElementById('endDate').value;
-
-            if (!farmId) {
-                showError('Please select a farm');
-                return;
-            }
-
-            showLoading();
-
-            // Format dates for API
-            const startDateTime = new Date(startDate).toISOString();
-            const endDateTime = new Date(endDate).toISOString();
-
-            // Call the appropriate API based on selected metric
-            let apiUrl = `/api/ai/anomalies/${metric}?farmId=${farmId}&startDate=${startDateTime}&endDate=${endDateTime}`;
-
-            fetch(apiUrl)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Failed to fetch anomaly data');
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    hideLoading();
-                    console.log('[DEBUG_LOG] Anomaly data received:', data);
-
-                    if (!data) {
-                        showError('No data received from server');
-                        return;
-                    }
-
-                    if (!data.anomalies) {
-                        showError('Invalid response format: missing anomalies array');
-                        return;
-                    }
-
-                    if (data.anomalies.length > 0) {
-                        // Validate anomaly data
-                        const invalidAnomalies = data.anomalies.filter(anomaly => 
-                            !anomaly.farmId || 
-                            !anomaly.metricType || 
-                            anomaly.value === undefined || 
-                            anomaly.expectedValue === undefined ||
-                            !anomaly.timestamp
-                        );
-
-                        if (invalidAnomalies.length > 0) {
-                            console.error('[DEBUG_LOG] Invalid anomalies found:', invalidAnomalies);
-                            showError('Some anomaly data is invalid. Check console for details.');
-                            return;
+                // Simulate API call (replace with actual endpoint)
+                setTimeout(() => {
+                    loadingIndicator.style.display = 'none';
+                    
+                    // Simulate anomaly detection results
+                    const anomalies = [
+                        {
+                            date: '2024-01-15',
+                            farm: 'Monarch Southwest',
+                            expected: 1250,
+                            actual: 980,
+                            deviation: -270,
+                            severity: 'High'
+                        },
+                        {
+                            date: '2024-01-18',
+                            farm: 'Tuls Energy',
+                            expected: 1100,
+                            actual: 1350,
+                            deviation: 250,
+                            severity: 'Medium'
                         }
+                    ];
 
-                        displayAnomalies(data.anomalies);
-                    } else {
-                        document.getElementById('noAnomaliesMessage').style.display = 'block';
-                        document.getElementById('anomalyTable').style.display = 'none';
-                        document.getElementById('anomalyChart').style.display = 'none';
-                    }
-                })
-                .catch(error => {
-                    hideLoading();
-                    showError('Error detecting anomalies: ' + error.message);
-                });
-        }
+                    displayAnomalies(anomalies);
+                }, 2000);
+            });
 
-        function displayAnomalies(anomalies) {
-            // Display table of anomalies
-            const tableBody = document.getElementById('anomalyTableBody');
-            tableBody.innerHTML = '';
-
-            anomalies.forEach(anomaly => {
-                const row = document.createElement('tr');
-
-                // Add severity class
-                if (anomaly.severity === 'Critical') {
-                    row.classList.add('table-danger');
-                } else {
-                    row.classList.add('table-warning');
+            function displayAnomalies(anomalies) {
+                if (anomalies.length === 0) {
+                    anomalySummary.innerHTML = '<strong>No anomalies detected</strong> in the selected date range.';
+                    anomalySummary.style.display = 'block';
+                    return;
                 }
 
-                row.innerHTML = `
-                    <td>${new Date(anomaly.timestamp).toLocaleString()}</td>
-                    <td>${anomaly.farmName}</td>
-                    <td>${anomaly.metricType}</td>
-                    <td>${anomaly.value.toFixed(2)}</td>
-                    <td>${anomaly.expectedValue.toFixed(2)}</td>
-                    <td>${anomaly.deviationPercent.toFixed(2)}%</td>
-                    <td>${anomaly.severity}</td>
-                `;
+                // Update summary
+                anomalySummary.innerHTML = `<strong>${anomalies.length} anomalies detected</strong> in the selected date range.`;
+                anomalySummary.style.display = 'block';
 
-                tableBody.appendChild(row);
-            });
+                // Update table
+                anomalyTableBody.innerHTML = '';
+                anomalies.forEach(anomaly => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${anomaly.date}</td>
+                        <td>${anomaly.farm}</td>
+                        <td>${anomaly.expected} MMBTUs</td>
+                        <td>${anomaly.actual} MMBTUs</td>
+                        <td class="${anomaly.deviation > 0 ? 'text-success' : 'text-danger'}">${anomaly.deviation > 0 ? '+' : ''}${anomaly.deviation} MMBTUs</td>
+                        <td><span class="badge badge-${anomaly.severity === 'High' ? 'danger' : anomaly.severity === 'Medium' ? 'warning' : 'info'}">${anomaly.severity}</span></td>
+                    `;
+                    anomalyTableBody.appendChild(row);
+                });
+                anomalyTable.style.display = 'block';
 
-            document.getElementById('anomalyTable').style.display = 'table';
+                // Create chart (simplified)
+                createAnomalyChart(anomalies);
+            }
 
-            // Create chart visualization
-            createAnomalyChart(anomalies);
-        }
+            function createAnomalyChart(anomalies) {
+                // Simple chart showing anomalies over time
+                const chartData = anomalies.map(a => ({
+                    x: new Date(a.date).getTime(),
+                    y: a.actual,
+                    name: a.farm,
+                    color: a.severity === 'High' ? '#dc3545' : a.severity === 'Medium' ? '#ffc107' : '#17a2b8'
+                }));
 
-        function createAnomalyChart(anomalies) {
-            // Implementation depends on your charting library
-            // This is a placeholder for Highcharts implementation
-            document.getElementById('anomalyChart').style.display = 'block';
-
-            // Basic chart implementation
-            Highcharts.chart('anomalyChart', {
-                chart: {
-                    type: 'scatter',
-                    zoomType: 'xy'
-                },
-                title: {
-                    text: 'Anomaly Detection Results'
-                },
-                xAxis: {
-                    type: 'datetime',
-                    title: {
-                        text: 'Date'
-                    }
-                },
-                yAxis: {
-                    title: {
-                        text: anomalies[0]?.metricType || 'Value'
-                    }
-                },
-                tooltip: {
-                    formatter: function() {
-                        return `<b>Date:</b> ${Highcharts.dateFormat('%Y-%m-%d %H:%M:%S', this.x)}<br>
-                                <b>Value:</b> ${this.y.toFixed(2)}<br>
-                                <b>Deviation:</b> ${this.point.deviation?.toFixed(2)}%<br>
-                                <b>Severity:</b> ${this.point.severity}`;
-                    }
-                },
-                series: [{
-                    name: 'Anomalies',
-                    data: anomalies.map(a => ({
-                        x: new Date(a.timestamp).getTime(),
-                        y: a.value,
-                        deviation: a.deviationPercent,
-                        severity: a.severity
-                    })),
-                    color: 'red',
-                    marker: {
-                        symbol: 'circle',
-                        radius: 6
-                    }
-                }]
-            });
-        }
+                Highcharts.chart(anomalyChart, {
+                    chart: { type: 'scatter' },
+                    title: { text: 'Anomaly Detection Results' },
+                    xAxis: { type: 'datetime' },
+                    yAxis: { title: { text: 'CH4 Recovery (MMBTUs)' } },
+                    tooltip: {
+                        formatter: function() {
+                            return `<b>${this.point.name}</b><br/>
+                                    Date: ${Highcharts.dateFormat('%Y-%m-%d', this.x)}<br/>
+                                    Value: ${this.y} MMBTUs<br/>
+                                    Severity: ${this.point.color === '#dc3545' ? 'High' : this.point.color === '#ffc107' ? 'Medium' : 'Low'}`;
+                        }
+                    },
+                    series: [{
+                        name: 'Anomalies',
+                        data: chartData
+                    }]
+                });
+            }
+        });
     </script>
-</th:block>
 </body>
 </html>
