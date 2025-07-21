@@ -1,55 +1,45 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/main}">
 <head>
     <title>Production Detail Dashboard</title>
-    <!-- Enhanced Highcharts with Export Functionality -->
-    <div th:replace="fragments/highcharts-scripts :: highcharts-with-utils"></div>
-    <div th:replace="fragments/highcharts-scripts :: chart-export-menu"></div>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" th:href="@{/css/chart-type-selector.css}">
     <style>
         .grid-layout {
             display: grid;
             grid-template-columns: 1fr;
-            grid-gap: 20px;
-            margin-bottom: 20px;
+            gap: 20px;
+            margin-top: 20px;
         }
 
         .grid-row {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            grid-gap: 20px;
+            grid-template-columns: 1fr;
+            gap: 20px;
         }
 
         .chart-panel {
-            background-color: #fff;
-            border-radius: 5px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            background: white;
+            border-radius: 8px;
             padding: 20px;
-            margin-bottom: 20px;
-            position: relative;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e1e5e9;
         }
 
         .chart-nav {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 10px;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
         }
 
-        .chart-type-selector {
-            display: flex;
-            gap: 5px;
-        }
-
-        .chart-type-button {
-            padding: 5px 10px;
-            border: 1px solid #ddd;
-            background-color: #f8f9fc;
-            cursor: pointer;
-        }
-
-        .chart-type-button.active {
-            background-color: #4e73df;
-            color: white;
+        .chart-title {
+            font-weight: 600;
+            color: #333;
+            font-size: 16px;
         }
 
         .chart-year-selector {
@@ -69,127 +59,112 @@
             background-color: #f8f9fc;
             cursor: pointer;
             border-right: 1px solid #ddd;
+            transition: all 0.2s ease;
         }
 
         .chart-year-selector .year:last-child {
             border-right: none;
         }
 
+        .chart-year-selector .year:hover {
+            background-color: #e9ecef;
+        }
+
         .chart-year-selector .year.selected {
             background-color: #4e73df;
             color: white;
         }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .chart-nav {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .chart-title {
+                font-size: 14px;
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="container-fluid">
-        <h1 class="h3 mb-4 text-gray-800">Production Detail Dashboard</h1>
+    <div layout:fragment="content">
+        <div class="container-fluid">
+            <h1 class="h3 mb-4 text-gray-800">Production Detail Dashboard</h1>
 
-        <div class="grid-layout">
-            <div class="grid-row">
-                <div class="grid-col">
-                    <div class="chart-panel">
-                        <div class="chart-nav">
-                            <span>
-                                <span>Cumulative Production</span>
-                                <div class="chart-year-selector" id="cumulative-chart-year-selector">
-                                    <div class="items">
-                                        <!-- Year buttons will be added dynamically -->
+            <div class="grid-layout">
+                <div class="grid-row">
+                    <div class="grid-col">
+                        <div class="chart-panel">
+                            <div class="chart-nav">
+                                <div>
+                                    <div class="chart-title">Cumulative Production</div>
+                                    <div class="chart-year-selector" id="cumulative-chart-year-selector">
+                                        <div class="items">
+                                            <!-- Year buttons will be added dynamically -->
+                                        </div>
                                     </div>
                                 </div>
-                            </span>
-                            <span class="chart-type-selector" id="cumulative-chart-selector">
-                                <button class="chart-type-button active" data-type="line">Line</button>
-                                <button class="chart-type-button" data-type="column">Column</button>
-                                <button class="chart-type-button" data-type="bar">Bar</button>
-                            </span>
+                                <div class="chart-type-selector" id="cumulative-chart-selector">
+                                    <!-- Chart type buttons will be added dynamically -->
+                                </div>
+                            </div>
+                            <div id="cumulative-production-chart"></div>
                         </div>
-                        <div id="cumulative-production-chart"></div>
+                    </div>
+                    <div class="grid-col">
+                        <div class="chart-panel">
+                            <div class="chart-nav">
+                                <div>
+                                    <div class="chart-title">Production YTD</div>
+                                    <div class="chart-year-selector" id="ytd-chart-year-selector">
+                                        <div class="items">
+                                            <!-- Year buttons will be added dynamically -->
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="chart-type-selector" id="ytd-chart-selector">
+                                    <!-- Chart type buttons will be added dynamically -->
+                                </div>
+                            </div>
+                            <div id="production-ytd-chart"></div>
+                        </div>
                     </div>
                 </div>
-                <div class="grid-col">
-                    <div class="chart-panel">
-                        <div class="chart-nav">
-                            <span>
-                                <span>Production YTD</span>
-                                <div class="chart-year-selector" id="ytd-chart-year-selector">
-                                    <div class="items">
-                                        <!-- Year buttons will be added dynamically -->
+                <div class="grid-row">
+                    <div class="grid-col">
+                        <div class="chart-panel">
+                            <div class="chart-nav">
+                                <div>
+                                    <div class="chart-title">Production vs Budget</div>
+                                    <div class="chart-year-selector" id="budget-chart-year-selector">
+                                        <div class="items">
+                                            <!-- Year buttons will be added dynamically -->
+                                        </div>
                                     </div>
                                 </div>
-                            </span>
-                            <span class="chart-type-selector" id="ytd-chart-selector">
-                                <button class="chart-type-button active" data-type="column">Column</button>
-                                <button class="chart-type-button" data-type="bar">Bar</button>
-                            </span>
-                        </div>
-                        <div id="production-ytd-chart"></div>
-                    </div>
-                </div>
-            </div>
-            <div class="grid-row">
-                <div class="grid-col">
-                    <div class="chart-panel">
-                        <div class="chart-nav">
-                            <span>
-                                <span>Production vs Budget</span>
-                                <div class="chart-year-selector" id="budget-chart-year-selector">
-                                    <div class="items">
-                                        <!-- Year buttons will be added dynamically -->
-                                    </div>
+                                <div class="chart-type-selector" id="budget-chart-selector">
+                                    <!-- Chart type buttons will be added dynamically -->
                                 </div>
-                            </span>
-                            <span class="chart-type-selector" id="budget-chart-selector">
-                                <button class="chart-type-button active" data-type="column">Column</button>
-                                <button class="chart-type-button" data-type="bar">Bar</button>
-                            </span>
+                            </div>
+                            <div id="production-budget-chart"></div>
                         </div>
-                        <div id="production-budget-chart"></div>
-                    </div>
-                </div>
-            </div>
-            <div class="grid-row">
-                <div class="grid-col">
-                    <div class="chart-panel">
-                        <div class="chart-nav">
-                            <span>
-                                <span>Production vs Budget (Pie)</span>
-                                <div class="chart-year-selector" id="budget-pie-chart-year-selector">
-                                    <div class="items">
-                                        <!-- Year buttons will be added dynamically -->
-                                    </div>
-                                </div>
-                            </span>
-                            <span></span>
-                        </div>
-                        <div id="production-budget-pie-chart"></div>
-                    </div>
-                </div>
-                <div class="grid-col">
-                    <div class="chart-panel">
-                        <div class="chart-nav">
-                            <span>
-                                <span>Production by Farm (Pie)</span>
-                                <div class="chart-year-selector" id="farm-pie-chart-year-selector">
-                                    <div class="items">
-                                        <!-- Year buttons will be added dynamically -->
-                                    </div>
-                                </div>
-                            </span>
-                            <span></span>
-                        </div>
-                        <div id="production-farm-pie-chart"></div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Scripts -->
+    <script th:src="@{/js/highcharts-with-utils.js}"></script>
+    <script th:src="@{/js/chart-export-menu.js}"></script>
+    <script th:src="@{/js/chart-type-selector.js}"></script>
     <script th:inline="javascript">
         /*<![CDATA[*/
-        const companyId = /*[[${selectedCompanyId}]]*/ 'default-company-id';
+        const farmId = /*[[${selectedFarmId}]]*/ '';
+        const selectedFarmName = /*[[${selectedFarmName}]]*/ '';
 
-        // Helper function to get current year and date ranges
         function getCurrentYear() {
             return new Date().getFullYear();
         }
@@ -205,9 +180,7 @@
         let selectedYears = {
             'cumulative': getCurrentYear(),
             'ytd': getCurrentYear(),
-            'budget': getCurrentYear(),
-            'budget-pie': getCurrentYear(),
-            'farm-pie': getCurrentYear()
+            'budget': getCurrentYear()
         };
 
         function initYearSelectors() {
@@ -220,8 +193,6 @@
             initYearSelector('cumulative-chart-year-selector', 'cumulative', years);
             initYearSelector('ytd-chart-year-selector', 'ytd', years);
             initYearSelector('budget-chart-year-selector', 'budget', years);
-            initYearSelector('budget-pie-chart-year-selector', 'budget-pie', years);
-            initYearSelector('farm-pie-chart-year-selector', 'farm-pie', years);
         }
 
         function initYearSelector(selectorId, chartType, years) {
@@ -262,36 +233,26 @@
         function reloadChart(chartType) {
             switch(chartType) {
                 case 'cumulative':
-                    loadCumulativeProductionChart(document.querySelector('#cumulative-chart-selector .chart-type-button.active').dataset.type);
+                    const cumulativeSelector = window.chartSelectors?.find(s => s.containerId === 'cumulative-chart-selector');
+                    const cumulativeType = cumulativeSelector ? cumulativeSelector.getSelectedType() : 'line';
+                    loadCumulativeProductionChart(cumulativeType);
                     break;
                 case 'ytd':
-                    loadProductionYTDChart(document.querySelector('#ytd-chart-selector .chart-type-button.active').dataset.type);
+                    const ytdSelector = window.chartSelectors?.find(s => s.containerId === 'ytd-chart-selector');
+                    const ytdType = ytdSelector ? ytdSelector.getSelectedType() : 'column';
+                    loadProductionYTDChart(ytdType);
                     break;
                 case 'budget':
-                    loadProductionBudgetChart(document.querySelector('#budget-chart-selector .chart-type-button.active').dataset.type);
-                    break;
-                case 'budget-pie':
-                    loadProductionBudgetPieChart();
-                    break;
-                case 'farm-pie':
-                    loadProductionFarmPieChart();
+                    const budgetSelector = window.chartSelectors?.find(s => s.containerId === 'budget-chart-selector');
+                    const budgetType = budgetSelector ? budgetSelector.getSelectedType() : 'column';
+                    loadProductionBudgetChart(budgetType);
                     break;
             }
         }
 
-        // Chart type selector functionality
-        function setupChartTypeSelector(selectorId, chartFunction) {
-            const selector = document.getElementById(selectorId);
-            if (!selector) return;
-
-            const buttons = selector.querySelectorAll('.chart-type-button');
-            buttons.forEach(button => {
-                button.addEventListener('click', function() {
-                    buttons.forEach(b => b.classList.remove('active'));
-                    this.classList.add('active');
-                    chartFunction(this.dataset.type);
-                });
-            });
+        // Initialize chart type selectors
+        function initChartTypeSelectors() {
+            window.chartSelectors = initializeChartTypeSelectors();
         }
 
         // Cumulative Production Chart
@@ -865,20 +826,20 @@
 
         // Initialize all charts when the page loads
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Initializing Production Detail Dashboard...');
+            
             // Initialize year selectors
             initYearSelectors();
+
+            // Initialize chart type selectors
+            initChartTypeSelectors();
 
             // Load all charts
             loadCumulativeProductionChart();
             loadProductionYTDChart();
             loadProductionBudgetChart();
-            loadProductionBudgetPieChart();
-            loadProductionFarmPieChart();
-
-            // Setup chart type selectors
-            setupChartTypeSelector('cumulative-chart-selector', loadCumulativeProductionChart);
-            setupChartTypeSelector('ytd-chart-selector', loadProductionYTDChart);
-            setupChartTypeSelector('budget-chart-selector', loadProductionBudgetChart);
+            
+            console.log('✅ Production Detail Dashboard initialized');
         });
         /*]]>*/
     </script>

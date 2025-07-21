@@ -1,14 +1,12 @@
--company dropdown default to dashboard, need to stay where i am in app just update company at this point
-- in all charts download on right, options on left
--make all optinos uniform in style use icons
-
 -success message for alert save
 
 -dark mode option in user dropdown for any user
 
--speed up query for user table in manage users (queried)
-
 -still have to enter name after biometric (queried)
+
+-space between cards on
+
+-speed up query for user table in manage users (queried)
 
 -mvc pattern for daily and weekly reports-mimick code because expected, use html and
 highcharts to produce all expected from pdf (queried)
@@ -17,3 +15,4 @@ highcharts to produce all expected from pdf (queried)
 can be better handled by java? or vice versa. take comprehensive look
 
 -language difference translator dropdown option ?
+-farm names supposed to be in chart

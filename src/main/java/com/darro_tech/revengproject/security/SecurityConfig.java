@@ -123,6 +123,7 @@ public class SecurityConfig {
                         mvc.pattern("/login"),
                         mvc.pattern("/register"),
                         mvc.pattern("/confirm-account"),
+                        mvc.pattern("/static/**"),  // Allow all static resources
                         mvc.pattern("/css/**"),
                         mvc.pattern("/js/**"),
                         mvc.pattern("/vendor/**"),
