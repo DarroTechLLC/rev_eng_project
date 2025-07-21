@@ -27,8 +27,6 @@
                       th:title="${selectedCompany.name}">
                     <span th:text="${selectedCompany.name.charAt(0)}"></span>
                 </span>
-                <!-- Inline dropdown arrow to ensure consistent appearance -->
-                <span style="display: inline-block; margin-left: 8px; vertical-align: middle; border-top: 0.3em solid; border-right: 0.3em solid transparent; border-bottom: 0; border-left: 0.3em solid transparent;"></span>
             </div>
 
             <!-- Dropdown Content -->
@@ -89,16 +87,6 @@
                 display: flex;
                 justify-content: center;
                 align-items: center;
-            }
-            #currentCompanyDisplay::after {
-                content: "";
-                display: inline-block;
-                margin-left: 8px;
-                vertical-align: middle;
-                border-top: 0.3em solid;
-                border-right: 0.3em solid transparent;
-                border-bottom: 0;
-                border-left: 0.3em solid transparent;
             }
         </style>
         <script>
@@ -430,31 +418,9 @@
                     });
                 }
 
-                // Helper function to ensure dropdown arrow is present
+                // Helper function to ensure dropdown functionality (arrow removed)
                 function ensureDropdownArrow(element) {
-                    // Check if the arrow is already present
-                    let arrowExists = false;
-                    for (let i = 0; i < element.children.length; i++) {
-                        const child = element.children[i];
-                        if (child.tagName === 'SPAN' && !child.classList.contains('company-logo-placeholder')) {
-                            // This is likely the arrow
-                            arrowExists = true;
-                            break;
-                        }
-                    }
-
-                    // Add the arrow if it doesn't exist
-                    if (!arrowExists) {
-                        const arrow = document.createElement('span');
-                        arrow.style.display = 'inline-block';
-                        arrow.style.marginLeft = '8px';
-                        arrow.style.verticalAlign = 'middle';
-                        arrow.style.borderTop = '0.3em solid';
-                        arrow.style.borderRight = '0.3em solid transparent';
-                        arrow.style.borderBottom = '0';
-                        arrow.style.borderLeft = '0.3em solid transparent';
-                        element.appendChild(arrow);
-                    }
+                    // Function kept for compatibility, but arrow is no longer added
                 }
 
                 // Initialize company selector
