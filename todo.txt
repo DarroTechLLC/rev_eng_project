@@ -15,4 +15,3 @@ highcharts to produce all expected from pdf (queried)
 can be better handled by java? or vice versa. take comprehensive look
 
 -language difference translator dropdown option ?
--farm names supposed to be in chart

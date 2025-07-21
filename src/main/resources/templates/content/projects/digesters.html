@@ -227,15 +227,8 @@
                 const data = response.data || [];
 
                 // Process data for lagoon levels chart
-                const categories = [];
-                const lagoon1Data = [];
-                const lagoon2Data = [];
-
-                data.forEach(d => {
-                    categories.push(d.date);
-                    lagoon1Data.push(d.lagoon1);
-                    lagoon2Data.push(d.lagoon2);
-                });
+                const lagoon1Data = data.map(d => [d.farm_name || d.farm_id, d.lagoon1]);
+                const lagoon2Data = data.map(d => [d.farm_name || d.farm_id, d.lagoon2]);
 
                 // Render chart
                 const chart = Highcharts.chart('lagoon-levels-chart', {
@@ -246,9 +239,9 @@
                         text: 'Lagoon Levels'
                     },
                     xAxis: {
-                        categories: categories,
+                        type: 'category',
                         title: {
-                            text: 'Date'
+                            text: 'Farm'
                         }
                     },
                     yAxis: {
@@ -261,7 +254,7 @@
                     tooltip: {
                         formatter: function() {
                             return `<b>${this.series.name}</b><br/>
-                                    Date: ${this.x}<br/>
+                                    Farm: ${this.key}<br/>
                                     Level: ${Highcharts.numberFormat(this.y, 1)}%`;
                         }
                     },

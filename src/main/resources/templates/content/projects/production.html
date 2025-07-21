@@ -251,7 +251,7 @@
                 const data = response.data || [];
 
                 // Process data for monthly chart
-                const seriesData = data.map(d => d.value || 0);
+                const seriesData = data.map(d => [d.farm_name || d.farm_id, d.value || 0]);
 
                 // Render chart using direct Highcharts implementation
                 console.log('🚀 Creating Monthly Production Chart with direct Highcharts');
@@ -341,10 +341,9 @@
                 // Process data for cumulative chart
                 const seriesData = [];
                 let cumulative = 0;
-
                 data.forEach(d => {
                     cumulative += (d.value || 0);
-                    seriesData.push(cumulative);
+                    seriesData.push([d.farm_name || d.farm_id, cumulative]);
                 });
 
                 // Render chart using direct Highcharts implementation
