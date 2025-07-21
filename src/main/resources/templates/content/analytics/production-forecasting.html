@@ -2,12 +2,11 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <title>Production Forecasting</title>
+    <!-- Enhanced Highcharts with Export Functionality -->
+    <div th:replace="fragments/highcharts-scripts :: highcharts-with-utils"></div>
+    <div th:replace="fragments/highcharts-scripts :: chart-export-menu"></div>
     <!-- jQuery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <!-- Highcharts -->
-    <script src="https://code.highcharts.com/highcharts.js"></script>
-    <!-- Chart Utils -->
-    <script src="/js/chart-utils/highcharts-utils.js"></script>
 </head>
 <body>
     <div class="container-fluid">
@@ -212,38 +211,64 @@
                     name: 'Forecast'
                 }));
 
-                // Create chart
-                Highcharts.chart('forecastChart', {
-                    chart: { type: 'line' },
-                    title: { text: 'CH4 Recovery Production Forecast' },
-                    xAxis: { type: 'datetime' },
-                    yAxis: { title: { text: 'CH4 Recovery (MMBTUs)' } },
+                // Create chart using direct Highcharts implementation
+                console.log('🚀 Creating Production Forecast Chart with direct Highcharts');
+                
+                const chart = Highcharts.chart('productionForecastChart', {
+                    chart: {
+                        type: 'line',
+                        height: 400
+                    },
+                    title: {
+                        text: 'Production Forecasting',
+                        style: {
+                            fontSize: '16px',
+                            fontWeight: 'bold'
+                        }
+                    },
+                    xAxis: {
+                        type: 'datetime',
+                        title: {
+                            text: 'Date'
+                        },
+                        labels: {
+                            format: '{value:%b %Y}'
+                        }
+                    },
+                    yAxis: {
+                        title: {
+                            text: 'MMBTUs'
+                        },
+                        labels: {
+                            formatter: function() {
+                                return Highcharts.numberFormat(this.value, 0);
+                            }
+                        }
+                    },
                     tooltip: {
                         formatter: function() {
                             return `<b>${this.series.name}</b><br/>
-                                    <b>Date:</b> ${Highcharts.dateFormat('%Y-%m-%d', this.x)}<br/>
-                                    <b>Value:</b> ${this.y.toFixed(2)} MMBTUs`;
+                                    ${Highcharts.dateFormat('%b %Y', this.x)}: ${Highcharts.numberFormat(this.y, 0)} MMBTUs`;
                         }
                     },
-                    legend: {
-                        enabled: true,
-                        align: 'center',
-                        verticalAlign: 'bottom'
-                    },
-                    series: [
-                        {
-                            name: 'Historical Data',
-                            data: historicalSeries,
-                            color: '#4e73df'
-                        },
-                        {
-                            name: 'Forecast',
-                            data: forecastSeries,
-                            color: '#1cc88a',
-                            dashStyle: 'dash'
-                        }
-                    ]
+                    series: [{
+                        name: 'Actual Production',
+                        data: historicalSeries, // Use historical data for actual production
+                        color: 'rgba(54, 162, 235, 1)'
+                    }, {
+                        name: 'Forecasted Production',
+                        data: forecastSeries,
+                        color: 'rgba(255, 99, 132, 1)',
+                        dashStyle: 'dash'
+                    }],
+                    exporting: {
+                        enabled: false // Disabled built-in exporting as we're using custom export menu
+                    }
                 });
+
+                // Initialize enhanced export menu
+                initChartExportMenu(chart, document.getElementById('productionForecastChart'));
+                console.log('✅ Production Forecast Chart with enhanced export created');
             }
         });
     </script>

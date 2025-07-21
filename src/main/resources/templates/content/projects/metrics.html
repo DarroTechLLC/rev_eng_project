@@ -130,8 +130,9 @@
         </div>
     </div>
 
-    <!-- Include Highcharts -->
-    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <!-- Enhanced Highcharts with Export Functionality -->
+    <div th:replace="fragments/highcharts-scripts :: highcharts-with-utils"></div>
+    <div th:replace="fragments/highcharts-scripts :: chart-export-menu"></div>
 
     <!-- JavaScript for charts -->
     <script th:inline="javascript">
@@ -196,17 +197,35 @@
                     internals.push(rec ? rec.average_internal : null);
                 }
 
-                // Create chart
-                Highcharts.chart('massBalanceChart', {
+                // Create chart using direct Highcharts implementation
+                console.log('🚀 Creating Mass Balance Chart with direct Highcharts');
+                
+                const chart = Highcharts.chart('massBalanceChart', {
+                    chart: {
+                        type: 'column',
+                        height: 400
+                    },
                     title: {
-                        text: 'Mass Balance'
+                        text: 'Mass Balance',
+                        style: {
+                            fontSize: '16px',
+                            fontWeight: 'bold'
+                        }
                     },
                     xAxis: {
-                        categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+                        categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                        title: {
+                            text: 'Month'
+                        }
                     },
                     yAxis: {
                         title: {
-                            text: '%'
+                            text: 'Percentage'
+                        },
+                        labels: {
+                            formatter: function() {
+                                return this.value.toFixed(2) + '%';
+                            }
                         }
                     },
                     tooltip: {
@@ -216,16 +235,24 @@
                     },
                     series: [{
                         name: 'Monthly',
-                        type: 'column',
-                        data: monthlyValues
+                        data: monthlyValues,
+                        color: 'rgba(54, 162, 235, 1)'
                     }, {
                         name: 'Annual Average',
-                        data: averages
+                        data: averages,
+                        color: 'rgba(255, 99, 132, 1)'
                     }, {
                         name: 'Annual Average (Internal)',
-                        data: internals
-                    }]
+                        data: internals,
+                        color: 'rgba(75, 192, 192, 1)'
+                    }],
+                    exporting: {
+                        enabled: false // Disabled built-in exporting as we're using custom export menu
+                    }
                 });
+
+                // Initialize enhanced export menu
+                initChartExportMenu(chart, document.getElementById('massBalanceChart'));
             });
         }
 
@@ -322,20 +349,38 @@
                     recoveryValues.push(value !== undefined ? value : null);
                 }
 
-                // Create chart
-                Highcharts.chart('methaneRecoveryChart', {
+                // Create chart using direct Highcharts implementation
+                console.log('🚀 Creating Methane Recovery Chart with direct Highcharts');
+                
+                const chart = Highcharts.chart('methaneRecoveryChart', {
+                    chart: {
+                        type: 'column',
+                        height: 400
+                    },
                     title: {
-                        text: 'Methane Recovery'
+                        text: 'Methane Recovery',
+                        style: {
+                            fontSize: '16px',
+                            fontWeight: 'bold'
+                        }
                     },
                     xAxis: {
-                        categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+                        categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                        title: {
+                            text: 'Month'
+                        }
                     },
                     yAxis: {
-                        title: {
-                            text: '%'
-                        },
                         min: 0,
-                        max: 100
+                        max: 100,
+                        title: {
+                            text: 'Percentage'
+                        },
+                        labels: {
+                            formatter: function() {
+                                return this.value.toFixed(2) + '%';
+                            }
+                        }
                     },
                     tooltip: {
                         formatter: function() {
@@ -344,9 +389,16 @@
                     },
                     series: [{
                         name: 'CH4% Recovery',
-                        data: recoveryValues
-                    }]
+                        data: recoveryValues,
+                        color: 'rgba(54, 162, 235, 1)'
+                    }],
+                    exporting: {
+                        enabled: false // Disabled built-in exporting as we're using custom export menu
+                    }
                 });
+
+                // Initialize enhanced export menu
+                initChartExportMenu(chart, document.getElementById('methaneRecoveryChart'));
             });
         }
 
@@ -403,17 +455,35 @@
                 processYearData(data1YearAgo, oneYearAgo, 1);
                 processYearData(dataCurYear, currentYear, 2);
 
-                // Create chart
-                Highcharts.chart('temperatureChart', {
+                // Create chart using direct Highcharts implementation
+                console.log('🚀 Creating Temperature Chart with direct Highcharts');
+                
+                const chart = Highcharts.chart('temperatureChart', {
+                    chart: {
+                        type: 'column',
+                        height: 400
+                    },
                     title: {
-                        text: `Monthly Average Temperatures (${twoYearsAgo} - ${currentYear})`
+                        text: `Monthly Average Temperatures (${twoYearsAgo} - ${currentYear})`,
+                        style: {
+                            fontSize: '16px',
+                            fontWeight: 'bold'
+                        }
                     },
                     xAxis: {
-                        categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+                        categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                        title: {
+                            text: 'Month'
+                        }
                     },
                     yAxis: {
                         title: {
                             text: 'Temperature ℉'
+                        },
+                        labels: {
+                            formatter: function() {
+                                return this.value.toFixed(2) + '℉';
+                            }
                         }
                     },
                     tooltip: {
@@ -421,8 +491,14 @@
                             return `<b>${this.series.name}</b><br/>${this.x}: ${this.y.toFixed(2)}℉`;
                         }
                     },
-                    series: series
+                    series: series,
+                    exporting: {
+                        enabled: false // Disabled built-in exporting as we're using custom export menu
+                    }
                 });
+
+                // Initialize enhanced export menu
+                initChartExportMenu(chart, document.getElementById('temperatureChart'));
             });
         }
 

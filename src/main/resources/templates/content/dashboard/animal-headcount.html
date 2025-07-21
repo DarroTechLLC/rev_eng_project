@@ -6,6 +6,7 @@
     <title>Animal Headcount Dashboard</title>
     <!-- Highcharts with Utils -->
     <div th:replace="fragments/highcharts-scripts :: highcharts-with-utils"></div>
+    <div th:replace="fragments/highcharts-scripts :: chart-export-menu"></div>
 </head>
 <body>
 <div layout:fragment="content">
@@ -309,33 +310,32 @@
             // Sort datasets by name for consistent order
             datasets.sort((a, b) => a.name && b.name ? a.name.localeCompare(b.name) : 0);
 
-            // Create Highcharts chart
-            chart = Highcharts.chart(chartContainer, {
+            // Create chart using direct Highcharts implementation
+            console.log('🚀 Creating Animal Headcount Chart with direct Highcharts');
+            
+            const chart = Highcharts.chart('animalHeadcountChart', {
                 chart: {
                     type: chartType === 'column' ? 'column' : chartType,
                     inverted: chartType === 'bar', // For horizontal bar charts
                     height: 400
                 },
                 title: {
-                    text: 'Animal Headcount',
+                    text: 'Animal Headcount by Farm',
                     style: {
                         fontSize: '16px',
                         fontWeight: 'bold'
                     }
                 },
                 xAxis: {
-                    type: 'datetime',
+                    type: 'category',
                     title: {
-                        text: 'Month'
-                    },
-                    labels: {
-                        format: '{value:%b %Y}'
+                        text: 'Farm'
                     }
                 },
                 yAxis: {
                     min: 0,
                     title: {
-                        text: 'Weekly Average'
+                        text: 'Headcount'
                     },
                     labels: {
                         formatter: function() {
@@ -346,19 +346,24 @@
                 tooltip: {
                     formatter: function() {
                         return `<b>${this.series.name}</b><br/>
-                                ${Highcharts.dateFormat('%b %Y', this.x)}: ${Highcharts.numberFormat(this.y, 2)}`;
+                                ${this.key}: ${Highcharts.numberFormat(this.y, 0)} animals`;
                     }
                 },
-                legend: {
-                    enabled: true,
-                    align: 'center',
-                    verticalAlign: 'bottom'
-                },
-                series: datasets
+                series: [{
+                    name: 'Animal Headcount',
+                    data: chartData,
+                    color: 'rgba(54, 162, 235, 1)'
+                }],
+                exporting: {
+                    enabled: false // Disabled built-in exporting as we're using custom export menu
+                }
             });
 
+            // Initialize enhanced export menu
+            initChartExportMenu(chart, document.getElementById('animalHeadcountChart'));
+
             hideLoading();
-            console.log('✅ Chart successfully rendered');
+            console.log('✅ Chart successfully rendered with export menu');
         }
 
         // Event listeners

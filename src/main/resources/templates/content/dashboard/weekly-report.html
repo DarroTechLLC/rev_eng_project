@@ -5,6 +5,10 @@
 <head>
     <title>Weekly Report</title>
     
+    <!-- Enhanced Highcharts with Export Functionality -->
+    <div th:replace="fragments/highcharts-scripts :: highcharts-with-utils"></div>
+    <div th:replace="fragments/highcharts-scripts :: chart-export-menu"></div>
+    
     <!-- Custom styles for this template -->
     <style>
         .section-card {
@@ -104,310 +108,32 @@
                     </div>
                     <div class="section-body">
                         <div class="row">
-                            <!-- WTD Production -->
-                            <div class="col-md-4">
-                                <h3 class="h6">Week-to-Date Production</h3>
-                                <table class="table table-sm table-bordered table-hover">
-                                    <thead class="thead-light">
-                                    <tr>
-                                        <th>Farm</th>
-                                        <th>Volume</th>
-                                        <th>% of Total</th>
-                                    </tr>
-                                    </thead>
-                                    <tbody>
-                                    <tr th:each="farm : ${wtdProduction}">
-                                        <td th:text="${farm.farmName}">Farm Name</td>
-                                        <td class="text-right" th:text="${#numbers.formatDecimal(farm.volume, 1, 2)}">0.00</td>
-                                        <td class="text-right" th:text="${#numbers.formatDecimal(farm.percentOfTotal, 1, 1) + '%'}">0.0%</td>
-                                    </tr>
-                                    <tr th:if="${wtdProduction == null || wtdProduction.isEmpty()}">
-                                        <td colspan="3" class="text-center">No data available</td>
-                                    </tr>
-                                    </tbody>
-                                    <tfoot>
-                                    <tr class="font-weight-bold">
-                                        <td>Total</td>
-                                        <td class="text-right" th:text="${#numbers.formatDecimal(wtdTotal, 1, 2)}">0.00</td>
-                                        <td class="text-right">100.0%</td>
-                                    </tr>
-                                    </tfoot>
-                                </table>
-                            </div>
-
-                            <!-- MTD Production -->
-                            <div class="col-md-4">
-                                <h3 class="h6">Month-to-Date Production</h3>
-                                <table class="table table-sm table-bordered table-hover">
-                                    <thead class="thead-light">
-                                    <tr>
-                                        <th>Farm</th>
-                                        <th>Volume</th>
-                                        <th>% of Total</th>
-                                    </tr>
-                                    </thead>
-                                    <tbody>
-                                    <tr th:each="farm : ${mtdProduction}">
-                                        <td th:text="${farm.farmName}">Farm Name</td>
-                                        <td class="text-right" th:text="${#numbers.formatDecimal(farm.volume, 1, 2)}">0.00</td>
-                                        <td class="text-right" th:text="${#numbers.formatDecimal(farm.percentOfTotal, 1, 1) + '%'}">0.0%</td>
-                                    </tr>
-                                    <tr th:if="${mtdProduction == null || mtdProduction.isEmpty()}">
-                                        <td colspan="3" class="text-center">No data available</td>
-                                    </tr>
-                                    </tbody>
-                                    <tfoot>
-                                    <tr class="font-weight-bold">
-                                        <td>Total</td>
-                                        <td class="text-right" th:text="${#numbers.formatDecimal(mtdTotal, 1, 2)}">0.00</td>
-                                        <td class="text-right">100.0%</td>
-                                    </tr>
-                                    </tfoot>
-                                </table>
-                            </div>
-
-                            <!-- YTD Production -->
-                            <div class="col-md-4">
-                                <h3 class="h6">Year-to-Date Production</h3>
-                                <table class="table table-sm table-bordered table-hover">
-                                    <thead class="thead-light">
-                                    <tr>
-                                        <th>Farm</th>
-                                        <th>Volume</th>
-                                        <th>% of Total</th>
-                                    </tr>
-                                    </thead>
-                                    <tbody>
-                                    <tr th:each="farm : ${ytdProduction}">
-                                        <td th:text="${farm.farmName}">Farm Name</td>
-                                        <td class="text-right" th:text="${#numbers.formatDecimal(farm.volume, 1, 2)}">0.00</td>
-                                        <td class="text-right" th:text="${#numbers.formatDecimal(farm.percentOfTotal, 1, 1) + '%'}">0.0%</td>
-                                    </tr>
-                                    <tr th:if="${ytdProduction == null || ytdProduction.isEmpty()}">
-                                        <td colspan="3" class="text-center">No data available</td>
-                                    </tr>
-                                    </tbody>
-                                    <tfoot>
-                                    <tr class="font-weight-bold">
-                                        <td>Total</td>
-                                        <td class="text-right" th:text="${#numbers.formatDecimal(ytdTotal, 1, 2)}">0.00</td>
-                                        <td class="text-right">100.0%</td>
-                                    </tr>
-                                    </tfoot>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Budget Comparison Section -->
-                <div class="section-card">
-                    <div class="section-header">
-                        <h2 class="h5 m-0">Budget Comparison</h2>
-                    </div>
-                    <div class="section-body">
-                        <table class="table table-bordered table-hover">
-                            <thead class="thead-light">
-                            <tr>
-                                <th>Period</th>
-                                <th>Actual</th>
-                                <th>Budget</th>
-                                <th>Variance</th>
-                                <th>% Variance</th>
-                                <th>Forecast</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            <tr>
-                                <td>Week</td>
-                                <td class="text-right" th:text="${#numbers.formatDecimal(budgetComparison.weeklyActual, 1, 2)}">0.00</td>
-                                <td class="text-right" th:text="${#numbers.formatDecimal(budgetComparison.weeklyBudget, 1, 2)}">0.00</td>
-                                <td class="text-right" th:text="${#numbers.formatDecimal(budgetComparison.weeklyVariance, 1, 2)}">0.00</td>
-                                <td class="text-right" th:text="${#numbers.formatDecimal(budgetComparison.weeklyVariancePercent, 1, 1) + '%'}"
-                                    th:classappend="${budgetComparison.weeklyVariancePercent >= 0 ? 'positive-change' : 'negative-change'}">0.0%</td>
-                                <td class="text-right" th:text="${#numbers.formatDecimal(budgetComparison.weeklyForecast, 1, 2)}">0.00</td>
-                            </tr>
-                            <tr>
-                                <td>Month</td>
-                                <td class="text-right" th:text="${#numbers.formatDecimal(budgetComparison.monthlyActual, 1, 2)}">0.00</td>
-                                <td class="text-right" th:text="${#numbers.formatDecimal(budgetComparison.monthlyBudget, 1, 2)}">0.00</td>
-                                <td class="text-right" th:text="${#numbers.formatDecimal(budgetComparison.monthlyVariance, 1, 2)}">0.00</td>
-                                <td class="text-right" th:text="${#numbers.formatDecimal(budgetComparison.monthlyVariancePercent, 1, 1) + '%'}"
-                                    th:classappend="${budgetComparison.monthlyVariancePercent >= 0 ? 'positive-change' : 'negative-change'}">0.0%</td>
-                                <td class="text-right" th:text="${#numbers.formatDecimal(budgetComparison.monthlyForecast, 1, 2)}">0.00</td>
-                            </tr>
-                            <tr>
-                                <td>Year</td>
-                                <td class="text-right" th:text="${#numbers.formatDecimal(budgetComparison.yearlyActual, 1, 2)}">0.00</td>
-                                <td class="text-right" th:text="${#numbers.formatDecimal(budgetComparison.yearlyBudget, 1, 2)}">0.00</td>
-                                <td class="text-right" th:text="${#numbers.formatDecimal(budgetComparison.yearlyVariance, 1, 2)}">0.00</td>
-                                <td class="text-right" th:text="${#numbers.formatDecimal(budgetComparison.yearlyVariancePercent, 1, 1) + '%'}"
-                                    th:classappend="${budgetComparison.yearlyVariancePercent >= 0 ? 'positive-change' : 'negative-change'}">0.0%</td>
-                                <td class="text-right" th:text="${#numbers.formatDecimal(budgetComparison.yearlyForecast, 1, 2)}">0.00</td>
-                            </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- Production Detail Section -->
-                <div class="section-card">
-                    <div class="section-header">
-                        <h2 class="h5 m-0">Production Detail</h2>
-                    </div>
-                    <div class="section-body">
-                        <ul class="nav nav-tabs" id="productionDetailTabs" role="tablist">
-                            <li class="nav-item">
-                                <a class="nav-link active" id="daily-tab" data-toggle="tab" href="#daily" role="tab">Daily Production</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" id="weekly-tab" data-toggle="tab" href="#weekly" role="tab">Weekly Trend</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" id="monthly-tab" data-toggle="tab" href="#monthly" role="tab">Monthly Trend</a>
-                            </li>
-                        </ul>
-
-                        <div class="tab-content mt-3" id="productionDetailTabContent">
-                            <!-- Daily Production Tab -->
-                            <div class="tab-pane fade show active" id="daily" role="tabpanel">
-                                <div class="table-responsive">
-                                    <table class="table table-sm table-bordered table-hover" id="dailyProductionTable">
-                                        <thead class="thead-light">
-                                        <tr>
-                                            <th>Date</th>
-                                            <th th:each="farm : ${farms}" th:text="${farm.farmName}">Farm Name</th>
-                                            <th>Total</th>
-                                        </tr>
-                                        </thead>
-                                        <tbody>
-                                        <tr th:each="day : ${dailyProduction}">
-                                            <td th:text="${#temporals.format(day.date, 'MM/dd/yyyy')}">06/10/2025</td>
-                                            <td class="text-right" th:each="volume : ${day.farmVolumes}"
-                                                th:text="${#numbers.formatDecimal(volume, 1, 2)}">0.00</td>
-                                            <td class="text-right" th:text="${#numbers.formatDecimal(day.totalVolume, 1, 2)}">0.00</td>
-                                        </tr>
-                                        <tr th:if="${dailyProduction == null || dailyProduction.isEmpty()}">
-                                            <td th:colspan="${farms.size() + 2}" class="text-center">No data available</td>
-                                        </tr>
-                                        </tbody>
-                                        <tfoot>
-                                        <tr class="font-weight-bold">
-                                            <td>Total</td>
-                                            <td class="text-right" th:each="farm : ${farms}"
-                                                th:text="${#numbers.formatDecimal(dailyTotals.getOrDefault(farm.farmId, 0.0), 1, 2)}">0.00</td>
-                                            <td class="text-right" th:text="${#numbers.formatDecimal(dailyGrandTotal, 1, 2)}">0.00</td>
-                                        </tr>
-                                        </tfoot>
-                                    </table>
-                                </div>
-                            </div>
-
-                            <!-- Weekly Trend Tab -->
-                            <div class="tab-pane fade" id="weekly" role="tabpanel">
-                                <div class="table-responsive">
-                                    <table class="table table-sm table-bordered table-hover" id="weeklyTrendTable">
-                                        <thead class="thead-light">
-                                        <tr>
-                                            <th>Week</th>
-                                            <th th:each="farm : ${farms}" th:text="${farm.farmName}">Farm Name</th>
-                                            <th>Total</th>
-                                        </tr>
-                                        </thead>
-                                        <tbody>
-                                        <tr th:each="week : ${weeklyProduction}">
-                                            <td th:text="${week.weekLabel}">Week 23</td>
-                                            <td class="text-right" th:each="volume : ${week.farmVolumes}"
-                                                th:text="${#numbers.formatDecimal(volume, 1, 2)}">0.00</td>
-                                            <td class="text-right" th:text="${#numbers.formatDecimal(week.totalVolume, 1, 2)}">0.00</td>
-                                        </tr>
-                                        <tr th:if="${weeklyProduction == null || weeklyProduction.isEmpty()}">
-                                            <td th:colspan="${farms.size() + 2}" class="text-center">No data available</td>
-                                        </tr>
-                                        </tbody>
-                                        <tfoot>
-                                        <tr class="font-weight-bold">
-                                            <td>Average</td>
-                                            <td class="text-right" th:each="farm : ${farms}"
-                                                th:text="${#numbers.formatDecimal(weeklyAverages.getOrDefault(farm.farmId, 0.0), 1, 2)}">0.00</td>
-                                            <td class="text-right" th:text="${#numbers.formatDecimal(weeklyGrandAverage, 1, 2)}">0.00</td>
-                                        </tr>
-                                        </tfoot>
-                                    </table>
-                                </div>
-                            </div>
-
-                            <!-- Monthly Trend Tab -->
-                            <div class="tab-pane fade" id="monthly" role="tabpanel">
-                                <div class="table-responsive">
-                                    <table class="table table-sm table-bordered table-hover" id="monthlyTrendTable">
-                                        <thead class="thead-light">
-                                        <tr>
-                                            <th>Month</th>
-                                            <th th:each="farm : ${farms}" th:text="${farm.farmName}">Farm Name</th>
-                                            <th>Total</th>
-                                        </tr>
-                                        </thead>
-                                        <tbody>
-                                        <tr th:each="month : ${monthlyProduction}">
-                                            <td th:text="${month.monthLabel}">June 2025</td>
-                                            <td class="text-right" th:each="volume : ${month.farmVolumes}"
-                                                th:text="${#numbers.formatDecimal(volume, 1, 2)}">0.00</td>
-                                            <td class="text-right" th:text="${#numbers.formatDecimal(month.totalVolume, 1, 2)}">0.00</td>
-                                        </tr>
-                                        <tr th:if="${monthlyProduction == null || monthlyProduction.isEmpty()}">
-                                            <td th:colspan="${farms.size() + 2}" class="text-center">No data available</td>
-                                        </tr>
-                                        </tbody>
-                                        <tfoot>
-                                        <tr class="font-weight-bold">
-                                            <td>Average</td>
-                                            <td class="text-right" th:each="farm : ${farms}"
-                                                th:text="${#numbers.formatDecimal(monthlyAverages.getOrDefault(farm.farmId, 0.0), 1, 2)}">0.00</td>
-                                            <td class="text-right" th:text="${#numbers.formatDecimal(monthlyGrandAverage, 1, 2)}">0.00</td>
-                                        </tr>
-                                        </tfoot>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Production Charts Section -->
-                <div class="section-card">
-                    <div class="section-header">
-                        <h2 class="h5 m-0">Production</h2>
-                    </div>
-                    <div class="section-body">
-                        <div class="row">
                             <!-- Daily Production Chart -->
                             <div class="col-md-6">
                                 <div class="chart-container">
-                                    <canvas id="dailyProductionChart"></canvas>
+                                    <div id="dailyProductionChart"></div>
                                 </div>
                             </div>
 
                             <!-- Weekly Production Chart -->
                             <div class="col-md-6">
                                 <div class="chart-container">
-                                    <canvas id="weeklyProductionChart"></canvas>
+                                    <div id="weeklyProductionChart"></div>
                                 </div>
                             </div>
                         </div>
-
                         <div class="row">
                             <!-- Monthly Production Chart -->
                             <div class="col-md-6">
                                 <div class="chart-container">
-                                    <canvas id="monthlyProductionChart"></canvas>
+                                    <div id="monthlyProductionChart"></div>
                                 </div>
                             </div>
 
                             <!-- YTD Production Pie Chart -->
                             <div class="col-md-6">
                                 <div class="chart-container">
-                                    <canvas id="ytdProductionPieChart"></canvas>
+                                    <div id="ytdProductionPieChart"></div>
                                 </div>
                             </div>
                         </div>
@@ -455,7 +181,7 @@
                                         <div class="row mt-3">
                                             <div class="col-md-12">
                                                 <div class="chart-container" style="height: 250px;">
-                                                    <canvas id="lagoonInflationChart"></canvas>
+                                                    <div id="lagoonInflationChart"></div>
                                                 </div>
                                             </div>
                                         </div>
@@ -497,7 +223,7 @@
                                         <div class="row mt-3">
                                             <div class="col-md-12">
                                                 <div class="chart-container" style="height: 250px;">
-                                                    <canvas id="ftAboveBermChart"></canvas>
+                                                    <div id="ftAboveBermChart"></div>
                                                 </div>
                                             </div>
                                         </div>
@@ -507,363 +233,335 @@
                         </div>
                     </div>
                 </div>
-
             </div>
-            <!-- /.container-fluid -->
-
         </div>
-        <!-- End of Main Content -->
-
-        <!-- Footer -->
-        <th:block th:replace="~{fragments/footer :: footer}"></th:block>
-        <!-- End of Footer -->
-
     </div>
-    <!-- End of Content Wrapper -->
-
 </div>
-<!-- End of Page Wrapper -->
 
-<!-- Scroll to Top Button-->
-<a class="scroll-to-top rounded" href="#page-top">
-    <i class="fas fa-angle-up"></i>
-</a>
-
-<!-- Page-specific scripts -->
+<!-- Chart Initialization Script -->
 <th:block layout:fragment="scripts">
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.4/dist/Chart.min.js"></script>
-
-    <!-- DataTables -->
-    <script src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.10.24/js/dataTables.bootstrap4.min.js"></script>
-
-    <!-- Custom JavaScript for Weekly Report -->
     <script th:inline="javascript">
-        $(document).ready(function() {
-            // Initialize DataTables
-            $('#dailyProductionTable, #weeklyTrendTable, #monthlyTrendTable, #lagoonInflationTable, #ftAboveBermTable').DataTable({
-                "paging": false,
-                "info": false,
-                "searching": false,
-                "ordering": false,
-                "responsive": true
-            });
+        // Get chart data from Thymeleaf
+        const dailyProductionData = /*[[${dailyChartData}]]*/ {};
+        const weeklyProductionData = /*[[${weeklyChartData}]]*/ {};
+        const monthlyProductionData = /*[[${monthlyChartData}]]*/ {};
+        const ytdProductionData = /*[[${ytdChartData}]]*/ {};
+        const lagoonInflationData = /*[[${lagoonInflationChartData}]]*/ {};
+        const ftAboveBermData = /*[[${ftAboveBermChartData}]]*/ {};
 
-            // Initialize all charts
-            initCharts();
-
-            // Handle report date change
-            $('#updateReportBtn').click(function() {
-                const selectedDate = $('#reportDate').val();
-                if (selectedDate) {
-                    const companyName = /*[[${selectedCompany.name.toLowerCase().replace(' ', '-')}]]*/;
-                    window.location.href = `/${companyName}/weekly-report?date=${selectedDate}`;
-                }
-            });
-
-            // Handle PDF download
-            $('#downloadPdfBtn').click(function(e) {
-                e.preventDefault();
-                const companyId = /*[[${selectedCompany.id}]]*/;
-                const reportDate = /*[[${reportDate}]]*/;
-                const companyName = /*[[${selectedCompany.name.toLowerCase().replace(' ', '-')}]]*/;
-
-                window.open(`/api/reports/weekly-pdf/${companyName}?company_id=${companyId}&date=${reportDate}`, '_blank');
-            });
-        });
+        // Initialize all charts
+        initCharts();
 
         function initCharts() {
-            // Get chart data from Thymeleaf
-            const dailyProductionData = /*[[${dailyChartData}]]*/;
-            const weeklyProductionData = /*[[${weeklyChartData}]]*/;
-            const monthlyProductionData = /*[[${monthlyChartData}]]*/;
-            const ytdProductionData = /*[[${ytdChartData}]]*/;
-            const lagoonInflationData = /*[[${lagoonInflationChartData}]]*/;
-            const ftAboveBermData = /*[[${ftAboveBermChartData}]]*/;
-
             // Initialize Daily Production Chart
             initDailyProductionChart(dailyProductionData);
-
+            
             // Initialize Weekly Production Chart
             initWeeklyProductionChart(weeklyProductionData);
-
+            
             // Initialize Monthly Production Chart
             initMonthlyProductionChart(monthlyProductionData);
-
+            
             // Initialize YTD Production Pie Chart
             initYtdProductionPieChart(ytdProductionData);
-
+            
             // Initialize Lagoon Inflation Chart
             initLagoonInflationChart(lagoonInflationData);
-
+            
             // Initialize FT Above Berm Chart
             initFtAboveBermChart(ftAboveBermData);
         }
 
         function initDailyProductionChart(data) {
-            const ctx = document.getElementById('dailyProductionChart').getContext('2d');
-            new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: data.labels,
-                    datasets: data.datasets
+            const chart = Highcharts.chart('dailyProductionChart', {
+                chart: {
+                    type: 'line',
+                    height: 300
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    title: {
-                        display: true,
-                        text: 'Daily Production Volume'
-                    },
-                    tooltips: {
-                        mode: 'index',
-                        intersect: false
-                    },
-                    legend: {
-                        position: 'bottom'
-                    },
-                    scales: {
-                        xAxes: [{
-                            stacked: true
-                        }],
-                        yAxes: [{
-                            stacked: true,
-                            ticks: {
-                                beginAtZero: true
-                            },
-                            scaleLabel: {
-                                display: true,
-                                labelString: 'Volume'
-                            }
-                        }]
+                title: {
+                    text: 'Daily Production',
+                    style: {
+                        fontSize: '14px',
+                        fontWeight: 'bold'
                     }
+                },
+                xAxis: {
+                    categories: data.labels || [],
+                    title: {
+                        text: 'Date'
+                    }
+                },
+                yAxis: {
+                    title: {
+                        text: 'Volume'
+                    },
+                    labels: {
+                        formatter: function() {
+                            return Highcharts.numberFormat(this.value, 0);
+                        }
+                    }
+                },
+                tooltip: {
+                    formatter: function() {
+                        return `<b>${this.series.name}</b><br/>
+                                ${this.x}: ${Highcharts.numberFormat(this.y, 0)}`;
+                    }
+                },
+                series: [{
+                    name: 'Production',
+                    data: data.values || [],
+                    color: 'rgba(54, 162, 235, 1)'
+                }],
+                exporting: {
+                    enabled: false
                 }
             });
+
+            // Initialize enhanced export menu
+            initChartExportMenu(chart, document.getElementById('dailyProductionChart'));
         }
 
         function initWeeklyProductionChart(data) {
-            const ctx = document.getElementById('weeklyProductionChart').getContext('2d');
-            new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: data.labels,
-                    datasets: data.datasets
+            const chart = Highcharts.chart('weeklyProductionChart', {
+                chart: {
+                    type: 'line',
+                    height: 300
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    title: {
-                        display: true,
-                        text: 'Weekly Production Trend'
-                    },
-                    tooltips: {
-                        mode: 'index',
-                        intersect: false
-                    },
-                    legend: {
-                        position: 'bottom'
-                    },
-                    scales: {
-                        yAxes: [{
-                            ticks: {
-                                beginAtZero: true
-                            },
-                            scaleLabel: {
-                                display: true,
-                                labelString: 'Volume'
-                            }
-                        }]
+                title: {
+                    text: 'Weekly Production',
+                    style: {
+                        fontSize: '14px',
+                        fontWeight: 'bold'
                     }
+                },
+                xAxis: {
+                    categories: data.labels || [],
+                    title: {
+                        text: 'Week'
+                    }
+                },
+                yAxis: {
+                    title: {
+                        text: 'Volume'
+                    },
+                    labels: {
+                        formatter: function() {
+                            return Highcharts.numberFormat(this.value, 0);
+                        }
+                    }
+                },
+                tooltip: {
+                    formatter: function() {
+                        return `<b>${this.series.name}</b><br/>
+                                ${this.x}: ${Highcharts.numberFormat(this.y, 0)}`;
+                    }
+                },
+                series: [{
+                    name: 'Production',
+                    data: data.values || [],
+                    color: 'rgba(75, 192, 192, 1)'
+                }],
+                exporting: {
+                    enabled: false
                 }
             });
+
+            // Initialize enhanced export menu
+            initChartExportMenu(chart, document.getElementById('weeklyProductionChart'));
         }
 
         function initMonthlyProductionChart(data) {
-            const ctx = document.getElementById('monthlyProductionChart').getContext('2d');
-            new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: data.labels,
-                    datasets: data.datasets
+            const chart = Highcharts.chart('monthlyProductionChart', {
+                chart: {
+                    type: 'line',
+                    height: 300
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    title: {
-                        display: true,
-                        text: 'Monthly Production Comparison'
-                    },
-                    tooltips: {
-                        mode: 'index',
-                        intersect: false
-                    },
-                    legend: {
-                        position: 'bottom'
-                    },
-                    scales: {
-                        yAxes: [{
-                            ticks: {
-                                beginAtZero: true
-                            },
-                            scaleLabel: {
-                                display: true,
-                                labelString: 'Volume'
-                            }
-                        }]
+                title: {
+                    text: 'Monthly Production',
+                    style: {
+                        fontSize: '14px',
+                        fontWeight: 'bold'
                     }
+                },
+                xAxis: {
+                    categories: data.labels || [],
+                    title: {
+                        text: 'Month'
+                    }
+                },
+                yAxis: {
+                    title: {
+                        text: 'Volume'
+                    },
+                    labels: {
+                        formatter: function() {
+                            return Highcharts.numberFormat(this.value, 0);
+                        }
+                    }
+                },
+                tooltip: {
+                    formatter: function() {
+                        return `<b>${this.series.name}</b><br/>
+                                ${this.x}: ${Highcharts.numberFormat(this.y, 0)}`;
+                    }
+                },
+                series: [{
+                    name: 'Production',
+                    data: data.values || [],
+                    color: 'rgba(255, 159, 64, 1)'
+                }],
+                exporting: {
+                    enabled: false
                 }
             });
+
+            // Initialize enhanced export menu
+            initChartExportMenu(chart, document.getElementById('monthlyProductionChart'));
         }
 
         function initYtdProductionPieChart(data) {
-            const ctx = document.getElementById('ytdProductionPieChart').getContext('2d');
-            new Chart(ctx, {
-                type: 'pie',
-                data: {
-                    labels: data.labels,
-                    datasets: [{
-                        data: data.values,
-                        backgroundColor: data.colors,
-                        borderWidth: 1
-                    }]
+            const chart = Highcharts.chart('ytdProductionPieChart', {
+                chart: {
+                    type: 'pie',
+                    height: 300
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    title: {
-                        display: true,
-                        text: 'YTD Production by Farm'
-                    },
-                    legend: {
-                        position: 'bottom'
+                title: {
+                    text: 'YTD Production by Farm',
+                    style: {
+                        fontSize: '14px',
+                        fontWeight: 'bold'
                     }
+                },
+                tooltip: {
+                    formatter: function() {
+                        return `<b>${this.point.name}</b><br/>
+                                ${Highcharts.numberFormat(this.y, 0)} (${Highcharts.numberFormat(this.percentage, 1)}%)`;
+                    }
+                },
+                series: [{
+                    name: 'Production',
+                    data: (data.labels || []).map((label, index) => ({
+                        name: label,
+                        y: data.values ? data.values[index] : 0,
+                        color: data.colors ? data.colors[index] : null
+                    }))
+                }],
+                exporting: {
+                    enabled: false
                 }
             });
+
+            // Initialize enhanced export menu
+            initChartExportMenu(chart, document.getElementById('ytdProductionPieChart'));
         }
 
         function initLagoonInflationChart(data) {
-            const ctx = document.getElementById('lagoonInflationChart').getContext('2d');
-            new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: data.labels,
-                    datasets: [
-                        {
-                            label: 'Current Week',
-                            data: data.currentValues,
-                            backgroundColor: 'rgba(75, 192, 192, 0.6)',
-                            borderColor: 'rgba(75, 192, 192, 1)',
-                            borderWidth: 1
-                        },
-                        {
-                            label: 'Previous Week',
-                            data: data.previousValues,
-                            backgroundColor: 'rgba(153, 102, 255, 0.6)',
-                            borderColor: 'rgba(153, 102, 255, 1)',
-                            borderWidth: 1
-                        }
-                    ]
+            const chart = Highcharts.chart('lagoonInflationChart', {
+                chart: {
+                    type: 'bar',
+                    height: 250
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    title: {
-                        display: true,
-                        text: 'Lagoon Inflation Levels'
-                    },
-                    tooltips: {
-                        mode: 'index',
-                        intersect: false,
-                        callbacks: {
-                            label: function(tooltipItem, data) {
-                                return data.datasets[tooltipItem.datasetIndex].label + ': ' + tooltipItem.yLabel + '%';
-                            }
-                        }
-                    },
-                    legend: {
-                        position: 'bottom'
-                    },
-                    scales: {
-                        yAxes: [{
-                            ticks: {
-                                beginAtZero: true,
-                                max: 100,
-                                callback: function(value) {
-                                    return value + '%';
-                                }
-                            },
-                            scaleLabel: {
-                                display: true,
-                                labelString: 'Inflation Level (%)'
-                            }
-                        }]
+                title: {
+                    text: 'Lagoon Inflation Levels',
+                    style: {
+                        fontSize: '14px',
+                        fontWeight: 'bold'
                     }
+                },
+                xAxis: {
+                    categories: data.labels || [],
+                    title: {
+                        text: 'Farm'
+                    }
+                },
+                yAxis: {
+                    title: {
+                        text: 'Inflation Level (%)'
+                    },
+                    max: 100,
+                    labels: {
+                        formatter: function() {
+                            return this.value + '%';
+                        }
+                    }
+                },
+                tooltip: {
+                    formatter: function() {
+                        return `<b>${this.series.name}</b><br/>
+                                ${this.x}: ${Highcharts.numberFormat(this.y, 1)}%`;
+                    }
+                },
+                series: [{
+                    name: 'Current Week',
+                    data: data.currentValues || [],
+                    color: 'rgba(75, 192, 192, 1)'
+                }, {
+                    name: 'Previous Week',
+                    data: data.previousValues || [],
+                    color: 'rgba(153, 102, 255, 1)'
+                }],
+                exporting: {
+                    enabled: false
                 }
             });
+
+            // Initialize enhanced export menu
+            initChartExportMenu(chart, document.getElementById('lagoonInflationChart'));
         }
 
         function initFtAboveBermChart(data) {
-            const ctx = document.getElementById('ftAboveBermChart').getContext('2d');
-            new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: data.labels,
-                    datasets: [
-                        {
-                            label: 'Current Week',
-                            data: data.currentValues,
-                            backgroundColor: 'rgba(255, 159, 64, 0.6)',
-                            borderColor: 'rgba(255, 159, 64, 1)',
-                            borderWidth: 1
-                        },
-                        {
-                            label: 'Previous Week',
-                            data: data.previousValues,
-                            backgroundColor: 'rgba(54, 162, 235, 0.6)',
-                            borderColor: 'rgba(54, 162, 235, 1)',
-                            borderWidth: 1
-                        }
-                    ]
+            const chart = Highcharts.chart('ftAboveBermChart', {
+                chart: {
+                    type: 'bar',
+                    height: 250
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    title: {
-                        display: true,
-                        text: 'FT Above the Berm Measurements'
-                    },
-                    tooltips: {
-                        mode: 'index',
-                        intersect: false,
-                        callbacks: {
-                            label: function(tooltipItem, data) {
-                                return data.datasets[tooltipItem.datasetIndex].label + ': ' + tooltipItem.yLabel + ' ft';
-                            }
-                        }
-                    },
-                    legend: {
-                        position: 'bottom'
-                    },
-                    scales: {
-                        yAxes: [{
-                            ticks: {
-                                beginAtZero: true,
-                                callback: function(value) {
-                                    return value + ' ft';
-                                }
-                            },
-                            scaleLabel: {
-                                display: true,
-                                labelString: 'Height (ft)'
-                            }
-                        }]
+                title: {
+                    text: 'FT Above the Berm Measurements',
+                    style: {
+                        fontSize: '14px',
+                        fontWeight: 'bold'
                     }
+                },
+                xAxis: {
+                    categories: data.labels || [],
+                    title: {
+                        text: 'Farm'
+                    }
+                },
+                yAxis: {
+                    title: {
+                        text: 'Height (ft)'
+                    },
+                    labels: {
+                        formatter: function() {
+                            return this.value + ' ft';
+                        }
+                    }
+                },
+                tooltip: {
+                    formatter: function() {
+                        return `<b>${this.series.name}</b><br/>
+                                ${this.x}: ${Highcharts.numberFormat(this.y, 2)} ft`;
+                    }
+                },
+                series: [{
+                    name: 'Current Week',
+                    data: data.currentValues || [],
+                    color: 'rgba(255, 159, 64, 1)'
+                }, {
+                    name: 'Previous Week',
+                    data: data.previousValues || [],
+                    color: 'rgba(54, 162, 235, 1)'
+                }],
+                exporting: {
+                    enabled: false
                 }
             });
+
+            // Initialize enhanced export menu
+            initChartExportMenu(chart, document.getElementById('ftAboveBermChart'));
         }
     </script>
-    <script th:src="@{/js/weekly-report.js}"></script>
 </th:block>
 </body>
 </html>

@@ -2,7 +2,9 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <title>Digesters Project</title>
-    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <!-- Enhanced Highcharts with Export Functionality -->
+    <div th:replace="fragments/highcharts-scripts :: highcharts-with-utils"></div>
+    <div th:replace="fragments/highcharts-scripts :: chart-export-menu"></div>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
         .grid-layout {
@@ -232,7 +234,7 @@
                 });
 
                 // Render chart
-                Highcharts.chart('lagoon-levels-chart', {
+                const chart = Highcharts.chart('lagoon-levels-chart', {
                     chart: {
                         type: chartType
                     },
@@ -265,8 +267,14 @@
                     }, {
                         name: 'Lagoon 2',
                         data: lagoon2Data
-                    }]
+                    }],
+                    exporting: {
+                        enabled: false // Disabled built-in exporting as we're using custom export menu
+                    }
                 });
+
+                // Initialize enhanced export menu
+                initChartExportMenu(chart, document.getElementById('lagoon-levels-chart'));
             })
             .catch(error => {
                 console.error('Error fetching lagoon levels data:', error);

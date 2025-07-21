@@ -6,6 +6,7 @@
     <title>MTD Volume Dashboard</title>
     <!-- Highcharts with Utils -->
     <div th:replace="fragments/highcharts-scripts :: highcharts-with-utils"></div>
+    <div th:replace="fragments/highcharts-scripts :: chart-export-menu"></div>
 </head>
 <body>
 <div layout:fragment="content">
@@ -155,17 +156,26 @@
         }
 
         function createChart(data) {
-            // Prepare data for Highcharts
-            const chartSeries = [{
-                name: 'Volume',
-                data: data.map(item => [item.farm_name || item.farm_id, item.volume || 0])
-            }];
+            // Format data for chart
+            const chartData = data.map(item => [
+                item.farm_name || item.farm_id || 'Unknown',
+                parseFloat(item.volume) || 0
+            ]).filter(([name, value]) => name && value >= 0);
 
-            const totalVolume = data.reduce((sum, item) => sum + (item.volume || 0), 0);
+            if (chartData.length === 0) {
+                console.error('❌ No valid data points found after formatting');
+                showError('No valid data available for the selected date range.');
+                hideLoading();
+                return;
+            }
+
+            // Calculate total volume
+            const totalVolume = chartData.reduce((sum, [name, value]) => sum + value, 0);
 
             console.log('📈 Chart Data Verification:');
-            console.log('✓ Data points present:', chartSeries[0].data.length);
+            console.log('✓ Valid data points:', chartData.length);
             console.log('✓ Total volume calculated:', totalVolume);
+            console.log('✓ Chart data:', chartData);
 
             // Get the selected chart type
             const chartType = chartTypeSelector.value;
@@ -179,14 +189,17 @@
             }
             const monthName = selectedDate.toLocaleString('default', { month: 'long' });
 
-            // Create Highcharts chart
-            chart = Highcharts.chart(chartContainer, {
+            // Create chart using direct Highcharts implementation
+            console.log('🚀 Creating MTD Volume Chart with direct Highcharts');
+            
+            const chart = Highcharts.chart('mtdVolumeChart', {
                 chart: {
-                    type: chartType,
+                    type: chartType === 'column' ? 'column' : chartType,
+                    inverted: chartType === 'bar', // For horizontal bar charts
                     height: 400
                 },
                 title: {
-                    text: `${monthName} MTD Production: (${Math.round(totalVolume).toLocaleString()} MMBTUs)`,
+                    text: `MTD Production Volume: (${Math.round(totalVolume).toLocaleString()} MMBTUs)`,
                     style: {
                         fontSize: '16px',
                         fontWeight: 'bold'
@@ -211,16 +224,28 @@
                     }
                 },
                 tooltip: {
-                    formatter: createTooltipFormatter('MMBTUs')
+                    formatter: function() {
+                        return `<b>${this.series.name}</b><br/>
+                                ${this.key}: ${Highcharts.numberFormat(this.y, 0)} MMBTUs`;
+                    }
                 },
                 legend: {
                     enabled: false
                 },
-                series: chartSeries
+                series: [{
+                    name: 'Volume',
+                    data: chartData
+                }],
+                exporting: {
+                    enabled: false // Disabled built-in exporting as we're using custom export menu
+                }
             });
 
+            // Initialize enhanced export menu
+            initChartExportMenu(chart, document.getElementById('mtdVolumeChart'));
+
             hideLoading();
-            console.log('✅ Chart successfully rendered');
+            console.log('✅ Chart successfully rendered with export menu');
         }
 
         // Event listeners

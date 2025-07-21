@@ -202,31 +202,21 @@
                     deviationPercent: anomaly.deviationPercent
                 }));
 
-                // Create chart
-                Highcharts.chart('anomalyChart', {
-                    chart: { type: 'scatter' },
-                    title: { text: 'Statistical Anomaly Detection Results' },
-                    xAxis: { 
-                        type: 'datetime',
-                        title: { text: 'Date' }
-                    },
-                    yAxis: { 
-                        title: { text: 'Value' }
-                    },
-                    tooltip: {
-                        formatter: function() {
-                            return `<b>${this.point.name}</b><br/>
-                                    <b>Date:</b> ${Highcharts.dateFormat('%Y-%m-%d', this.x)}<br/>
-                                    <b>Value:</b> ${this.y.toFixed(2)}<br/>
-                                    <b>Expected:</b> ${this.point.expectedValue ? this.point.expectedValue.toFixed(2) : 'N/A'}<br/>
-                                    <b>Deviation:</b> ${this.point.deviationPercent ? this.point.deviationPercent.toFixed(1) + '%' : 'N/A'}`;
-                        }
-                    },
-                    series: [{
-                        name: 'Anomalies',
-                        data: chartData
-                    }]
+                // Create chart using ChartBuilder pattern (matches Next.js implementation)
+                const chartBuilder = new ChartBuilder('scatter')
+                    .title('Statistical Anomaly Detection Results')
+                    .xAxis(new DateAxis({ title: { text: 'Date' } }))
+                    .yAxis(new NumericAxis().title('Value'))
+                    .tooltip(new CustomSeriesTooltip(''));
+
+                chartBuilder.addSeries({
+                    id: 'anomalies',
+                    name: 'Anomalies',
+                    data: chartData
                 });
+
+                const chartOptions = chartBuilder.getOptions();
+                Highcharts.chart('anomalyChart', chartOptions);
             }
         });
     </script>

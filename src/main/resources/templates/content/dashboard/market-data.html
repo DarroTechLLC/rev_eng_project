@@ -305,6 +305,7 @@
                         }
                     },
                     yAxis: {
+                        min: 0,
                         title: {
                             text: '$/metric ton'
                         },
@@ -324,8 +325,14 @@
                         name: 'LCFS Price',
                         data: chartData.map(point => [point.x, point.y]),
                         color: 'rgba(54, 162, 235, 1)'
-                    }]
+                    }],
+                    exporting: {
+                        enabled: false // Disabled built-in exporting as we're using custom export menu
+                    }
                 });
+
+                // Initialize enhanced export menu
+                initChartExportMenu(lcfsHistoricChart, lcfsHistoricContainer);
             })
             .catch(error => {
                 console.error('❌ Error:', error);
@@ -411,6 +418,7 @@
                         }
                     },
                     yAxis: {
+                        min: 0,
                         title: {
                             text: '$/metric ton'
                         },
@@ -423,15 +431,21 @@
                     tooltip: {
                         formatter: function() {
                             return `<b>LCFS</b><br/>
-                                    ${Highcharts.dateFormat('%b %d, %Y', this.x)}: $${Highcharts.numberFormat(this.y, 2)}/metric ton`;
+                                    ${Highcharts.dateFormat('%b %d', this.x)}: $${Highcharts.numberFormat(this.y, 2)}/metric ton`;
                         }
                     },
                     series: [{
                         name: 'LCFS Price',
                         data: chartData.map(point => [point.x, point.y]),
                         color: 'rgba(54, 162, 235, 1)'
-                    }]
+                    }],
+                    exporting: {
+                        enabled: false // Disabled built-in exporting as we're using custom export menu
+                    }
                 });
+
+                // Initialize enhanced export menu
+                initChartExportMenu(lcfsCurrentMonthChart, lcfsCurrentMonthContainer);
             })
             .catch(error => {
                 console.error('❌ Error:', error);
@@ -520,6 +534,7 @@
                         }
                     },
                     yAxis: {
+                        min: 0,
                         title: {
                             text: '$/metric ton'
                         },
@@ -531,7 +546,7 @@
                     },
                     tooltip: {
                         formatter: function() {
-                            return `<b>LCFS Future</b><br/>
+                            return `<b>LCFS</b><br/>
                                     ${Highcharts.dateFormat('%b %Y', this.x)}: $${Highcharts.numberFormat(this.y, 2)}/metric ton`;
                         }
                     },
@@ -539,8 +554,14 @@
                         name: 'LCFS Future Price',
                         data: chartData.map(point => [point.x, point.y]),
                         color: 'rgba(75, 192, 192, 1)'
-                    }]
+                    }],
+                    exporting: {
+                        enabled: false // Disabled built-in exporting as we're using custom export menu
+                    }
                 });
+
+                // Initialize enhanced export menu
+                initChartExportMenu(lcfsFutureChart, lcfsFutureContainer);
             })
             .catch(error => {
                 console.error('❌ Error:', error);
@@ -635,29 +656,32 @@
                         },
                         labels: {
                             formatter: function() {
-                                return Highcharts.numberFormat(this.value, 2);
+                                return Highcharts.numberFormat(this.value, 2) + ' c/RIN';
                             }
                         }
                     },
                     tooltip: {
                         formatter: function() {
-                            return `<b>${this.series.name}</b><br/>
+                            return `<b>RIN</b><br/>
                                     ${Highcharts.dateFormat('%b %Y', this.x)}: ${Highcharts.numberFormat(this.y, 2)} c/RIN`;
                         }
                     },
-                    series: [
-                        {
-                            name: 'D3 RIN',
-                            data: d3Data.map(point => [point.x, point.y]),
-                            color: 'rgba(255, 99, 132, 1)'
-                        },
-                        {
-                            name: 'D5 RIN',
-                            data: d5Data.map(point => [point.x, point.y]),
-                            color: 'rgba(153, 102, 255, 1)'
-                        }
-                    ]
+                    series: [{
+                        name: 'D3 RIN',
+                        data: d3Data.map(point => [point.x, point.y]),
+                        color: 'rgba(255, 99, 132, 1)'
+                    }, {
+                        name: 'D5 RIN',
+                        data: d5Data.map(point => [point.x, point.y]),
+                        color: 'rgba(153, 102, 255, 1)'
+                    }],
+                    exporting: {
+                        enabled: false // Disabled built-in exporting as we're using custom export menu
+                    }
                 });
+
+                // Initialize enhanced export menu
+                initChartExportMenu(rinHistoricChart, rinHistoricContainer);
             })
             .catch(error => {
                 console.error('❌ Error:', error);
@@ -754,29 +778,32 @@
                         },
                         labels: {
                             formatter: function() {
-                                return Highcharts.numberFormat(this.value, 2);
+                                return Highcharts.numberFormat(this.value, 2) + ' c/RIN';
                             }
                         }
                     },
                     tooltip: {
                         formatter: function() {
-                            return `<b>${this.series.name}</b><br/>
-                                    ${Highcharts.dateFormat('%b %d, %Y', this.x)}: ${Highcharts.numberFormat(this.y, 2)} c/RIN`;
+                            return `<b>RIN</b><br/>
+                                    ${Highcharts.dateFormat('%b %d', this.x)}: ${Highcharts.numberFormat(this.y, 2)} c/RIN`;
                         }
                     },
-                    series: [
-                        {
-                            name: 'D3 RIN',
-                            data: d3Data.map(point => [point.x, point.y]),
-                            color: 'rgba(255, 99, 132, 1)'
-                        },
-                        {
-                            name: 'D5 RIN',
-                            data: d5Data.map(point => [point.x, point.y]),
-                            color: 'rgba(153, 102, 255, 1)'
-                        }
-                    ]
+                    series: [{
+                        name: 'D3 RIN',
+                        data: d3Data.map(point => [point.x, point.y]),
+                        color: 'rgba(255, 99, 132, 1)'
+                    }, {
+                        name: 'D5 RIN',
+                        data: d5Data.map(point => [point.x, point.y]),
+                        color: 'rgba(153, 102, 255, 1)'
+                    }],
+                    exporting: {
+                        enabled: false // Disabled built-in exporting as we're using custom export menu
+                    }
                 });
+
+                // Initialize enhanced export menu
+                initChartExportMenu(rinCurrentMonthChart, rinCurrentMonthContainer);
             })
             .catch(error => {
                 console.error('❌ Error:', error);
@@ -880,8 +907,14 @@
                         name: 'Natural Gas Price',
                         data: chartData.map(point => [point.x, point.y]),
                         color: 'rgba(255, 159, 64, 1)'
-                    }]
+                    }],
+                    exporting: {
+                        enabled: false // Disabled built-in exporting as we're using custom export menu
+                    }
                 });
+
+                // Initialize enhanced export menu
+                initChartExportMenu(natGasHistoricChart, natGasHistoricContainer);
             })
             .catch(error => {
                 console.error('❌ Error:', error);
@@ -980,15 +1013,21 @@
                     tooltip: {
                         formatter: function() {
                             return `<b>Natural Gas</b><br/>
-                                    ${Highcharts.dateFormat('%b %d, %Y', this.x)}: $${Highcharts.numberFormat(this.y, 2)}/MMBTUs`;
+                                    ${Highcharts.dateFormat('%b %d', this.x)}: $${Highcharts.numberFormat(this.y, 2)}/MMBTUs`;
                         }
                     },
                     series: [{
                         name: 'Natural Gas Price',
                         data: chartData.map(point => [point.x, point.y]),
                         color: 'rgba(255, 159, 64, 1)'
-                    }]
+                    }],
+                    exporting: {
+                        enabled: false // Disabled built-in exporting as we're using custom export menu
+                    }
                 });
+
+                // Initialize enhanced export menu
+                initChartExportMenu(natGasCurrentMonthChart, natGasCurrentMonthContainer);
             })
             .catch(error => {
                 console.error('❌ Error:', error);

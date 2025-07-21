@@ -4,8 +4,9 @@
       layout:decorate="~{layouts/main}">
 <head>
     <title>Production Headcount Dashboard</title>
-    <!-- Highcharts with Utils -->
+    <!-- Enhanced Highcharts with Export Functionality -->
     <div th:replace="fragments/highcharts-scripts :: highcharts-with-utils"></div>
+    <div th:replace="fragments/highcharts-scripts :: chart-export-menu"></div>
 </head>
 <body>
 <div layout:fragment="content">
@@ -106,110 +107,64 @@
                     chart.destroy();
                 }
 
-                // Create chart with verified data
-                createChart(data);
+                // Create chart using direct Highcharts implementation
+                console.log('🚀 Creating Production Headcount Chart with direct Highcharts');
+                
+                const chart = Highcharts.chart('productionHeadcountChart', {
+                    chart: {
+                        type: chartType === 'column' ? 'column' : chartType,
+                        inverted: chartType === 'bar', // For horizontal bar charts
+                        height: 400
+                    },
+                    title: {
+                        text: 'Production per Animal Headcount',
+                        style: {
+                            fontSize: '16px',
+                            fontWeight: 'bold'
+                        }
+                    },
+                    xAxis: {
+                        type: 'category',
+                        title: {
+                            text: 'Farm'
+                        }
+                    },
+                    yAxis: {
+                        min: 0,
+                        title: {
+                            text: 'MMBTUs per Animal'
+                        },
+                        labels: {
+                            formatter: function() {
+                                return Highcharts.numberFormat(this.value, 2);
+                            }
+                        }
+                    },
+                    tooltip: {
+                        formatter: function() {
+                            return `<b>${this.series.name}</b><br/>
+                                    ${this.key}: ${Highcharts.numberFormat(this.y, 2)} MMBTUs per animal`;
+                        }
+                    },
+                    series: [{
+                        name: 'Production per Animal',
+                        data: chartData,
+                        color: 'rgba(75, 192, 192, 1)'
+                    }],
+                    exporting: {
+                        enabled: false // Disabled built-in exporting as we're using custom export menu
+                    }
+                });
+
+                // Initialize enhanced export menu
+                initChartExportMenu(chart, document.getElementById('productionHeadcountChart'));
+
             })
             .catch(error => {
                 console.error('❌ Error:', error);
                 showError('Failed to load chart data. Please try again.');
                 hideLoading();
             });
-        }
-
-        function createChart(data) {
-            // Group data by farm
-            const farmData = {};
-
-            data.forEach(item => {
-                if (!farmData[item.farm_id]) {
-                    farmData[item.farm_id] = {
-                        name: item.farm_name || item.farm_id,
-                        data: []
-                    };
-                }
-
-                // Parse the timestamp
-                const timestamp = new Date(item.timestamp).getTime();
-                farmData[item.farm_id].data.push([
-                    timestamp, // X value (timestamp)
-                    item.population // Y value
-                ]);
-            });
-
-            // Create series for each farm, sorted alphabetically by farm name
-            const series = Object.values(farmData)
-                .sort((a, b) => a.name && b.name ? a.name.localeCompare(b.name) : 0) // Sort alphabetically by farm name
-                .map((farm, index) => {
-                    // Generate a color based on index
-                    const hue = (index * 137) % 360; // Use golden ratio for color distribution
-                    const color = `hsl(${hue}, 70%, 60%)`;
-
-                    return {
-                        name: farm.name,
-                        data: farm.data,
-                        color: color
-                    };
-                });
-
-            // Get the selected chart type
-            const chartType = chartTypeSelector.value;
-            console.log('📊 Creating chart with type:', chartType);
-
-            // If chart exists, destroy it
-            if (chart) {
-                chart.destroy();
-            }
-
-            // Create Highcharts chart
-            chart = Highcharts.chart(chartContainer, {
-                chart: {
-                    type: chartType === 'column' ? 'column' : chartType,
-                    inverted: chartType === 'bar', // For horizontal bar charts
-                    height: 400
-                },
-                title: {
-                    text: 'Historic 52-Week Production per 52-Week Inventory Population',
-                    style: {
-                        fontSize: '16px',
-                        fontWeight: 'bold'
-                    }
-                },
-                xAxis: {
-                    type: 'datetime',
-                    title: {
-                        text: 'Date'
-                    },
-                    labels: {
-                        format: '{value:%b %Y}'
-                    }
-                },
-                yAxis: {
-                    min: 0,
-                    title: {
-                        text: 'MMBTUs/stocked space/year'
-                    },
-                    labels: {
-                        formatter: function() {
-                            return Highcharts.numberFormat(this.value, 0);
-                        }
-                    }
-                },
-                tooltip: {
-                    formatter: function() {
-                        return `<b>${this.series.name}</b><br/>
-                                ${Highcharts.dateFormat('%b %Y', this.x)}: ${Highcharts.numberFormat(this.y, 2)} MMBTUs/stocked space/year`;
-                    }
-                },
-                legend: {
-                    enabled: true,
-                    align: 'center',
-                    verticalAlign: 'bottom'
-                },
-                series: series
-            });
-
-            hideLoading();
-            console.log('✅ Chart successfully rendered');
         }
 
         // Event listeners

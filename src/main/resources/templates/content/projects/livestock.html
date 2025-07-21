@@ -2,7 +2,9 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <title>Livestock Project</title>
-    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <!-- Enhanced Highcharts with Export Functionality -->
+    <div th:replace="fragments/highcharts-scripts :: highcharts-with-utils"></div>
+    <div th:replace="fragments/highcharts-scripts :: chart-export-menu"></div>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
         .grid-layout {
@@ -266,37 +268,57 @@
                     seriesData.push(d.headcount);
                 });
 
-                // Render chart
-                Highcharts.chart('animal-headcount-chart', {
+                // Create chart using direct Highcharts implementation
+                console.log('🚀 Creating Animal Headcount Chart with direct Highcharts');
+                
+                const chart = Highcharts.chart('animal-headcount-chart', {
                     chart: {
-                        type: chartType
+                        type: chartType === 'column' ? 'column' : chartType,
+                        inverted: chartType === 'bar', // For horizontal bar charts
+                        height: 400
                     },
                     title: {
-                        text: 'Animal Headcount'
+                        text: 'Animal Headcount by Farm',
+                        style: {
+                            fontSize: '16px',
+                            fontWeight: 'bold'
+                        }
                     },
                     xAxis: {
-                        categories: categories,
+                        type: 'category',
                         title: {
-                            text: 'Date'
+                            text: 'Farm'
                         }
                     },
                     yAxis: {
+                        min: 0,
                         title: {
                             text: 'Headcount'
+                        },
+                        labels: {
+                            formatter: function() {
+                                return Highcharts.numberFormat(this.value, 0);
+                            }
                         }
                     },
                     tooltip: {
                         formatter: function() {
-                            return `<b>${selectedYear}</b><br/>
-                                    Date: ${this.x}<br/>
-                                    Headcount: ${Highcharts.numberFormat(this.y, 0)}`;
+                            return `<b>${this.series.name}</b><br/>
+                                    ${this.key}: ${Highcharts.numberFormat(this.y, 0)} animals`;
                         }
                     },
                     series: [{
-                        name: 'Headcount',
-                        data: seriesData
-                    }]
+                        name: 'Animal Headcount',
+                        data: seriesData,
+                        color: 'rgba(54, 162, 235, 1)'
+                    }],
+                    exporting: {
+                        enabled: false // Disabled built-in exporting as we're using custom export menu
+                    }
                 });
+
+                // Initialize enhanced export menu
+                initChartExportMenu(chart, document.getElementById('animal-headcount-chart'));
             })
             .catch(error => {
                 console.error('Error fetching animal headcount data:', error);
@@ -338,13 +360,21 @@
                     weightData.push(d.weight);
                 });
 
-                // Render chart
-                Highcharts.chart('head-weight-chart', {
+                // Create chart using direct Highcharts implementation
+                console.log('🚀 Creating Head vs Weight Chart with direct Highcharts');
+                
+                const chart = Highcharts.chart('head-weight-chart', {
                     chart: {
-                        type: chartType
+                        type: chartType === 'column' ? 'column' : chartType,
+                        inverted: chartType === 'bar', // For horizontal bar charts
+                        height: 400
                     },
                     title: {
-                        text: 'Historic Production per Animal Headcount vs. Weight Unit'
+                        text: 'Historic Production per Animal Headcount vs. Weight Unit',
+                        style: {
+                            fontSize: '16px',
+                            fontWeight: 'bold'
+                        }
                     },
                     xAxis: {
                         categories: categories,
@@ -372,13 +402,21 @@
                     series: [{
                         name: 'Animal Headcount (Pop)',
                         data: headData,
-                        yAxis: 0
+                        yAxis: 0,
+                        color: 'rgba(255, 99, 132, 1)'
                     }, {
                         name: 'Animal Weight Unit (AU)',
                         data: weightData,
-                        yAxis: 1
-                    }]
+                        yAxis: 1,
+                        color: 'rgba(153, 102, 255, 1)'
+                    }],
+                    exporting: {
+                        enabled: false // Disabled built-in exporting as we're using custom export menu
+                    }
                 });
+
+                // Initialize enhanced export menu
+                initChartExportMenu(chart, document.getElementById('head-weight-chart'));
             })
             .catch(error => {
                 console.error('Error fetching head vs weight data:', error);

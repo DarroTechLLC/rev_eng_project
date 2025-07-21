@@ -131,6 +131,7 @@ const highchartsTheme = {
         enabled: true,
         buttons: {
             contextButton: {
+                enabled: false, // REMOVE ARROW BUTTON
                 symbolStroke: '#858796',
                 theme: {
                     fill: 'transparent'
