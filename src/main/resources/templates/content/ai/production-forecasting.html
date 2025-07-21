@@ -2,10 +2,9 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <title>AI Production Forecasting</title>
-    <!-- Highcharts -->
-    <script src="https://code.highcharts.com/highcharts.js"></script>
-    <!-- Chart Utils -->
-    <script src="/js/chart-utils/highcharts-utils.js"></script>
+    <!-- Enhanced Highcharts with Export Functionality -->
+    <div th:replace="fragments/highcharts-scripts :: highcharts-with-utils"></div>
+    <div th:replace="fragments/highcharts-scripts :: chart-export-menu"></div>
 </head>
 <body>
     <div class="container-fluid">
@@ -307,7 +306,9 @@
                     confidenceLower.push(point.value - confidenceRange);
                 });
 
-                Highcharts.chart(forecastChart, {
+                // Create chart with enhanced export functionality
+                console.log('🚀 Creating AI Production Forecast Chart with enhanced export');
+                const aiForecastChart = Highcharts.chart(forecastChart, {
                     chart: { type: 'line' },
                     title: { text: 'CH4 Recovery Forecast' },
                     xAxis: { type: 'datetime' },
@@ -339,8 +340,15 @@
                         color: '#ffc107',
                         dashStyle: 'dot',
                         marker: { enabled: false }
-                    }]
+                    }],
+                    credits: {
+                        enabled: false
+                    }
                 });
+                
+                // Initialize enhanced export menu
+                initChartExportMenu(aiForecastChart, forecastChart);
+                console.log('✅ AI Production Forecast Chart with enhanced export created');
             }
         });
     </script>

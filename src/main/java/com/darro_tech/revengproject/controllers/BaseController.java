@@ -19,7 +19,7 @@ import jakarta.servlet.http.HttpSession;
 
 public abstract class BaseController {
 
-    private static final Logger logger = LoggerFactory.getLogger(BaseController.class);
+    protected static final Logger logger = LoggerFactory.getLogger(BaseController.class);
 
     @Autowired
     private AuthenticationController authenticationController;

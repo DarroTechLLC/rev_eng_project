@@ -4,8 +4,9 @@
       layout:decorate="~{layouts/main}">
 <head>
     <title>MTD Volume Dashboard</title>
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Enhanced Highcharts with Export Functionality -->
+    <div th:replace="fragments/highcharts-scripts :: highcharts-with-utils"></div>
+    <div th:replace="fragments/highcharts-scripts :: chart-export-menu"></div>
 </head>
 <body>
 <div layout:fragment="content">
@@ -29,7 +30,7 @@
                     <div class="card-body">
                         <div id="loadingIndicator" style="display: none;">Loading...</div>
                         <div id="errorMessage" class="alert alert-danger" style="display: none;"></div>
-                        <canvas id="mtdVolumeChart"></canvas>
+                        <div id="mtdVolumeChart" style="min-height: 400px;"></div>
                     </div>
                 </div>
             </div>
@@ -40,77 +41,49 @@
 <!-- Chart Initialization Script -->
 <th:block layout:fragment="scripts">
     <script th:inline="javascript">
-        // Get company ID from Thymeleaf model
-        const selectedCompanyId = /*[[${selectedCompanyId}]]*/ '';
+        // Global variables
+        let chart;
+        let selectedCompanyId = /*[[${selectedCompanyId}]]*/ null;
+
+        // DOM elements
         const dateSelector = document.getElementById('dateSelector');
         const chartTypeSelector = document.getElementById('chartType');
-        const ctx = document.getElementById('mtdVolumeChart').getContext('2d');
-        let chart;
+        const chartContainer = document.getElementById('mtdVolumeChart');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const errorMessage = document.getElementById('errorMessage');
 
-        // Log initial data presence
-        console.log('🔍 Chart Configuration Verification:');
-        console.log('✓ Chart container present:', !!document.getElementById('mtdVolumeChart'));
-        console.log('✓ Date selector present:', !!dateSelector);
-        console.log('✓ Chart type selector present:', !!chartTypeSelector);
-        console.log('✓ Company ID present:', !!selectedCompanyId);
-
+        // Helper functions
         function showLoading() {
-            document.getElementById('loadingIndicator').style.display = 'block';
+            loadingIndicator.style.display = 'block';
+            hideError();
         }
 
         function hideLoading() {
-            document.getElementById('loadingIndicator').style.display = 'none';
+            loadingIndicator.style.display = 'none';
         }
 
         function showError(message) {
-            const errorElement = document.getElementById('errorMessage');
-            errorElement.textContent = message;
-            errorElement.style.display = 'block';
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
         }
 
         function hideError() {
-            document.getElementById('errorMessage').style.display = 'none';
+            errorMessage.style.display = 'none';
         }
 
         function updateChart() {
-            // Check if date is valid, use current date as fallback
-            let selectedDate = new Date(dateSelector.value);
-
-            // Check if the date is valid (not NaN)
-            if (isNaN(selectedDate.getTime())) {
-                console.warn('⚠️ Invalid date detected, using current date as fallback');
-                selectedDate = new Date(); // Use current date as fallback
-                dateSelector.value = selectedDate.toISOString().split('T')[0]; // Update the input field
-            }
-
-            // Double-check that the date is valid after potential correction
-            if (isNaN(selectedDate.getTime())) {
-                console.error('❌ Date is still invalid after correction attempt');
-                showError('Invalid date. Please select a valid date.');
-                return;
-            }
-
-            // Ensure year, month, and day are valid numbers
-            const year = selectedDate.getFullYear();
-            const month = selectedDate.getMonth() + 1;
-            const day = selectedDate.getDate();
-
-            if (isNaN(year) || isNaN(month) || isNaN(day)) {
-                console.error('❌ Invalid date components detected');
-                showError('Invalid date components. Please select a valid date.');
-                return;
-            }
-
-            // Format dates as YYYY-MM-DD
-            const fromDate = `${year}-${month.toString().padStart(2, '0')}-01`;
-            const toDate = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
-
-            console.log('📅 Selected date:', dateSelector.value);
-            console.log('📊 Date range:', fromDate, 'to', toDate);
+            const selectedDate = dateSelector.value;
+            console.log('📅 Selected date:', selectedDate);
             console.log('🏢 Company ID:', selectedCompanyId);
 
             showLoading();
-            hideError();
+
+            // Calculate date range for MTD (from first day of month to selected date)
+            const date = new Date(selectedDate);
+            const fromDate = new Date(date.getFullYear(), date.getMonth(), 1).toISOString().split('T')[0];
+            const toDate = selectedDate;
+
+            console.log('📊 Date range:', fromDate, 'to', toDate);
 
             fetch('/api/charts/multi-farm/farm-volumes-for-range', {
                 method: 'POST',
@@ -155,22 +128,16 @@
         }
 
         function createChart(data) {
-            const chartData = {
-                labels: data.map(item => item.farm_name || item.farm_id),
-                datasets: [{
-                    label: 'Volume (MMBTUs)',
-                    data: data.map(item => item.volume),
-                    backgroundColor: 'rgba(54, 162, 235, 0.8)',
-                    borderColor: 'rgba(54, 162, 235, 1)',
-                    borderWidth: 1
-                }]
-            };
+            // Prepare data for Highcharts
+            const chartSeries = [{
+                name: 'Volume',
+                data: data.map(item => [item.farm_name || item.farm_id, item.volume || 0])
+            }];
 
             const totalVolume = data.reduce((sum, item) => sum + (item.volume || 0), 0);
 
             console.log('📈 Chart Data Verification:');
-            console.log('✓ Labels present:', chartData.labels.length);
-            console.log('✓ Data points present:', chartData.datasets[0].data.length);
+            console.log('✓ Data points present:', chartSeries[0].data.length);
             console.log('✓ Total volume calculated:', totalVolume);
 
             // Get the selected chart type
@@ -185,34 +152,57 @@
             }
             const monthName = selectedDate.toLocaleString('default', { month: 'long' });
 
-            chart = new Chart(ctx, {
-                // For column type, we use 'bar' type in Chart.js but with horizontal: false
-                type: chartType === 'column' ? 'bar' : chartType,
-                data: chartData,
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    indexAxis: chartType === 'bar' ? 'y' : 'x', // Use horizontal bars for 'bar' type
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: `${monthName} MTD Production: ${Math.round(totalVolume).toLocaleString()} MMBTUs`
-                        }
+            // Create Highcharts chart
+            chart = Highcharts.chart(chartContainer, {
+                chart: {
+                    type: chartType,
+                    height: 400
+                },
+                title: {
+                    text: `${monthName} MTD Production: (${Math.round(totalVolume).toLocaleString()} MMBTUs)`,
+                    style: {
+                        fontSize: '16px',
+                        fontWeight: 'bold'
                     },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            title: {
-                                display: true,
-                                text: 'MMBTUs'
-                            }
+                    margin: 20
+                },
+                xAxis: {
+                    type: 'category',
+                    title: {
+                        text: 'Farm'
+                    }
+                },
+                yAxis: {
+                    min: 0,
+                    title: {
+                        text: 'MMBTUs'
+                    },
+                    labels: {
+                        formatter: function() {
+                            return Highcharts.numberFormat(this.value, 0);
                         }
                     }
+                },
+                tooltip: {
+                    formatter: function() {
+                        return `<b>${this.series.name}</b><br/>
+                                ${this.key}: ${Highcharts.numberFormat(this.y, 0)} MMBTUs`;
+                    }
+                },
+                legend: {
+                    enabled: false
+                },
+                series: chartSeries,
+                exporting: {
+                    enabled: false // Disabled built-in exporting as we're using custom export menu
                 }
             });
 
+            // Initialize enhanced export menu
+            initChartExportMenu(chart, chartContainer);
+
             hideLoading();
-            console.log('✅ Chart successfully rendered');
+            console.log('✅ Chart successfully rendered with export menu');
         }
 
         // Event listeners

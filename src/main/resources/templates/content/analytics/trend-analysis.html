@@ -204,27 +204,23 @@
                     trendLine.push(trendValue);
                 }
 
-                // Create chart
-                Highcharts.chart('trendChart', {
-                    chart: { type: 'line' },
-                    title: { text: 'CH4 Recovery Production Trend Analysis' },
-                    xAxis: { type: 'datetime' },
-                    yAxis: { title: { text: 'CH4 Recovery (MMBTUs)' } },
-                    tooltip: {
-                        formatter: function() {
-                            return `<b>Date:</b> ${Highcharts.dateFormat('%Y-%m-%d', this.x)}<br/>
-                                    <b>Trend Value:</b> ${this.y.toFixed(1)} MMBTUs<br/>
-                                    <b>Slope:</b> ${(trend.slope * 100).toFixed(1)}% per day<br/>
-                                    <b>R²:</b> ${trend.r2Value ? trend.r2Value.toFixed(3) : 'N/A'}`;
-                        }
-                    },
-                    series: [{
-                        name: 'Trend Line',
-                        data: dates.map((date, i) => [date, trendLine[i]]),
-                        color: '#e74a3b',
-                        dashStyle: 'dash'
-                    }]
+                // Create chart using ChartBuilder pattern (matches Next.js implementation)
+                const chartBuilder = new ChartBuilder('line')
+                    .title('CH4 Recovery Production Trend Analysis')
+                    .xAxis(new DateAxis())
+                    .yAxis(new NumericAxis().title('CH4 Recovery (MMBTUs)'))
+                    .tooltip(new CustomSeriesTooltip('MMBTUs'));
+
+                chartBuilder.addSeries({
+                    id: 'trend-line',
+                    name: 'Trend Line',
+                    data: dates.map((date, i) => [date, trendLine[i]]),
+                    color: '#e74a3b',
+                    dashStyle: 'dash'
                 });
+
+                const chartOptions = chartBuilder.getOptions();
+                Highcharts.chart('trendChart', chartOptions);
             }
         });
     </script>

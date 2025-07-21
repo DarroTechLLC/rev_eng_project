@@ -6,6 +6,7 @@
     <title>Daily Volume Dashboard</title>
     <!-- Highcharts with Utils -->
     <div th:replace="fragments/highcharts-scripts :: highcharts-with-utils"></div>
+    <div th:replace="fragments/highcharts-scripts :: chart-export-menu"></div>
 </head>
 <body>
 <div layout:fragment="content">
@@ -130,18 +131,12 @@
                 return;
             }
 
-            // Use the safe data formatting function if available, otherwise use basic formatting
-            let chartData;
-            if (typeof safelyFormatChartData === 'function') {
-                chartData = safelyFormatChartData(data, 'farm_name', 'volume');
-            } else {
-                console.warn('⚠️ safelyFormatChartData not available, using basic formatting');
-                chartData = data.map(item => [
-                    item.farm_name || item.farm_id || 'Unknown',
-                    parseFloat(item.volume) || 0
-                ]).filter(([name, value]) => name && value >= 0);
-            }
-            
+            // Format data for chart
+            const chartData = data.map(item => [
+                item.farm_name || item.farm_id || 'Unknown',
+                parseFloat(item.volume) || 0
+            ]).filter(([name, value]) => name && value >= 0);
+
             if (chartData.length === 0) {
                 console.error('❌ No valid data points found after formatting');
                 showError('No valid data available for the selected date.');
@@ -161,20 +156,21 @@
             const chartType = chartTypeSelector.value;
             console.log('📊 Creating chart with type:', chartType);
 
-            // Create Highcharts chart with proper error handling
+            // Create Highcharts chart directly
             try {
-                // Create chart configuration with fallbacks for utility functions
-                const chartConfig = {
+                chart = Highcharts.chart('dailyVolumeChart', {
                     chart: {
-                        type: chartType,
+                        type: chartType === 'column' ? 'column' : chartType,
                         height: 400
                     },
-                    title: typeof createTitleWithTotal === 'function' 
-                        ? createTitleWithTotal('Daily Production Volume', totalVolume, 'MMBTUs')
-                        : {
-                            text: `Daily Production Volume: (${Math.round(totalVolume).toLocaleString()} MMBTUs)`,
-                            style: { fontSize: '16px', fontWeight: 'bold' }
-                          },
+                    title: {
+                        text: `Daily Production Volume: (${Math.round(totalVolume).toLocaleString()} MMBTUs)`,
+                        style: {
+                            fontSize: '16px',
+                            fontWeight: 'bold'
+                        },
+                        margin: 20
+                    },
                     xAxis: {
                         type: 'category',
                         title: {
@@ -193,12 +189,10 @@
                         }
                     },
                     tooltip: {
-                        formatter: typeof createTooltipFormatter === 'function' 
-                            ? createTooltipFormatter('MMBTUs')
-                            : function() {
-                                return `<b>${this.series.name}</b><br/>
-                                        ${this.key}: ${Highcharts.numberFormat(this.y, 0)} MMBTUs`;
-                              }
+                        formatter: function() {
+                            return `<b>${this.series.name}</b><br/>
+                                    ${this.key}: ${Highcharts.numberFormat(this.y, 0)} MMBTUs`;
+                        }
                     },
                     legend: {
                         enabled: false
@@ -208,26 +202,15 @@
                         data: chartData
                     }],
                     exporting: {
-                        enabled: true,
-                        filename: 'daily-volume-chart',
-                        buttons: {
-                            contextButton: {
-                                menuItems: ['downloadPNG', 'downloadPDF', 'downloadCSV', 'downloadXLS']
-                            }
-                        }
+                        enabled: false // Disabled built-in exporting as we're using custom export menu
                     }
-                };
+                });
 
-                // Use enhanced error handling if available, otherwise fallback to direct chart creation
-                if (typeof createChartWithErrorHandling === 'function') {
-                    chart = createChartWithErrorHandling('dailyVolumeChart', chartConfig);
-                } else {
-                    console.warn('⚠️ createChartWithErrorHandling not available, using direct chart creation');
-                    chart = Highcharts.chart('dailyVolumeChart', chartConfig);
-                }
+                // Initialize enhanced export menu
+                initChartExportMenu(chart, chartContainer);
 
                 hideLoading();
-                console.log('✅ Chart successfully rendered');
+                console.log('✅ Chart successfully rendered with export menu');
             } catch (error) {
                 console.error('❌ Error creating Highcharts chart:', error);
                 showError('Failed to create chart. Please try again.');
@@ -244,11 +227,6 @@
 
         // Initialize chart on page load
         document.addEventListener('DOMContentLoaded', function() {
-            // Initialize Highcharts error handling
-            if (typeof initializeHighchartsWithErrorHandling === 'function') {
-                initializeHighchartsWithErrorHandling();
-            }
-            
             // Update chart
             updateChart();
         });

@@ -108,7 +108,12 @@ function initializeHighcharts() {
     if (document.getElementById('dailyTrendChart')) {
         // Generate sample data
         const sampleData = generateSampleTimeSeriesData(7, 10, 40);
-        createProductionTrendChart('dailyTrendChart', sampleData, 'Daily Production Trend');
+        const chart = createProductionTrendChart('dailyTrendChart', sampleData, 'Daily Production Trend');
+        
+        // Add export functionality if chart was created successfully
+        if (chart && typeof initChartExportMenu === 'function') {
+            initChartExportMenu(chart, document.getElementById('dailyTrendChart'));
+        }
     }
 
     // Initialize farm distribution chart
@@ -116,7 +121,12 @@ function initializeHighcharts() {
         // Generate sample farm data
         const farmNames = ['Farm A', 'Farm B', 'Farm C', 'Farm D'];
         const farmData = generateSampleFarmDistribution(farmNames);
-        createFarmDistributionChart('farmDistributionChart', farmData, 'Production by Farm');
+        const chart = createFarmDistributionChart('farmDistributionChart', farmData, 'Production by Farm');
+        
+        // Add export functionality if chart was created successfully
+        if (chart && typeof initChartExportMenu === 'function') {
+            initChartExportMenu(chart, document.getElementById('farmDistributionChart'));
+        }
     }
 }
 

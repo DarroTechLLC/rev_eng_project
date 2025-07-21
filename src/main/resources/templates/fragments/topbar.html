@@ -234,8 +234,12 @@
                     el.style.display = 'none';
                 });
 
-                // Initialize tooltips
-                $('[title]').tooltip();
+                // Initialize tooltips (only if jQuery tooltip is available)
+                if (typeof $ !== 'undefined' && $.fn && $.fn.tooltip) {
+                    $('[title]').tooltip();
+                } else {
+                    console.log('[DEBUG_LOG] Tooltip function not available, skipping tooltip initialization');
+                }
 
                 // Fetch user role information
                 fetch('/debug/roles-api')
