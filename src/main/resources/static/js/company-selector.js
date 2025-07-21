@@ -164,9 +164,14 @@
         let newUrl = '';
 
         if (pathSegments.length > 0) {
-            // Always redirect to the company's projects root when in a project view
-            // This ensures we get the correct default farm for the new company
-            if (pathSegments.includes('projects')) {
+            // Handle analytics routes - maintain the analytics page for the new company
+            if (pathSegments.includes('analytics') && pathSegments.length > 2) {
+                const analyticsType = pathSegments[2]; // e.g., 'trend-analysis', 'anomaly-detection', 'production-forecasting'
+                newUrl = `/${companySlug}/analytics/${analyticsType}`;
+                console.log(`📊 Analytics page detected - maintaining analytics type: ${newUrl}`);
+            } else if (pathSegments.includes('projects')) {
+                // Always redirect to the company's projects root when in a project view
+                // This ensures we get the correct default farm for the new company
                 newUrl = `/${companySlug}/projects`;
                 console.log(`🔄 Project page detected - redirecting to company projects root: ${newUrl}`);
                 console.log(`ℹ️ The server will select a default farm for company: ${companySlug}`);
