@@ -1,7 +1,3 @@
--if login fails offer this to user: Your login credentials are invalid.
-If you have forgotten your password click here.
-OK=button
-
 -make names of companies links and remove edit links from table, remove edit link from farms table, remove
 edit icon from website alerts
 

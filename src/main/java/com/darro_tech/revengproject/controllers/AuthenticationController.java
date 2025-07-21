@@ -3,9 +3,6 @@ package com.darro_tech.revengproject.controllers;
 import java.time.Instant;
 import java.util.Optional;
 
-//import javax.validation.Valid;
-
-import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -32,6 +29,7 @@ import com.darro_tech.revengproject.util.LoggerUtils;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
+import jakarta.validation.Valid;
 
 /**
  * Created by Chris Bay
@@ -300,6 +298,7 @@ public class AuthenticationController {
                 LoggerUtils.logAuthentication(logger, false, loginFormDTO.getUsername(), "Username not found");
 
                 errors.rejectValue("username", "user.invalid", "The given username does not exist");
+                model.addAttribute("loginError", true);
                 LoggerUtils.logResponse(logger, "/login", "Login failed: username not found");
                 return "auth/login";
             }
@@ -312,6 +311,7 @@ public class AuthenticationController {
                 LoggerUtils.logAuthentication(logger, false, loginFormDTO.getUsername(), "Invalid password");
 
                 errors.rejectValue("password", "password.invalid", "Invalid password");
+                model.addAttribute("loginError", true);
                 LoggerUtils.logResponse(logger, "/login", "Login failed: invalid password");
                 return "auth/login";
             }
