@@ -1,8 +1,10 @@
 -------------------------Working on----------------
 -charts:
 current:
+mtd-volume
+
+#done/matched to expected implementation:
 daily volume
-#done
 
 
 --------------------------Up Next-----------------
@@ -22,3 +24,12 @@ highcharts to produce all expected from pdf (queried)
 can be better handled by java? or vice versa. take comprehensive look
 
 -language difference translator dropdown option ?
+---------Chart prompt----------
+1. Examine the mtd-volume.html template in the Java project to understand the current implementation
+2. Look for any controller that handles the mtd-volume endpoint
+3. Check the ChartService and ChartApiController since they appear to be modified and likely related to charts
+4. Determine what data is currently being provided to the mtd-volume view in the Java implementation
+5. Find out how the NextJS implementation gets and displays its data
+6. Compare the data structures and visualization between the two implementations
+7. Update the Java implementation to match the NextJS implementation
+8. Test the changes to ensure the Java view displays the same information as the NextJS view

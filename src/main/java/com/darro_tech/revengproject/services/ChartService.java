@@ -1,30 +1,26 @@
 package com.darro_tech.revengproject.services;
 
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.Year;
+import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import com.darro_tech.revengproject.dto.FarmVolumeData;
-import com.darro_tech.revengproject.models.Budget;
 import com.darro_tech.revengproject.models.CompanyFarm;
 import com.darro_tech.revengproject.models.Farm;
 import com.darro_tech.revengproject.models.MarketPrice;
 import com.darro_tech.revengproject.models.MarketPricesMonthly;
-import com.darro_tech.revengproject.repositories.BudgetRepository;
-import com.darro_tech.revengproject.repositories.ChartMeterDailyViewRepository;
-import com.darro_tech.revengproject.repositories.CompanyFarmRepository;
-import com.darro_tech.revengproject.repositories.FarmRepository;
-import com.darro_tech.revengproject.repositories.MarketPriceRepository;
-import com.darro_tech.revengproject.repositories.MarketPricesMonthlyRepository;
+import com.darro_tech.revengproject.repositories.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 @Service
 public class ChartService {
@@ -73,7 +69,7 @@ public class ChartService {
             logger.debug("Found {} farms in database", allFarms.size());
 
             Map<String, String> farmNames = allFarms.stream()
-                .collect(Collectors.toMap(Farm::getId, Farm::getName));
+                    .collect(Collectors.toMap(Farm::getId, Farm::getName));
 
             // Convert results to DTOs
             List<FarmVolumeData> farmVolumeDataList = new ArrayList<>();
@@ -90,10 +86,10 @@ public class ChartService {
                 farmVolumeData.setFarmName(farmNames.getOrDefault(farmId, farmId));
                 farmVolumeData.setVolume(volume);
 
-                logger.debug("Created DTO: farm_id={}, farmName={}, volume={}", 
-                           farmVolumeData.getFarm_id(), 
-                           farmVolumeData.getFarmName(), 
-                           farmVolumeData.getVolume());
+                logger.debug("Created DTO: farm_id={}, farmName={}, volume={}",
+                        farmVolumeData.getFarm_id(),
+                        farmVolumeData.getFarmName(),
+                        farmVolumeData.getVolume());
 
                 farmVolumeDataList.add(farmVolumeData);
             }
@@ -101,14 +97,14 @@ public class ChartService {
             // Log data presence verification
             logger.info("📊 Data verification:");
             logger.info("✓ Total records: {}", farmVolumeDataList.size());
-            logger.info("✓ Total volume: {}", 
-                farmVolumeDataList.stream().mapToDouble(FarmVolumeData::getVolume).sum());
+            logger.info("✓ Total volume: {}",
+                    farmVolumeDataList.stream().mapToDouble(FarmVolumeData::getVolume).sum());
 
-            farmVolumeDataList.forEach(data -> {
-                logger.info("✓ Farm {} data present: {}", 
-                    data.getFarm_id(), 
-                    data.getVolume() != null);
-            });
+            for (FarmVolumeData data : farmVolumeDataList) {
+                logger.info("✓ Farm {} data present: {}",
+                        data.getFarm_id(),
+                        data.getVolume() != null);
+            }
 
             return farmVolumeDataList;
         } catch (Exception e) {
@@ -128,7 +124,7 @@ public class ChartService {
             logger.info("🔍 Using custom query that ignores include_website flag");
             logger.debug("Querying database for farm volumes...");
             List<Object[]> results = chartMeterDailyViewRepository.findTotalVolumeByFarmForDateRangeIgnoringIncludeWebsite(
-                companyId, fromDate, toDate);
+                    companyId, fromDate, toDate);
             logger.info("Query returned {} results", results != null ? results.size() : 0);
 
             if (results == null || results.isEmpty()) {
@@ -142,7 +138,7 @@ public class ChartService {
             logger.debug("Found {} farms in database", allFarms.size());
 
             Map<String, String> farmNames = allFarms.stream()
-                .collect(Collectors.toMap(Farm::getId, Farm::getName));
+                    .collect(Collectors.toMap(Farm::getId, Farm::getName));
 
             // Convert results to DTOs
             List<FarmVolumeData> farmVolumeDataList = new ArrayList<>();
@@ -153,16 +149,15 @@ public class ChartService {
                 Double volume = ((Number) result[1]).doubleValue();
 
                 logger.debug("Processing farm: ID={}, volume={}", farmId, volume);
-
                 FarmVolumeData farmVolumeData = new FarmVolumeData();
                 farmVolumeData.setFarm_id(farmId);
                 farmVolumeData.setFarmName(farmNames.getOrDefault(farmId, farmId));
                 farmVolumeData.setVolume(volume);
 
-                logger.debug("Created DTO: farm_id={}, farmName={}, volume={}", 
-                           farmVolumeData.getFarm_id(), 
-                           farmVolumeData.getFarmName(), 
-                           farmVolumeData.getVolume());
+                logger.debug("Created DTO: farm_id={}, farmName={}, volume={}",
+                        farmVolumeData.getFarm_id(),
+                        farmVolumeData.getFarmName(),
+                        farmVolumeData.getVolume());
 
                 farmVolumeDataList.add(farmVolumeData);
             }
@@ -170,14 +165,14 @@ public class ChartService {
             // Log data presence verification
             logger.info("📊 Data verification:");
             logger.info("✓ Total records: {}", farmVolumeDataList.size());
-            logger.info("✓ Total volume: {}", 
-                farmVolumeDataList.stream().mapToDouble(FarmVolumeData::getVolume).sum());
+            logger.info("✓ Total volume: {}",
+                    farmVolumeDataList.stream().mapToDouble(FarmVolumeData::getVolume).sum());
 
-            farmVolumeDataList.forEach(data -> {
-                logger.info("✓ Farm {} data present: {}", 
-                    data.getFarm_id(), 
-                    data.getVolume() != null);
-            });
+            for (FarmVolumeData data : farmVolumeDataList) {
+                logger.info("✓ Farm {} data present: {}",
+                        data.getFarm_id(),
+                        data.getVolume() != null);
+            }
 
             return farmVolumeDataList;
         } catch (Exception e) {
@@ -197,21 +192,22 @@ public class ChartService {
             logger.debug("Loading farms for company ID: {}", companyId);
             List<CompanyFarm> companyFarms = companyFarmRepository.findByCompanyId(companyId);
             List<Farm> companyFarmsList = companyFarms.stream()
-                .map(CompanyFarm::getFarm)
-                .collect(Collectors.toList());
+                    .map(CompanyFarm::getFarm)
+                    .collect(Collectors.toList());
             logger.debug("Found {} farms for company ID: {}", companyFarmsList.size(), companyId);
 
             // Create a map of farm IDs to their names
             Map<String, String> farmNames = companyFarmsList.stream()
-                .collect(Collectors.toMap(Farm::getId, Farm::getName));
+                    .collect(Collectors.toMap(Farm::getId, Farm::getName));
 
             // In a real implementation, we would query the database for production population data
-            // For now, we'll generate sample data for demonstration purposes
+
+            // Generate sample data for rposes
             List<Map<String, Object>> populationDataList = new ArrayList<>();
 
             logger.info("Using {} farms for sample data generation", companyFarmsList.size());
 
-            // Generate sample data points for each farm
+            // Generate sample data points fo each farm
             for (Farm farm : companyFarmsList) {
                 // Generate data points from fromDate to toDate
                 LocalDate currentDate = fromDate;
@@ -372,7 +368,7 @@ public class ChartService {
 
             // Query the database for market prices monthly data
             List<MarketPricesMonthly> pricesData = marketPricesMonthlyRepository.findByTimestampBetweenOrderByTimestampAsc(
-                fromInstant, toInstant);
+                    fromInstant, toInstant);
 
             logger.info("Found {} market prices monthly records", pricesData.size());
 
@@ -415,7 +411,7 @@ public class ChartService {
 
             // Query the database for market prices daily data
             List<MarketPrice> pricesData = marketPriceRepository.findByTimestampBetweenOrderByTimestampAsc(
-                fromInstant, toInstant);
+                    fromInstant, toInstant);
 
             logger.info("Found {} market prices daily records", pricesData.size());
 
@@ -455,7 +451,7 @@ public class ChartService {
             // Query the database for daily production data
             logger.debug("Querying database for daily production data...");
             List<Object[]> results = chartMeterDailyViewRepository.findDailyProductionForCompanyDateRange(
-                companyId, fromDate, toDate);
+                    companyId, fromDate, toDate);
             logger.info("Query returned {} results", results != null ? results.size() : 0);
 
             if (results == null || results.isEmpty()) {
@@ -465,6 +461,7 @@ public class ChartService {
 
             // Convert results to the format expected by the frontend
             List<Map<String, Object>> productionDataList = new ArrayList<>();
+
             logger.debug("Converting query results to response format...");
 
             for (Object[] result : results) {
@@ -483,10 +480,10 @@ public class ChartService {
             // Log data presence verification
             logger.info("📊 Data verification:");
             logger.info("✓ Total records: {}", productionDataList.size());
-            logger.info("✓ Total production: {}", 
-                productionDataList.stream()
-                    .mapToDouble(data -> ((Number) data.get("value")).doubleValue())
-                    .sum());
+            logger.info("✓ Total production: {}",
+                    productionDataList.stream()
+                            .mapToDouble(data -> ((Number) data.get("value")).doubleValue())
+                            .sum());
 
             return productionDataList;
         } catch (Exception e) {
@@ -513,23 +510,23 @@ public class ChartService {
             // Get budget data by farm
             logger.debug("Querying database for farm budget data...");
             List<Object[]> budgetResults = budgetRepository.findTotalBudgetByFarmForCompanyAndDateRange(
-                companyId, fromInstant, toInstant);
+                    companyId, fromInstant, toInstant);
             logger.info("Query returned {} budget results", budgetResults != null ? budgetResults.size() : 0);
 
             // Create a map of farm IDs to their names
             logger.debug("Loading farm names from database...");
             List<Farm> allFarms = farmRepository.findAll();
             Map<String, String> farmNames = allFarms.stream()
-                .collect(Collectors.toMap(Farm::getId, Farm::getName));
+                    .collect(Collectors.toMap(Farm::getId, Farm::getName));
 
-            // Create a map of farm IDs to their budget values
+            // Create Ds to their budget values
             Map<String, Double> farmBudgets = new HashMap<>();
             if (budgetResults != null) {
                 for (Object[] result : budgetResults) {
                     String farmId = (String) result[0];
                     Double budget = ((Number) result[1]).doubleValue();
                     farmBudgets.put(farmId, budget);
-                    logger.debug("Farm budget: ID={}, budget={}", farmId, budget);
+                    logger.debug("Budget: ID = {}, budget = {}", farmId, budget);
                 }
             }
 
@@ -564,14 +561,14 @@ public class ChartService {
             // Log data presence verification
             logger.info("📊 Data verification:");
             logger.info("✓ Total farms: {}", actualData.size());
-            logger.info("✓ Total production: {}", 
-                actualData.stream()
-                    .mapToDouble(data -> ((Number) data.get("value")).doubleValue())
-                    .sum());
-            logger.info("✓ Total budget: {}", 
-                budgetData.stream()
-                    .mapToDouble(data -> ((Number) data.get("value")).doubleValue())
-                    .sum());
+            logger.info("✓ Total production: {}",
+                    actualData.stream()
+                            .mapToDouble(data -> ((Number) data.get("value")).doubleValue())
+                            .sum());
+            logger.info("✓ Total budget: {}",
+                    budgetData.stream()
+                            .mapToDouble(data -> ((Number) data.get("value")).doubleValue())
+                            .sum());
 
             return response;
         } catch (Exception e) {
@@ -581,7 +578,7 @@ public class ChartService {
     }
 
     /**
-     * Get monthly meter data for a specific farm within a date range
+     * Get monthly meter data for a specific farm within a
      */
     public List<Map<String, Object>> getSingleFarmMeterMonthlyTimeline(String farmId, LocalDate fromDate, LocalDate toDate) {
         logger.info("🔍 Fetching monthly meter data for farm: {} from {} to {}", farmId, fromDate, toDate);
@@ -616,10 +613,10 @@ public class ChartService {
             // Log data presence verification
             logger.info("📊 Data verification:");
             logger.info("✓ Total records: {}", monthlyData.size());
-            logger.info("✓ Total production: {}", 
-                monthlyData.stream()
-                    .mapToDouble(data -> ((Number) data.get("value")).doubleValue())
-                    .sum());
+            logger.info("✓ Total production: {}",
+                    monthlyData.stream()
+                            .mapToDouble(data -> ((Number) data.get("value")).doubleValue())
+                            .sum());
 
             return monthlyData;
         } catch (Exception e) {
@@ -632,7 +629,7 @@ public class ChartService {
      * Get animal headcount data for a specific farm within a date range
      */
     public List<Map<String, Object>> getSingleFarmAnimalHeadcount(String farmId, LocalDate fromDate, LocalDate toDate) {
-        logger.info("🔍 Fetching animal headcount data for farm: {} from {} to {}", farmId, fromDate, toDate);
+        logger.info("🔍 Fetching animal headcount for farm: {} from {} to {}", farmId, fromDate, toDate);
 
         try {
             // In a real implementation, we would query the database for animal headcount data
@@ -656,7 +653,7 @@ public class ChartService {
                 dataPoint.put("date", date);
 
                 // Generate a random value between 1000 and 5000 for the headcount
-                int headcount = 1000 + (int)(Math.random() * 4000);
+                int headcount = 1000 + (int) (Math.random() * 4000);
                 dataPoint.put("headcount", headcount);
 
                 headcountData.add(dataPoint);
@@ -665,10 +662,10 @@ public class ChartService {
             // Log data presence verification
             logger.info("📊 Data verification:");
             logger.info("✓ Total records: {}", headcountData.size());
-            logger.info("✓ Total headcount: {}", 
-                headcountData.stream()
-                    .mapToDouble(data -> ((Number) data.get("headcount")).doubleValue())
-                    .sum());
+            logger.info("✓ Total headcount: {}",
+                    headcountData.stream()
+                            .mapToDouble(data -> ((Number) data.get("headcount")).doubleValue())
+                            .sum());
 
             return headcountData;
         } catch (Exception e) {
@@ -681,7 +678,7 @@ public class ChartService {
      * Get head vs weight 52 week data for a specific farm within a date range
      */
     public List<Map<String, Object>> getSingleFarmHeadVsWeight52Week(String farmId, LocalDate fromDate, LocalDate toDate) {
-        logger.info("🔍 Fetching head vs weight 52 week data for farm: {} from {} to {}", farmId, fromDate, toDate);
+        logger.info("🔍 Fetching head vs weight data for farm: {} from {} to {}", farmId, fromDate, toDate);
 
         try {
             // In a real implementation, we would query the database for head vs weight data
@@ -701,7 +698,7 @@ public class ChartService {
                 dataPoint.put("week", "Week " + week);
 
                 // Generate a random value between 1000 and 5000 for the headcount
-                int headcount = 1000 + (int)(Math.random() * 4000);
+                int headcount = 1000 + (int) (Math.random() * 4000);
                 dataPoint.put("headcount", headcount);
 
                 // Generate a random value between 200 and 300 for the weight
@@ -714,14 +711,14 @@ public class ChartService {
             // Log data presence verification
             logger.info("📊 Data verification:");
             logger.info("✓ Total records: {}", headWeightData.size());
-            logger.info("✓ Total headcount: {}", 
-                headWeightData.stream()
-                    .mapToDouble(data -> ((Number) data.get("headcount")).doubleValue())
-                    .sum());
-            logger.info("✓ Average weight: {}", 
-                headWeightData.stream()
-                    .mapToDouble(data -> ((Number) data.get("weight")).doubleValue())
-                    .average().orElse(0));
+            logger.info("✓ Total headcount: {}",
+                    headWeightData.stream()
+                            .mapToDouble(data -> ((Number) data.get("headcount")).doubleValue())
+                            .sum());
+            logger.info("✓ Average weight: {}",
+                    headWeightData.stream()
+                            .mapToDouble(data -> ((Number) data.get("weight")).doubleValue())
+                            .average().orElse(0));
 
             return headWeightData;
         } catch (Exception e) {
@@ -731,10 +728,10 @@ public class ChartService {
     }
 
     /**
-     * Get lagoon levels data for a specific farm within a date range
+     * Get lagoon levels within a date range
      */
     public List<Map<String, Object>> getSingleFarmLagoonLevels(String farmId, LocalDate fromDate, LocalDate toDate) {
-        logger.info("🔍 Fetching lagoon levels data for farm: {} from {} to {}", farmId, fromDate, toDate);
+        logger.info("🔍 Fetching lagoon levels for farm: {} from {} to {}", farmId, fromDate, toDate);
 
         try {
             // In a real implementation, we would query the database for lagoon levels data
@@ -841,8 +838,8 @@ public class ChartService {
             // Get farms for the specified company
             List<CompanyFarm> companyFarms = companyFarmRepository.findByCompanyId(companyId);
             List<Farm> farms = companyFarms.stream()
-                .map(CompanyFarm::getFarm)
-                .collect(Collectors.toList());
+                    .map(CompanyFarm::getFarm)
+                    .collect(Collectors.toList());
 
             logger.info("Found {} farms for company ID: {}", farms.size(), companyId);
 
@@ -852,6 +849,7 @@ public class ChartService {
 
             // Generate data for each farm
             for (Farm farm : farms) {
+
                 Map<String, Object> dataPoint = new HashMap<>();
                 dataPoint.put("farm_id", farm.getId());
                 dataPoint.put("farm_name", farm.getName());
@@ -989,5 +987,20 @@ public class ChartService {
             logger.error("❌ Error in getSingleFarmTemperatureTimeline: {}", e.getMessage(), e);
             return new ArrayList<>();
         }
+    }
+
+    public Map<String, List<FarmVolumeData>> getMTDVolumeByFarmForYears(String companyId, LocalDate date) {
+        logger.info("🔄 Calculating MTD volume by farm for 3 years for company: {} and date: {}", companyId, date);
+        Map<String, List<FarmVolumeData>> results = new LinkedHashMap<>();
+        for (int i = 0; i < 3; i++) {
+            int year = Year.now().minusYears(i).getValue();
+            LocalDate from = LocalDate.of(year, date.getMonth(), 1);
+            LocalDate to = LocalDate.of(year, date.getMonth(), date.getDayOfMonth());
+            logger.info("🔢 Year: {}, From: {}, To: {}", year, from, to);
+            List<FarmVolumeData> volumes = getVolumeByFarmForDateRange(companyId, from, to);
+            results.put(String.valueOf(year), volumes);
+            logger.info("📅 Year {}: {} records", year, volumes.size());
+        }
+        return results;
     }
 }
