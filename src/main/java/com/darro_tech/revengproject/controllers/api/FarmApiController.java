@@ -21,7 +21,9 @@ import org.springframework.web.bind.annotation.SessionAttribute;
 import com.darro_tech.revengproject.dto.FarmCreateDTO;
 import com.darro_tech.revengproject.dto.ValidationResult;
 import com.darro_tech.revengproject.models.Farm;
+import com.darro_tech.revengproject.models.User;
 import com.darro_tech.revengproject.services.CompanyService;
+import com.darro_tech.revengproject.services.FarmSelectionService;
 import com.darro_tech.revengproject.services.FarmService;
 import com.darro_tech.revengproject.services.UserService;
 
@@ -44,6 +46,9 @@ public class FarmApiController {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private FarmSelectionService farmSelectionService;
 
     /**
      * Get farms for the currently selected company
@@ -295,6 +300,78 @@ public class FarmApiController {
     }
 
     /**
+     * Get the currently selected farm
+     */
+    @GetMapping("/farms/selected")
+    public ResponseEntity<Map<String, Object>> getSelectedFarm(HttpSession session) {
+        logger.info("🔍 Getting selected farm from session");
+
+        // Get selected farm from session
+        String selectedFarmId = farmSelectionService.getSelectedFarmId(session);
+
+        // Get selected company from session
+        String selectedCompanyId = (String) session.getAttribute("selectedCompanyId");
+        if (selectedCompanyId == null) {
+            logger.warning("❌ No company selected in session");
+            return ResponseEntity.ok(Map.of(
+                    "success", false,
+                    "message", "No company selected"
+            ));
+        }
+
+        if (selectedFarmId == null) {
+            logger.info("ℹ️ No farm selected in session");
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "selected", false,
+                    "message", "No farm selected"
+            ));
+        }
+
+        try {
+            // Get farm details
+            Optional<Farm> farmOpt = farmService.getFarmById(selectedFarmId);
+            if (!farmOpt.isPresent()) {
+                logger.warning("⚠️ Selected farm not found: " + selectedFarmId);
+                return ResponseEntity.ok(Map.of(
+                        "success", true,
+                        "selected", false,
+                        "message", "Selected farm not found"
+                ));
+            }
+
+            Farm farm = farmOpt.get();
+
+            // Verify farm belongs to selected company
+            List<Farm> companyFarms = farmService.getFarmsByCompanyId(selectedCompanyId);
+            boolean farmBelongsToCompany = companyFarms.stream()
+                    .anyMatch(f -> f.getId().equals(selectedFarmId));
+
+            if (!farmBelongsToCompany) {
+                logger.warning("⚠️ Selected farm does not belong to selected company");
+                return ResponseEntity.ok(Map.of(
+                        "success", true,
+                        "selected", false,
+                        "message", "Selected farm does not belong to selected company"
+                ));
+            }
+
+            logger.info("✅ Found selected farm: " + farm.getName());
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "selected", true,
+                    "farm", farm
+            ));
+        } catch (Exception e) {
+            logger.severe("❌ Error getting selected farm: " + e.getMessage());
+            return ResponseEntity.ok(Map.of(
+                    "success", false,
+                    "message", "Error getting selected farm: " + e.getMessage()
+            ));
+        }
+    }
+
+    /**
      * Select a farm and update session
      */
     @PostMapping("/farms/select")
@@ -305,6 +382,16 @@ public class FarmApiController {
         logger.info("🔄 Selecting farm with ID: " + farmId);
 
         try {
+            // Get selected company from session
+            String selectedCompanyId = (String) session.getAttribute("selectedCompanyId");
+            if (selectedCompanyId == null) {
+                logger.warning("❌ No company selected in session");
+                return ResponseEntity.ok(Map.of(
+                        "success", false,
+                        "message", "No company selected"
+                ));
+            }
+
             // Validate farm exists
             Optional<Farm> farmOpt = farmService.getFarmById(farmId);
             if (!farmOpt.isPresent()) {
@@ -317,33 +404,18 @@ public class FarmApiController {
 
             Farm farm = farmOpt.get();
 
-            // Get selected company from session
-            String selectedCompanyId = (String) session.getAttribute("selectedCompanyId");
-            if (selectedCompanyId == null) {
-                logger.warning("❌ No company selected in session");
+            // Use FarmSelectionService to select the farm
+            boolean selected = farmSelectionService.selectFarm(farmId, selectedCompanyId, session);
+
+            if (!selected) {
+                logger.warning("❌ Failed to select farm");
                 return ResponseEntity.ok(Map.of(
                         "success", false,
-                        "message", "No company selected"
+                        "message", "Failed to select farm"
                 ));
             }
 
-            // Verify farm belongs to selected company
-            List<Farm> companyFarms = farmService.getFarmsByCompanyId(selectedCompanyId);
-            boolean farmBelongsToCompany = companyFarms.stream()
-                    .anyMatch(f -> f.getId().equals(farmId));
-
-            if (!farmBelongsToCompany) {
-                logger.warning("❌ Farm does not belong to selected company");
-                return ResponseEntity.ok(Map.of(
-                        "success", false,
-                        "message", "Farm does not belong to selected company"
-                ));
-            }
-
-            // Update session
-            session.setAttribute("selectedFarmKey", farmId);
-            logger.info("✅ Updated session with farm: " + farm.getName());
-
+            // Also store in localStorage via the response
             return ResponseEntity.ok(Map.of(
                     "success", true,
                     "farm", farm,
