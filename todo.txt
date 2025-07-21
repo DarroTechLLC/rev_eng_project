@@ -1,4 +1,5 @@
 -company dropdown default to dashboard, need to stay where i am in app just update company at this point
+-ai views default to dashboard when company change, how to fix
 
 -success message for alert save
 
