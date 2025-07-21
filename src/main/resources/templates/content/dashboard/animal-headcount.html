@@ -313,7 +313,7 @@
             // Create chart using direct Highcharts implementation
             console.log('🚀 Creating Animal Headcount Chart with direct Highcharts');
             
-            const chart = Highcharts.chart('animalHeadcountChart', {
+            chart = Highcharts.chart('animalHeadcountChart', {  // Remove 'const' here
                 chart: {
                     type: chartType === 'column' ? 'column' : chartType,
                     inverted: chartType === 'bar', // For horizontal bar charts
@@ -327,9 +327,12 @@
                     }
                 },
                 xAxis: {
-                    type: 'category',
+                    type: 'datetime',  // Changed to datetime for time series
                     title: {
-                        text: 'Farm'
+                        text: 'Date'
+                    },
+                    labels: {
+                        format: '{value:%b %Y}'
                     }
                 },
                 yAxis: {
@@ -346,14 +349,10 @@
                 tooltip: {
                     formatter: function() {
                         return `<b>${this.series.name}</b><br/>
-                                ${this.key}: ${Highcharts.numberFormat(this.y, 0)} animals`;
+                                ${Highcharts.dateFormat('%b %Y', this.x)}: ${Highcharts.numberFormat(this.y, 0)} animals`;
                     }
                 },
-                series: [{
-                    name: 'Animal Headcount',
-                    data: chartData,
-                    color: 'rgba(54, 162, 235, 1)'
-                }],
+                series: datasets,  // Use datasets array instead of chartData
                 exporting: {
                     enabled: false // Disabled built-in exporting as we're using custom export menu
                 }
