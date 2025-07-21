@@ -54,7 +54,7 @@
                         <tbody>
                             <tr th:each="user : ${users}">
                                 <td>
-                                    <a th:href="@{'/admin/users/' + ${user.id}}" th:text="${user.username ?: '[PENDING]'}" class="username-link"></a>
+                                    <a th:href="@{'/admin/users/' + ${user.id}}" th:text="${user.username ?: '[PENDING]'}" class="username-link" style="color: #4e73df; text-decoration: none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'"></a>
                                 </td>
                                 <td th:text="${user.firstName}"></td>
                                 <td th:text="${user.lastName}"></td>

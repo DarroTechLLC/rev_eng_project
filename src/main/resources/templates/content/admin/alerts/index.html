@@ -43,7 +43,6 @@
                                     <th class="sortable" data-sort="active">Active <i class="fas fa-sort"></i></th>
                                     <th class="sortable" data-sort="created">Created <i class="fas fa-sort"></i></th>
                                     <th class="sortable" data-sort="updated">Updated <i class="fas fa-sort"></i></th>
-                                <th>Actions</th>
                             </tr>
                         </thead>
                             <tbody id="alertsTableBody">
@@ -222,6 +221,14 @@
             const messageLink = document.createElement('a');
             messageLink.href = `/admin/alerts/edit/${alert.id}`;
             messageLink.textContent = truncateText(alert.message, 50);
+            messageLink.style.color = '#4e73df';
+            messageLink.style.textDecoration = 'none';
+            messageLink.addEventListener('mouseenter', function() {
+                this.style.textDecoration = 'underline';
+            });
+            messageLink.addEventListener('mouseleave', function() {
+                this.style.textDecoration = 'none';
+            });
             messageCell.appendChild(messageLink);
             row.appendChild(messageCell);
             
@@ -260,29 +267,7 @@
             updatedCell.textContent = formatDate(alert.updated_at);
             row.appendChild(updatedCell);
             
-            // Actions column
-            const actionsCell = document.createElement('td');
-            
-            // Edit button
-            const editBtn = document.createElement('a');
-            editBtn.href = `/admin/alerts/edit/${alert.id}`;
-            editBtn.className = 'btn btn-primary btn-sm mr-2';
-            editBtn.innerHTML = '<i class="fas fa-edit"></i>';
-            actionsCell.appendChild(editBtn);
-            
-            // Delete button
-            const deleteBtn = document.createElement('button');
-            deleteBtn.type = 'button';
-            deleteBtn.className = 'btn btn-danger btn-sm';
-            deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
-            deleteBtn.addEventListener('click', function() {
-                // Set the alert to delete and show the confirmation modal
-                alertToDelete = alert.id;
-                $('#deleteModal').modal('show');
-            });
-            actionsCell.appendChild(deleteBtn);
-            
-            row.appendChild(actionsCell);
+            // No actions column needed
             
             tableBody.appendChild(row);
         });
