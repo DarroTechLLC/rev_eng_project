@@ -1,6 +1,6 @@
--make names of companies links and remove edit links from table, remove edit link from farms table, remove
-edit icon from website alerts
+-production charts need download
 
+-success message for alert save
 
 -dark mode option in user dropdown for any user
 

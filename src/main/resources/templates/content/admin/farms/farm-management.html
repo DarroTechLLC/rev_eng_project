@@ -65,13 +65,13 @@
                                 <th class="sortable" data-sort="farmType">Farm Type <i class="fas fa-sort"></i></th>
                                 <th class="sortable" data-sort="tempSource">Temp Source <i class="fas fa-sort"></i></th>
                                 <th class="sortable" data-sort="isSource">Is Source <i class="fas fa-sort"></i></th>
-                                <th>Actions</th>
+<!--                                <th>Actions</th>-->
                             </tr>
                         </thead>
                         <tbody>
                             <tr th:each="farm : ${farms}" class="farm-row">
                                 <td>
-                                    <a th:href="@{/admin/farms/edit/{id}(id=${farm.id})}" th:text="${farm.name}" class="farm-name farm-link">
+                                    <a th:href="@{/admin/farms/edit/{id}(id=${farm.id})}" th:text="${farm.name}" class="farm-name farm-link" style="color: #4e73df; text-decoration: none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">
                                         Example Farm
                                     </a>
                                 </td>
@@ -79,16 +79,16 @@
                                 <td th:text="${farm.farmType != null ? farm.farmType : '(None Selected)'}" class="farm-type">Standard</td>
                                 <td th:text="${farm.tempSourceId != null ? tempSourceNames[farm.tempSourceId] : ''}" class="farm-temp-source">Source</td>
                                 <td th:text="${farm.isTempSource ? 'YES' : ''}" class="farm-is-source">No</td>
-                                <td>
-                                    <a th:href="@{/admin/farms/edit/{id}(id=${farm.id})}" class="btn btn-primary btn-sm">
-                                        <i class="fas fa-edit"></i> Edit
-                                    </a>
-                                    <button type="button" class="btn btn-danger btn-sm delete-farm-btn" 
-                                            th:data-id="${farm.id}"
-                                            th:data-name="${farm.name}">
-                                        <i class="fas fa-trash"></i> Delete
-                                    </button>
-                                </td>
+<!--                                <td>-->
+<!--                                    <a th:href="@{/admin/farms/edit/{id}(id=${farm.id})}" class="btn btn-primary btn-sm">-->
+<!--                                        <i class="fas fa-edit"></i> Edit-->
+<!--                                    </a>-->
+<!--                                    <button type="button" class="btn btn-danger btn-sm delete-farm-btn" -->
+<!--                                            th:data-id="${farm.id}"-->
+<!--                                            th:data-name="${farm.name}">-->
+<!--                                        <i class="fas fa-trash"></i> Delete-->
+<!--                                    </button>-->
+<!--                                </td>-->
                             </tr>
                         </tbody>
                     </table>

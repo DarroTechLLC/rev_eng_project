@@ -46,7 +46,6 @@
                                 <th class="sortable" data-sort="name">Name <i class="fas fa-sort"></i></th>
                                 <th class="sortable" data-sort="displayName">Display Name <i class="fas fa-sort"></i></th>
                                 <th>Logo</th>
-                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -54,19 +53,13 @@
                                 <td colspan="5" class="text-center">No Companies Available</td>
                             </tr>
                             <tr th:each="company : ${companies}" class="company-row">
-                                <td th:text="${company.name}" class="company-name"></td>
+                                <td>
+                                    <a th:href="@{/admin/companies/{id}(id=${company.id})}" th:text="${company.name}" class="company-name" style="color: #4e73df; text-decoration: none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'"></a>
+                                </td>
                                 <td th:text="${company.displayName}" class="company-display-name"></td>
                                 <td>
                                     <img th:if="${company.logoUrl}" th:src="${company.logoUrl}" alt="Company Logo" style="max-height: 40px;">
                                     <span th:unless="${company.logoUrl}" class="text-muted">No Logo</span>
-                                </td>
-                                <td>
-                                    <a th:href="@{/admin/companies/{id}(id=${company.id})}" class="btn btn-sm btn-info">
-                                        <i class="fas fa-edit"></i> Edit
-                                    </a>
-                                    <button class="btn btn-sm btn-danger delete-company" th:data-id="${company.id}">
-                                        <i class="fas fa-trash"></i> Delete
-                                    </button>
                                 </td>
                             </tr>
                         </tbody>
