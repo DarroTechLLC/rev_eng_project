@@ -15,3 +15,6 @@ OK=button
 -highcharts=rename and formatting
 
 -still have to enter name after biometric
+
+-is there data being handled by js in any scenario in this app that
+can be better handled by java? or vice versa. take comprehensive look
