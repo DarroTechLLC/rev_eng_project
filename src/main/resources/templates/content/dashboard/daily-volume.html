@@ -139,6 +139,7 @@
                 chart.destroy();
             }
 
+            // Process data for chart - match NextJS implementation exactly
             const chartData = data.data || [];
             if (chartData.length === 0) {
                 showError('No data available for the selected date.');
@@ -146,9 +147,12 @@
                 return;
             }
 
-            // Process data for chart
-            const categories = chartData.map(item => item.farm_name || item.farm_id);
-            const seriesData = chartData.map(item => item.volume || 0);
+            // Create data pairs like NextJS: [farmName, volume]
+            const seriesData = chartData.map(item => {
+                const farmName = item.farm_name || item.farm_id;
+                const volume = item.volume || 0;
+                return [farmName, volume];
+            });
 
             // Create chart using direct Highcharts implementation
             console.log('🚀 Creating Daily Volume Chart with direct Highcharts');

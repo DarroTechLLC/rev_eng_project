@@ -222,9 +222,9 @@
             // Fill in data for all 12 months
             for (let i = 0; i < 12; i++) {
                 const rec = map.get(i);
-                monthlyValues.push(rec ? rec.value : null);
-                averages.push(rec ? rec.average : null);
-                internals.push(rec ? rec.average_internal : null);
+                monthlyValues.push([rec ? rec.farm_name || rec.farm_id : 'Unknown', rec ? rec.value : null]);
+                averages.push([rec ? rec.farm_name || rec.farm_id : 'Unknown', rec ? rec.average : null]);
+                internals.push([rec ? rec.farm_name || rec.farm_id : 'Unknown', rec ? rec.average_internal : null]);
             }
 
             // Create chart using direct Highcharts implementation
@@ -243,7 +243,10 @@
                     }
                 },
                 xAxis: {
-                    categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+                    type: 'category',
+                    title: {
+                        text: 'Farm'
+                    }
                 },
                 yAxis: {
                     title: {
@@ -253,7 +256,7 @@
                 tooltip: {
                     formatter: function() {
                         return `<b>${this.series.name}</b><br/>
-                                ${this.x}: ${Highcharts.numberFormat(this.y, 2)}`;
+                                ${this.key}: ${Highcharts.numberFormat(this.y, 2)}`;
                     }
                 },
                 series: [{

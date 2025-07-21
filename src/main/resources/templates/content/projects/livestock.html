@@ -254,13 +254,7 @@
                 const data = response.data || [];
 
                 // Process data for headcount chart
-                const categories = [];
-                const seriesData = [];
-
-                data.forEach(d => {
-                    categories.push(d.date);
-                    seriesData.push(d.headcount);
-                });
+                const seriesData = data.map(d => [d.farm_name || d.farm_id, d.headcount]);
 
                 // Create chart using direct Highcharts implementation
                 console.log('🚀 Creating Animal Headcount Chart with direct Highcharts');
@@ -344,15 +338,8 @@
                 const data = response.data || [];
 
                 // Process data for head vs weight chart
-                const categories = [];
-                const headData = [];
-                const weightData = [];
-
-                data.forEach(d => {
-                    categories.push(d.week);
-                    headData.push(d.headcount);
-                    weightData.push(d.weight);
-                });
+                const headData = data.map(d => [d.farm_name || d.farm_id, d.headcount]);
+                const weightData = data.map(d => [d.farm_name || d.farm_id, d.weight]);
 
                 // Create chart using direct Highcharts implementation
                 console.log('🚀 Creating Head vs Weight Chart with direct Highcharts');
@@ -371,9 +358,9 @@
                         }
                     },
                     xAxis: {
-                        categories: categories,
+                        type: 'category',
                         title: {
-                            text: 'Week'
+                            text: 'Farm'
                         }
                     },
                     yAxis: [{
@@ -389,7 +376,7 @@
                     tooltip: {
                         formatter: function() {
                             return `<b>${this.series.name}</b><br/>
-                                    Week: ${this.x}<br/>
+                                    Farm: ${this.key}<br/>
                                     Value: ${Highcharts.numberFormat(this.y, this.series.name === 'Animal Headcount (Pop)' ? 0 : 2)}`;
                         }
                     },
