@@ -6,17 +6,35 @@
         <!-- Company Dropdown -->
         <div id="companyDropdown" class="dropdown">
             <!-- Current Selection Display -->
-            <div id="currentCompanyDisplay" class="d-flex align-items-center dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                <!-- Will be populated by JavaScript -->
+            <div id="currentCompanyDisplay" 
+                 th:data-company-slug="${selectedCompany != null ? selectedCompany.name.toLowerCase().replaceAll(' ', '-') : ''}"
+                 class="d-flex align-items-center dropdown-toggle" 
+                 data-toggle="dropdown" 
+                 aria-haspopup="true" 
+                 aria-expanded="false">
+                <!-- Server-side rendering of selected company -->
+                <img th:if="${selectedCompany != null && selectedCompany.logoUrl != null}"
+                     th:src="${selectedCompany.logoUrl}"
+                     th:alt="${selectedCompany.name}"
+                     class="company-only-logo"
+                     style="max-height: 30px; max-width: 60px;"
+                     th:title="${selectedCompany.name}" />
+
+                <span th:if="${selectedCompany != null && selectedCompany.logoUrl == null}"
+                      class="company-logo-placeholder"
+                      style="display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; background-color: #e9ecef; border-radius: 50%; font-weight: bold;"
+                      th:title="${selectedCompany.name}">
+                    <span th:text="${selectedCompany.name.charAt(0)}"></span>
+                </span>
             </div>
-            
+
             <!-- Dropdown Content -->
             <div class="dropdown-content dropdown-menu" id="companyList" aria-labelledby="companyDropdown">
                 <div class="text-center p-2">Loading companies...</div>
             </div>
         </div>
     </div>
-    
+
     <!-- Script Fragment -->
     <th:block th:fragment="company-selector-script">
         <style>
@@ -85,16 +103,16 @@
                 // Function to load companies
                 function loadCompanies() {
                     console.log('📊 Loading companies...');
-                    
+
                     // Show loading state
                     const companyList = document.getElementById('companyList');
                     const currentDisplay = document.getElementById('currentCompanyDisplay');
-                    
+
                     companyList.innerHTML = '<div class="text-center p-2">Loading companies...</div>';
                     if (currentDisplay.innerHTML.trim() === '') {
                         currentDisplay.innerHTML = '<div class="d-flex align-items-center"><div class="spinner-border spinner-border-sm text-primary mr-2" role="status"></div></div>';
                     }
-                    
+
                     fetch('/api/companies')
                         .then(response => {
                             console.log('📊 Companies API response status:', response.status);
@@ -108,44 +126,44 @@
                         })
                         .then(data => {
                             console.log('✅ Companies loaded successfully:', data);
-                            
+
                             // Clear loading messages
                             companyList.innerHTML = '';
                             currentDisplay.innerHTML = '';
-                            
+
                             if (data.success && data.companies && data.companies.length > 0) {
                                 // Find selected company
                                 const selectedCompany = data.companies.find(c => c.companyId === data.selectedCompanyId) || data.companies[0];
                                 console.log('🏢 Selected company:', selectedCompany);
-                                
+
                                 // Add company slug as data attribute
                                 currentDisplay.setAttribute('data-company-slug', 
                                     selectedCompany.companyName.toLowerCase().replace(/\s+/g, '-'));
                                 console.log('🔗 Company slug:', currentDisplay.getAttribute('data-company-slug'));
-                                
+
                                 // Update current selection display - logo only
                                 displayCompanyLogo(currentDisplay, selectedCompany, true);
-                                
+
                                 // Create dropdown items
                                 data.companies.forEach(company => {
                                     const item = document.createElement('div');
                                     item.className = 'dropdown-item logo-wrapper d-flex align-items-center justify-content-center';
-                                    
+
                                     // Highlight selected company
                                     if (data.selectedCompanyId === company.companyId) {
                                         item.classList.add('active');
                                     }
-                                    
+
                                     // Create logo display - logo only
                                     displayCompanyLogo(item, company, true);
-                                    
+
                                     // Add click handler
                                     item.addEventListener('click', function(e) {
                                         e.preventDefault();
                                         e.stopPropagation();
                                         selectCompany(company.companyId, company.companyName);
                                     });
-                                    
+
                                     companyList.appendChild(item);
                                 });
                             } else {
@@ -158,22 +176,25 @@
                             console.error('❌ Error loading companies:', error);
                             companyList.innerHTML = '<div class="text-danger p-2">Failed to load companies</div>';
                             currentDisplay.innerHTML = '<span class="company-name text-danger">Error loading companies</span>';
-                            
+
                             // Show detailed error message in console
                             console.error('❌ Failed to load companies: ' + error.message);
                         });
                 }
-                
+
                 // Helper function to display company logo or name
                 function displayCompanyLogo(container, company, logoOnly = false) {
                     container.innerHTML = '';
-                    
+
                     if (company.logoUrl) {
                         const logo = document.createElement('img');
                         logo.src = company.logoUrl;
                         logo.alt = company.companyName;
                         logo.className = logoOnly ? 'company-only-logo' : 'company-logo';
                         logo.title = company.companyName;
+                        // Add inline styles to ensure consistent sizing
+                        logo.style.maxHeight = '30px';
+                        logo.style.maxWidth = '60px';
                         container.appendChild(logo);
                     } else {
                         // If no logo, show a placeholder or initials
@@ -181,9 +202,18 @@
                         placeholder.className = 'company-logo-placeholder';
                         placeholder.textContent = company.displayName || company.companyName.charAt(0);
                         placeholder.title = company.companyName;
+                        // Add inline styles to ensure consistent sizing
+                        placeholder.style.display = 'inline-flex';
+                        placeholder.style.alignItems = 'center';
+                        placeholder.style.justifyContent = 'center';
+                        placeholder.style.width = '30px';
+                        placeholder.style.height = '30px';
+                        placeholder.style.backgroundColor = '#e9ecef';
+                        placeholder.style.borderRadius = '50%';
+                        placeholder.style.fontWeight = 'bold';
                         container.appendChild(placeholder);
                     }
-                    
+
                     // Only add the name if not in logoOnly mode
                     if (!logoOnly) {
                         const nameSpan = document.createElement('span');
@@ -192,29 +222,29 @@
                         container.appendChild(nameSpan);
                     }
                 }
-                
+
                 // Helper function to intelligently update URL when company changes
                 function updateUrlForCompanyChange(companySlug) {
                     // Get current URL path segments
                     const path = window.location.pathname;
                     const pathSegments = path.split('/').filter(segment => segment.length > 0);
                     const queryParams = window.location.search;
-                    
+
                     console.log('🔍 Current path segments:', pathSegments);
                     console.log('🔗 Current query params:', queryParams);
-                    
+
                     // Special handling for known problematic companies
                     if (companySlug.toLowerCase() === 'tuls' || 
                         companySlug.toLowerCase() === 'texhoma' ||
                         companySlug.toLowerCase() === 'vendor') {
                         console.log('⚠️ Special handling for company: ' + companySlug);
-                        
+
                         // Always redirect to dashboard for these companies
                         const safeUrl = `/${companySlug.toLowerCase()}/dashboard/daily-volume`;
                         console.log(`🛡️ Using safe URL for special company: ${safeUrl}`);
                         return safeUrl;
                     }
-                    
+
                     // Check if this is an admin path
                     if (pathSegments.length > 0 && pathSegments[0] === 'admin') {
                         console.log('👨‍💼 Admin page detected, keeping admin context');
@@ -222,10 +252,10 @@
                         console.log('🔄 Admin route - refreshing page to maintain state');
                         return window.location.href; // Return current URL to maintain query params
                     }
-                    
+
                     // If we're on a regular company page
                     let newUrl = '';
-                    
+
                     if (pathSegments.length > 0) {
                         // Always redirect to the company's projects root when in a project view
                         // This ensures we get the correct default farm for the new company
@@ -247,43 +277,43 @@
                         newUrl = `/${companySlug}/dashboard/daily-volume`;
                         console.log(`🔄 Root page - redirecting to company dashboard: ${newUrl}`);
                     }
-                    
+
                     // Keep any query parameters
                     if (queryParams) {
                         newUrl += queryParams;
                         console.log(`🔗 Added query params to URL: ${newUrl}`);
                     }
-                    
+
                     console.log(`🚀 Final navigation: ${path} → ${newUrl}`);
                     return newUrl;
                 }
-                
+
                 // Function to select company
                 function selectCompany(companyId, companyName) {
                     // Close dropdown first
                     document.querySelector('.dropdown-content').classList.remove('show');
-                    
+
                     // Show loading state
                     const currentDisplay = document.getElementById('currentCompanyDisplay');
                     const originalContent = currentDisplay.innerHTML;
                     currentDisplay.innerHTML = '<div class="d-flex align-items-center"><div class="spinner-border spinner-border-sm text-primary mr-2" role="status"></div></div>';
-                    
+
                     console.log('🏢 Selecting company:', companyId, companyName);
-                    
+
                     // Get CSRF token from meta tag
                     const csrfToken = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
                     const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content');
-                    
+
                     // Prepare headers
                     const headers = {
                         'Content-Type': 'application/json'
                     };
-                    
+
                     // Add CSRF token if available
                     if (csrfToken && csrfHeader) {
                         headers[csrfHeader] = csrfToken;
                     }
-                    
+
                     // Use the companies-all endpoint which is guaranteed to work
                     fetch('/api/companies-all/select/' + companyId, {
                         method: 'POST',
@@ -314,13 +344,13 @@
                             });
                             document.dispatchEvent(companySelectedEvent);
                             console.log('📢 Dispatched companySelected event');
-                            
+
                             // Create a slug format of the company name for URL
                             const companySlug = companyName.toLowerCase().replace(/\s+/g, '-');
-                            
+
                             // Determine the new URL based on current location
                             const newUrl = updateUrlForCompanyChange(companySlug);
-                            
+
                             // Navigate to the new URL
                             window.location.href = newUrl;
                         } else {
@@ -335,9 +365,54 @@
                         console.error('❌ Error switching company:', error);
                     });
                 }
-                
+
                 // Initialize company selector
-                loadCompanies();
+                const currentCompany = document.getElementById('currentCompanyDisplay');
+                const alreadyHydrated = currentCompany.getAttribute('data-company-slug');
+
+                if (!alreadyHydrated || alreadyHydrated.trim() === '') {
+                    // Only fetch if data wasn't injected server-side
+                    console.log('🔄 No server-side company data found, loading companies via API...');
+                    loadCompanies();
+                } else {
+                    console.log('✅ Using server-side hydrated company data:', alreadyHydrated);
+                    // Still need to load the dropdown items
+                    fetch('/api/companies')
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success && data.companies && data.companies.length > 0) {
+                                // Clear loading message
+                                const companyList = document.getElementById('companyList');
+                                companyList.innerHTML = '';
+
+                                // Create dropdown items
+                                data.companies.forEach(company => {
+                                    const item = document.createElement('div');
+                                    item.className = 'dropdown-item logo-wrapper d-flex align-items-center justify-content-center';
+
+                                    // Highlight selected company
+                                    if (data.selectedCompanyId === company.companyId) {
+                                        item.classList.add('active');
+                                    }
+
+                                    // Create logo display - logo only
+                                    displayCompanyLogo(item, company, true);
+
+                                    // Add click handler
+                                    item.addEventListener('click', function(e) {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        selectCompany(company.companyId, company.companyName);
+                                    });
+
+                                    companyList.appendChild(item);
+                                });
+                            }
+                        })
+                        .catch(error => {
+                            console.error('❌ Error loading dropdown companies:', error);
+                        });
+                }
             });
         </script>
     </th:block>
