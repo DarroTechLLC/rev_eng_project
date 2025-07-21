@@ -1,5 +1,3 @@
--success message for alert save
-
 -dark mode option in user dropdown for any user
 
 -still have to enter name after biometric (queried)
