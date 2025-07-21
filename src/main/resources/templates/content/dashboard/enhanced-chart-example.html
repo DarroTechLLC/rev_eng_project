@@ -1,172 +1,213 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
-      layout:decorate="~{layouts/main-layout}">
+      layout:decorate="~{layouts/main}">
 <head>
-    <title>Enhanced Chart Export Example</title>
-    
-    <!-- Enhanced Highcharts with all export functionality -->
-    <div th:replace="fragments/highcharts-scripts :: highcharts-with-utils"></div>
-    <div th:replace="fragments/highcharts-scripts :: chart-export-menu"></div>
-    
+    <title>Enhanced Chart Example</title>
+    <link rel="stylesheet" th:href="@{/css/chart-type-selector.css}">
     <style>
-        .chart-container {
-            position: relative;
-            height: 400px;
-            margin-bottom: 20px;
-        }
-        .chart-panel {
-            background-color: #fff;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-        .chart-nav {
+        .chart-controls {
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            margin-bottom: 15px;
+            gap: 10px;
+            flex-wrap: wrap;
         }
-        .chart-type-selector {
-            display: flex;
-            gap: 5px;
+
+        .chart-title {
+            font-weight: 600;
+            color: #333;
+            font-size: 16px;
         }
-        .chart-type-button {
+
+        .date-selector {
             padding: 6px 12px;
             border: 1px solid #ddd;
-            background-color: #f8f9fc;
-            cursor: pointer;
             border-radius: 4px;
-            font-size: 12px;
+            font-size: 14px;
         }
-        .chart-type-button.active {
-            background-color: #4e73df;
-            color: white;
-            border-color: #4e73df;
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .chart-controls {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .chart-title {
+                font-size: 14px;
+            }
         }
     </style>
 </head>
 <body>
 <div layout:fragment="content">
     <div class="container-fluid">
-        <!-- Page Heading -->
-        <div class="d-sm-flex align-items-center justify-content-between mb-4">
-            <h1 class="h3 mb-0 text-gray-800">Enhanced Chart Export Example</h1>
-            <p class="text-muted">This demonstrates the enhanced chart export functionality matching the Next.js implementation</p>
-        </div>
-
-        <!-- Chart Panel -->
-        <div class="chart-panel">
-            <div class="chart-nav">
-                <div>
-                    <h5>Production Volume Chart</h5>
-                    <div class="chart-type-selector" id="chartTypeSelector">
-                        <button class="chart-type-button active" data-type="line">Line</button>
-                        <button class="chart-type-button" data-type="column">Column</button>
-                        <button class="chart-type-button" data-type="bar">Bar</button>
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                        <h6 class="m-0 font-weight-bold text-primary">Enhanced Chart Example</h6>
+                        <div class="chart-controls">
+                            <!-- Date Selector -->
+                            <input type="date" id="dateSelector" class="date-selector"
+                                   th:value="${#dates.format(selectedDate, 'yyyy-MM-dd')}" />
+                            <!-- Chart Type Selector -->
+                            <div class="chart-type-selector" id="enhanced-chart-selector">
+                                <!-- Chart type buttons will be added dynamically -->
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="loadingIndicator" style="display: none;">Loading...</div>
+                        <div id="errorMessage" class="alert alert-danger" style="display: none;"></div>
+                        <div id="enhancedChart" style="min-height: 400px;"></div>
                     </div>
                 </div>
-            </div>
-            <div class="chart-container" id="productionChart"></div>
-        </div>
-
-        <!-- Instructions -->
-        <div class="card">
-            <div class="card-header">
-                <h6 class="m-0 font-weight-bold text-primary">How to Use Enhanced Export</h6>
-            </div>
-            <div class="card-body">
-                <p><strong>Features implemented:</strong></p>
-                <ul>
-                    <li>✅ Custom export menu with dropdown (matching Next.js)</li>
-                    <li>✅ Enhanced XLSX export with proper formatting</li>
-                    <li>✅ Chart title-based filename generation</li>
-                    <li>✅ Multiple export formats: PNG, JPEG, SVG, PDF, CSV, XLS</li>
-                    <li>✅ Automatic file naming from chart title</li>
-                    <li>✅ Download icon in top-right corner of chart</li>
-                </ul>
-                <p><strong>Usage:</strong></p>
-                <ol>
-                    <li>Look for the download icon (📥) in the top-right corner of the chart</li>
-                    <li>Click the icon to open the export menu</li>
-                    <li>Select your preferred export format</li>
-                    <li>Files will be automatically named based on the chart title</li>
-                </ol>
             </div>
         </div>
     </div>
 </div>
 
-<th:block layout:fragment="scripts">
-    <script th:inline="javascript">
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('🚀 Initializing Enhanced Chart Export Example');
-            
-            // Sample data
-            const sampleData = [
-                ['Farm A', 1200],
-                ['Farm B', 1800],
-                ['Farm C', 900],
-                ['Farm D', 1500],
-                ['Farm E', 2100]
-            ];
+<!-- Scripts -->
+<script th:src="@{/js/highcharts-with-utils.js}"></script>
+<script th:src="@{/js/chart-export-menu.js}"></script>
+<script th:src="@{/js/chart-type-selector.js}"></script>
+<script th:inline="javascript">
+    // Get company ID from Thymeleaf model
+    const selectedCompanyId = /*[[${selectedCompanyId}]]*/ '';
+    const dateSelector = document.getElementById('dateSelector');
+    const chartContainer = document.getElementById('enhancedChart');
+    let chart;
 
-            // Chart configuration
-            let chartOptions = {
-                chart: {
-                    type: 'line',
-                    height: 350
-                },
-                title: {
-                    text: 'Production Volume by Farm'
-                },
-                xAxis: {
-                    type: 'category'
-                },
-                yAxis: {
-                    title: {
-                        text: 'Volume (MMBTUs)'
-                    }
-                },
-                series: [{
-                    name: 'Production Volume',
-                    data: sampleData
-                }],
-                exporting: {
-                    enabled: true
+    // Log initial data presence
+    console.log('🔍 Chart Configuration Verification:');
+    console.log('✓ Chart container present:', !!chartContainer);
+    console.log('✓ Date selector present:', !!dateSelector);
+    console.log('✓ Company ID present:', !!selectedCompanyId);
+
+    function showLoading() {
+        document.getElementById('loadingIndicator').style.display = 'block';
+    }
+
+    function hideLoading() {
+        document.getElementById('loadingIndicator').style.display = 'none';
+    }
+
+    function showError(message) {
+        const errorElement = document.getElementById('errorMessage');
+        errorElement.textContent = message;
+        errorElement.style.display = 'block';
+    }
+
+    function hideError() {
+        document.getElementById('errorMessage').style.display = 'none';
+    }
+
+    function updateChart() {
+        const selectedDate = dateSelector.value;
+        const chartSelector = window.chartSelectors?.find(s => s.containerId === 'enhanced-chart-selector');
+        const chartType = chartSelector ? chartSelector.getSelectedType() : 'line';
+        
+        console.log('📅 Selected date:', selectedDate);
+        console.log('📊 Chart type:', chartType);
+        console.log('🏢 Company ID:', selectedCompanyId);
+
+        showLoading();
+        hideError();
+
+        // Generate sample data for demonstration
+        const sampleData = generateSampleData(chartType);
+
+        if (chart) {
+            chart.destroy();
+        }
+
+        // Create chart using direct Highcharts implementation
+        console.log('🚀 Creating Enhanced Chart Example with direct Highcharts');
+        
+        chart = Highcharts.chart('enhancedChart', {
+            chart: {
+                type: chartType === 'column' ? 'column' : chartType,
+                inverted: chartType === 'bar', // For horizontal bar charts
+                height: 400
+            },
+            title: {
+                text: 'Enhanced Chart Example',
+                style: {
+                    fontSize: '16px',
+                    fontWeight: 'bold'
                 }
-            };
-
-            // Create chart
-            const chart = Highcharts.chart('productionChart', chartOptions);
-            
-            // Initialize custom export menu
-            const exportMenu = initChartExportMenu(chart, document.getElementById('productionChart'));
-            
-            console.log('✅ Enhanced chart with export menu created');
-
-            // Chart type selector functionality
-            const typeButtons = document.querySelectorAll('#chartTypeSelector .chart-type-button');
-            typeButtons.forEach(button => {
-                button.addEventListener('click', function() {
-                    // Update active button
-                    typeButtons.forEach(b => b.classList.remove('active'));
-                    this.classList.add('active');
-                    
-                    // Update chart type
-                    const newType = this.dataset.type;
-                    chart.update({
-                        chart: {
-                            type: newType
-                        }
-                    });
-                    
-                    console.log('📊 Chart type changed to:', newType);
-                });
-            });
+            },
+            xAxis: {
+                type: 'category',
+                title: {
+                    text: 'Category'
+                }
+            },
+            yAxis: {
+                min: 0,
+                title: {
+                    text: 'Value'
+                },
+                labels: {
+                    formatter: function() {
+                        return Highcharts.numberFormat(this.value, 0);
+                    }
+                }
+            },
+            tooltip: {
+                formatter: function() {
+                    return `<b>${this.series.name}</b><br/>
+                            ${this.key}: ${Highcharts.numberFormat(this.y, 0)}`;
+                }
+            },
+            series: [{
+                name: 'Sample Data',
+                data: sampleData,
+                color: 'rgba(75, 192, 192, 1)'
+            }],
+            exporting: {
+                enabled: false // Disabled built-in exporting as we're using custom export menu
+            }
         });
-    </script>
-</th:block>
+
+        // Initialize enhanced export menu
+        initChartExportMenu(chart, document.getElementById('enhancedChart'));
+        
+        hideLoading();
+        console.log('✅ Enhanced Chart Example with enhanced export created');
+    }
+
+    function generateSampleData(chartType) {
+        const categories = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+        const data = categories.map((cat, index) => ({
+            name: cat,
+            y: Math.floor(Math.random() * 100) + 20
+        }));
+        
+        return data;
+    }
+
+    // Initialize chart type selectors
+    function initChartTypeSelectors() {
+        window.chartSelectors = initializeChartTypeSelectors();
+    }
+
+    // Initialize when DOM is ready
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('🚀 Initializing Enhanced Chart Example...');
+        
+        // Initialize chart type selectors
+        initChartTypeSelectors();
+
+        // Set up event listeners
+        dateSelector.addEventListener('change', updateChart);
+
+        // Initial chart load
+        updateChart();
+        
+        console.log('✅ Enhanced Chart Example initialized');
+    });
+</script>
 </body>
 </html> 

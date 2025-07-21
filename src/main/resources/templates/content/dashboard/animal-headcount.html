@@ -4,9 +4,40 @@
       layout:decorate="~{layouts/main}">
 <head>
     <title>Animal Headcount Dashboard</title>
-    <!-- Highcharts with Utils -->
-    <div th:replace="fragments/highcharts-scripts :: highcharts-with-utils"></div>
-    <div th:replace="fragments/highcharts-scripts :: chart-export-menu"></div>
+    <link rel="stylesheet" th:href="@{/css/chart-type-selector.css}">
+    <style>
+        .chart-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .chart-title {
+            font-weight: 600;
+            color: #333;
+            font-size: 16px;
+        }
+
+        .date-selector {
+            padding: 6px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .chart-controls {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .chart-title {
+                font-size: 14px;
+            }
+        }
+    </style>
 </head>
 <body>
 <div layout:fragment="content">
@@ -17,12 +48,13 @@
                     <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
                         <h6 class="m-0 font-weight-bold text-primary">Animal Headcount</h6>
                         <div class="chart-controls">
+                            <!-- Date Selector -->
+                            <input type="date" id="dateSelector" class="date-selector"
+                                   th:value="${#dates.format(selectedDate, 'yyyy-MM-dd')}" />
                             <!-- Chart Type Selector -->
-                            <select id="chartType" class="form-control d-inline-block w-auto">
-                                <option value="line">Line</option>
-                                <option value="column">Column</option>
-                                <option value="bar">Bar</option>
-                            </select>
+                            <div class="chart-type-selector" id="animal-headcount-chart-selector">
+                                <!-- Chart type buttons will be added dynamically -->
+                            </div>
                         </div>
                     </div>
                     <div class="card-body">
@@ -36,284 +68,106 @@
     </div>
 </div>
 
-<!-- Chart Initialization Script -->
-<th:block layout:fragment="scripts">
-    <script th:inline="javascript">
-        // Get company ID from Thymeleaf model
-        const selectedCompanyId = /*[[${selectedCompanyId}]]*/ '';
-        const chartTypeSelector = document.getElementById('chartType');
-        const chartContainer = document.getElementById('animalHeadcountChart');
-        let chart;
+<!-- Scripts -->
+<script th:src="@{/js/highcharts-with-utils.js}"></script>
+<script th:src="@{/js/chart-export-menu.js}"></script>
+<script th:src="@{/js/chart-type-selector.js}"></script>
+<script th:inline="javascript">
+    // Get company ID from Thymeleaf model
+    const selectedCompanyId = /*[[${selectedCompanyId}]]*/ '';
+    const dateSelector = document.getElementById('dateSelector');
+    const chartContainer = document.getElementById('animalHeadcountChart');
+    let chart;
 
-        // Log initial data presence
-        console.log('🔍 Chart Configuration Verification:');
-        console.log('✓ Chart container present:', !!document.getElementById('animalHeadcountChart'));
-        console.log('✓ Chart type selector present:', !!chartTypeSelector);
-        console.log('✓ Company ID present:', !!selectedCompanyId);
+    // Log initial data presence
+    console.log('🔍 Chart Configuration Verification:');
+    console.log('✓ Chart container present:', !!chartContainer);
+    console.log('✓ Date selector present:', !!dateSelector);
+    console.log('✓ Company ID present:', !!selectedCompanyId);
 
-        function showLoading() {
-            document.getElementById('loadingIndicator').style.display = 'block';
-        }
+    function showLoading() {
+        document.getElementById('loadingIndicator').style.display = 'block';
+    }
 
-        function hideLoading() {
-            document.getElementById('loadingIndicator').style.display = 'none';
-        }
+    function hideLoading() {
+        document.getElementById('loadingIndicator').style.display = 'none';
+    }
 
-        function showError(message) {
-            const errorElement = document.getElementById('errorMessage');
-            errorElement.textContent = message;
-            errorElement.style.display = 'block';
-        }
+    function showError(message) {
+        const errorElement = document.getElementById('errorMessage');
+        errorElement.textContent = message;
+        errorElement.style.display = 'block';
+    }
 
-        function hideError() {
-            document.getElementById('errorMessage').style.display = 'none';
-        }
+    function hideError() {
+        document.getElementById('errorMessage').style.display = 'none';
+    }
 
-        // Get the current year and previous years
-        const currentYear = new Date().getFullYear();
-        const oneYearAgo = currentYear - 1;
-        const twoYearsAgo = currentYear - 2;
+    function updateChart() {
+        const selectedDate = dateSelector.value;
+        const chartSelector = window.chartSelectors?.find(s => s.containerId === 'animal-headcount-chart-selector');
+        const chartType = chartSelector ? chartSelector.getSelectedType() : 'line';
+        
+        console.log('📅 Selected date:', selectedDate);
+        console.log('📊 Chart type:', chartType);
+        console.log('🏢 Company ID:', selectedCompanyId);
 
-        // Function to get first day of year in ISO format
-        function getFirstDayOfYear(year) {
-            return `${year}-01-01`;
-        }
+        showLoading();
+        hideError();
 
-        // Function to get last day of year in ISO format
-        function getLastDayOfYear(year) {
-            return `${year}-12-31`;
-        }
-
-        // Function to get first day of current month in ISO format
-        function getFirstDayOfCurrentMonth() {
-            const now = new Date();
-            return `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-01`;
-        }
-
-        // Function to generate a color based on index
-        function getChartColor(index) {
-            const colors = [
-                'rgba(54, 162, 235, 1)',   // Blue
-                'rgba(255, 99, 132, 1)',   // Red
-                'rgba(75, 192, 192, 1)',   // Green
-                'rgba(255, 159, 64, 1)',   // Orange
-                'rgba(153, 102, 255, 1)',  // Purple
-                'rgba(255, 205, 86, 1)'    // Yellow
-            ];
-            return colors[index % colors.length];
-        }
-
-        // Arrays to store datasets and promises
-        let datasets = [];
-        let dataPromises = [];
-
-        function fetchPopulationData(year, index) {
-            const from = getFirstDayOfYear(year);
-            const to = getLastDayOfYear(year);
-
-            return fetch('/api/charts/company/population-timeline', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    company_id: selectedCompanyId,
-                    from: from,
-                    to: to
-                })
+        fetch('/api/charts/multi-farm/animal-headcount', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                company_id: selectedCompanyId,
+                date: selectedDate
             })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`Failed to fetch population data for ${year}`);
-                }
-                return response.json();
-            })
-            .then(response => {
-                const data = response.data || [];
-
-                // Create monthly data array (12 months)
-                const monthlyData = [];
-
-                // Fill in the data we have
-                data.forEach(item => {
-                    const date = new Date(item.timestamp);
-                    const month = date.getMonth();
-
-                    // Create a date for the first day of the month
-                    const monthDate = new Date(year, month, 1);
-
-                    // Add data point [timestamp, value]
-                    monthlyData.push([monthDate.getTime(), item.value]);
-                });
-
-                // Sort data by date
-                monthlyData.sort((a, b) => a[0] - b[0]);
-
-                // Add to datasets
-                datasets.push({
-                    name: year.toString(),
-                    data: monthlyData,
-                    color: getChartColor(index),
-                    type: chartTypeSelector.value === 'column' ? 'column' : chartTypeSelector.value
-                });
-            });
-        }
-
-        function fetchForecastData(year, index) {
-            const from = getFirstDayOfCurrentMonth();
-            const to = getLastDayOfYear(year);
-
-            return fetch('/api/charts/company/population-forecast-timeline', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    company_id: selectedCompanyId,
-                    from: from,
-                    to: to
-                })
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`Failed to fetch forecast data for ${year}`);
-                }
-                return response.json();
-            })
-            .then(response => {
-                const data = response.data || [];
-
-                // Create monthly data array
-                const monthlyData = [];
-
-                // Fill in the data we have
-                data.forEach(item => {
-                    const date = new Date(item.timestamp);
-                    const month = date.getMonth();
-
-                    // Create a date for the first day of the month
-                    const monthDate = new Date(year, month, 1);
-
-                    // Add data point [timestamp, value]
-                    monthlyData.push([monthDate.getTime(), item.value]);
-                });
-
-                // Sort data by date
-                monthlyData.sort((a, b) => a[0] - b[0]);
-
-                // Add to datasets
-                datasets.push({
-                    name: `${year} Forecast`,
-                    data: monthlyData,
-                    color: getChartColor(index),
-                    type: chartTypeSelector.value === 'column' ? 'column' : chartTypeSelector.value,
-                    dashStyle: 'Dash', // Dashed line for forecast
-                });
-            });
-        }
-
-        function fetchBudgetData(year, index) {
-            const from = getFirstDayOfYear(year);
-            const to = getLastDayOfYear(year);
-
-            return fetch('/api/charts/company/population-budget-timeline', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    company_id: selectedCompanyId,
-                    from: from,
-                    to: to
-                })
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`Failed to fetch budget data for ${year}`);
-                }
-                return response.json();
-            })
-            .then(response => {
-                const data = response.data || [];
-
-                // Create monthly data array
-                const monthlyData = [];
-
-                // Fill in the data we have
-                data.forEach(item => {
-                    const date = new Date(item.timestamp);
-                    const month = date.getMonth();
-
-                    // Create a date for the first day of the month
-                    const monthDate = new Date(year, month, 1);
-
-                    // Add data point [timestamp, value]
-                    monthlyData.push([monthDate.getTime(), item.value]);
-                });
-
-                // Sort data by date
-                monthlyData.sort((a, b) => a[0] - b[0]);
-
-                // Add to datasets
-                datasets.push({
-                    name: `${year} Budget`,
-                    data: monthlyData,
-                    color: getChartColor(index),
-                    type: chartTypeSelector.value === 'column' ? 'column' : chartTypeSelector.value,
-                    dashStyle: 'DashDot', // Different dash pattern for budget
-                });
-            });
-        }
-
-        function updateChart() {
-            console.log('🏢 Company ID:', selectedCompanyId);
-
-            showLoading();
-            hideError();
-
-            // Reset datasets and promises
-            datasets = [];
-            dataPromises = [];
-
-            // Add promises for data fetching
-            dataPromises.push(fetchPopulationData(twoYearsAgo, 0));
-            dataPromises.push(fetchPopulationData(oneYearAgo, 1));
-            dataPromises.push(fetchPopulationData(currentYear, 2));
-            dataPromises.push(fetchForecastData(currentYear, 3));
-            dataPromises.push(fetchBudgetData(currentYear, 4));
-
-            // Wait for all data to be fetched
-            Promise.all(dataPromises)
-                .then(() => {
-                    // Sort datasets by name for consistent order
-                    datasets.sort((a, b) => a.name && b.name ? a.name.localeCompare(b.name) : 0);
-
-                    // Create the chart
-                    createChart();
-                })
-                .catch(error => {
-                    console.error('❌ Error:', error);
-                    showError('Failed to load chart data. Please try again.');
-                    hideLoading();
-                });
-        }
-
-        function createChart() {
-            // Get the selected chart type
-            const chartType = chartTypeSelector.value;
-            console.log('📊 Creating chart with type:', chartType);
-
+        })
+        .then(response => {
+            console.log('📡 API Response status:', response.status);
+            if (!response.ok) {
+                throw new Error('Failed to fetch chart data');
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('📊 Received data:', data);
+            
             if (chart) {
                 chart.destroy();
             }
 
-            // Sort datasets by name for consistent order
-            datasets.sort((a, b) => a.name && b.name ? a.name.localeCompare(b.name) : 0);
+            const chartData = data.data || [];
+            if (chartData.length === 0) {
+                showError('No data available for the selected date.');
+                hideLoading();
+                return;
+            }
+
+            // Process data for chart - create time series data
+            const datasets = [];
+            const farmNames = [...new Set(chartData.map(item => item.farm_name || item.farm_id))];
+            
+            farmNames.forEach(farmName => {
+                const farmData = chartData.filter(item => (item.farm_name || item.farm_id) === farmName);
+                const seriesData = farmData.map(item => [
+                    new Date(item.date).getTime(),
+                    item.headcount || 0
+                ]).sort((a, b) => a[0] - b[0]);
+                
+                datasets.push({
+                    name: farmName,
+                    data: seriesData,
+                    type: chartType
+                });
+            });
 
             // Create chart using direct Highcharts implementation
             console.log('🚀 Creating Animal Headcount Chart with direct Highcharts');
             
-            chart = Highcharts.chart('animalHeadcountChart', {  // Remove 'const' here
+            chart = Highcharts.chart('animalHeadcountChart', {
                 chart: {
                     type: chartType === 'column' ? 'column' : chartType,
                     inverted: chartType === 'bar', // For horizontal bar charts
@@ -327,7 +181,7 @@
                     }
                 },
                 xAxis: {
-                    type: 'datetime',  // Changed to datetime for time series
+                    type: 'datetime',
                     title: {
                         text: 'Date'
                     },
@@ -352,7 +206,7 @@
                                 ${Highcharts.dateFormat('%b %Y', this.x)}: ${Highcharts.numberFormat(this.y, 0)} animals`;
                     }
                 },
-                series: datasets,  // Use datasets array instead of chartData
+                series: datasets,
                 exporting: {
                     enabled: false // Disabled built-in exporting as we're using custom export menu
                 }
@@ -360,20 +214,37 @@
 
             // Initialize enhanced export menu
             initChartExportMenu(chart, document.getElementById('animalHeadcountChart'));
-
+            
             hideLoading();
-            console.log('✅ Chart successfully rendered with export menu');
-        }
-
-        // Event listeners
-        chartTypeSelector.addEventListener('change', () => {
-            // When chart type changes, we need to recreate the chart with the new type
-            updateChart();
+            console.log('✅ Animal Headcount Chart with enhanced export created');
+        })
+        .catch(error => {
+            console.error('❌ Error fetching animal headcount data:', error);
+            showError('Error loading chart data: ' + error.message);
+            hideLoading();
         });
+    }
 
-        // Initialize chart on page load
-        document.addEventListener('DOMContentLoaded', updateChart);
-    </script>
-</th:block>
+    // Initialize chart type selectors
+    function initChartTypeSelectors() {
+        window.chartSelectors = initializeChartTypeSelectors();
+    }
+
+    // Initialize when DOM is ready
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('🚀 Initializing Animal Headcount Dashboard...');
+        
+        // Initialize chart type selectors
+        initChartTypeSelectors();
+
+        // Set up event listeners
+        dateSelector.addEventListener('change', updateChart);
+
+        // Initial chart load
+        updateChart();
+        
+        console.log('✅ Animal Headcount Dashboard initialized');
+    });
+</script>
 </body>
 </html>

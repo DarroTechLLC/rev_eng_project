@@ -4,9 +4,40 @@
       layout:decorate="~{layouts/main}">
 <head>
     <title>YTD Volume Dashboard</title>
-    <!-- Highcharts with Utils -->
-    <div th:replace="fragments/highcharts-scripts :: highcharts-with-utils"></div>
-    <div th:replace="fragments/highcharts-scripts :: chart-export-menu"></div>
+    <link rel="stylesheet" th:href="@{/css/chart-type-selector.css}">
+    <style>
+        .chart-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .chart-title {
+            font-weight: 600;
+            color: #333;
+            font-size: 16px;
+        }
+
+        .date-selector {
+            padding: 6px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .chart-controls {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .chart-title {
+                font-size: 14px;
+            }
+        }
+    </style>
 </head>
 <body>
 <div layout:fragment="content">
@@ -15,16 +46,15 @@
             <div class="col-12">
                 <div class="card shadow mb-4">
                     <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                        <h6 class="m-0 font-weight-bold text-primary">Year-to-Date Volume</h6>
+                        <h6 class="m-0 font-weight-bold text-primary">YTD Volume</h6>
                         <div class="chart-controls">
                             <!-- Date Selector -->
-                            <input type="date" id="dateSelector" class="form-control d-inline-block w-auto mr-2"
+                            <input type="date" id="dateSelector" class="date-selector"
                                    th:value="${#dates.format(selectedDate, 'yyyy-MM-dd')}" />
                             <!-- Chart Type Selector -->
-                            <select id="chartType" class="form-control d-inline-block w-auto">
-                                <option value="bar">Bar</option>
-                                <option value="column">Column</option>
-                            </select>
+                            <div class="chart-type-selector" id="ytd-volume-chart-selector">
+                                <!-- Chart type buttons will be added dynamically -->
+                            </div>
                         </div>
                     </div>
                     <div class="card-body">
@@ -38,173 +68,103 @@
     </div>
 </div>
 
-<!-- Chart Initialization Script -->
-<th:block layout:fragment="scripts">
-    <script th:inline="javascript">
-        // Get company ID from Thymeleaf model
-        const selectedCompanyId = /*[[${selectedCompanyId}]]*/ '';
-        const dateSelector = document.getElementById('dateSelector');
-        const chartTypeSelector = document.getElementById('chartType');
-        const chartContainer = document.getElementById('ytdVolumeChart');
-        let chart;
+<!-- Scripts -->
+<script th:src="@{/js/highcharts-with-utils.js}"></script>
+<script th:src="@{/js/chart-export-menu.js}"></script>
+<script th:src="@{/js/chart-type-selector.js}"></script>
+<script th:inline="javascript">
+    // Get company ID from Thymeleaf model
+    const selectedCompanyId = /*[[${selectedCompanyId}]]*/ '';
+    const dateSelector = document.getElementById('dateSelector');
+    const chartContainer = document.getElementById('ytdVolumeChart');
+    let chart;
 
-        // Log initial data presence
-        console.log('🔍 Chart Configuration Verification:');
-        console.log('✓ Chart container present:', !!document.getElementById('ytdVolumeChart'));
-        console.log('✓ Date selector present:', !!dateSelector);
-        console.log('✓ Chart type selector present:', !!chartTypeSelector);
-        console.log('✓ Company ID present:', !!selectedCompanyId);
+    // Log initial data presence
+    console.log('🔍 Chart Configuration Verification:');
+    console.log('✓ Chart container present:', !!chartContainer);
+    console.log('✓ Date selector present:', !!dateSelector);
+    console.log('✓ Company ID present:', !!selectedCompanyId);
 
-        function showLoading() {
-            document.getElementById('loadingIndicator').style.display = 'block';
-        }
+    function showLoading() {
+        document.getElementById('loadingIndicator').style.display = 'block';
+    }
 
-        function hideLoading() {
-            document.getElementById('loadingIndicator').style.display = 'none';
-        }
+    function hideLoading() {
+        document.getElementById('loadingIndicator').style.display = 'none';
+    }
 
-        function showError(message) {
-            const errorElement = document.getElementById('errorMessage');
-            errorElement.textContent = message;
-            errorElement.style.display = 'block';
-        }
+    function showError(message) {
+        const errorElement = document.getElementById('errorMessage');
+        errorElement.textContent = message;
+        errorElement.style.display = 'block';
+    }
 
-        function hideError() {
-            document.getElementById('errorMessage').style.display = 'none';
-        }
+    function hideError() {
+        document.getElementById('errorMessage').style.display = 'none';
+    }
 
-        function updateChart() {
-            // Check if date is valid, use current date as fallback
-            let selectedDate = new Date(dateSelector.value);
+    function updateChart() {
+        const selectedDate = dateSelector.value;
+        const chartSelector = window.chartSelectors?.find(s => s.containerId === 'ytd-volume-chart-selector');
+        const chartType = chartSelector ? chartSelector.getSelectedType() : 'column';
+        
+        console.log('📅 Selected date:', selectedDate);
+        console.log('📊 Chart type:', chartType);
+        console.log('🏢 Company ID:', selectedCompanyId);
 
-            // Check if the date is valid (not NaN)
-            if (isNaN(selectedDate.getTime())) {
-                console.warn('⚠️ Invalid date detected, using current date as fallback');
-                selectedDate = new Date(); // Use current date as fallback
-                dateSelector.value = selectedDate.toISOString().split('T')[0]; // Update the input field
-            }
+        showLoading();
+        hideError();
 
-            // Double-check that the date is valid after potential correction
-            if (isNaN(selectedDate.getTime())) {
-                console.error('❌ Date is still invalid after correction attempt');
-                showError('Invalid date. Please select a valid date.');
-                return;
-            }
-
-            const year = selectedDate.getFullYear();
-            const month = selectedDate.getMonth() + 1;
-            const day = selectedDate.getDate();
-
-            // Ensure year, month, and day are valid numbers
-            if (isNaN(year) || isNaN(month) || isNaN(day)) {
-                console.error('❌ Invalid date components detected');
-                showError('Invalid date components. Please select a valid date.');
-                return;
-            }
-
-            // Format dates as YYYY-MM-DD
-            const fromDate = `${year.toString().padStart(4, '0')}-01-01`;
-            const toDate = `${year.toString().padStart(4, '0')}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
-
-            console.log('📅 Selected date:', dateSelector.value);
-            console.log('📊 Date range:', fromDate, 'to', toDate);
-            console.log('🏢 Company ID:', selectedCompanyId);
-
-            showLoading();
-            hideError();
-
-            fetch('/api/charts/multi-farm/farm-volumes-for-range', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    company_id: selectedCompanyId,
-                    from: fromDate,
-                    to: toDate
-                })
+        fetch('/api/charts/multi-farm/farm-volumes-for-date', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                company_id: selectedCompanyId,
+                date: selectedDate
             })
-                .then(response => {
-                    console.log('📡 API Response status:', response.status);
-                    if (!response.ok) {
-                        throw new Error('Failed to fetch chart data');
-                    }
-                    return response.json();
-                })
-                .then(response => {
-                    console.log('📊 Received data:', response);
-                    console.log('✓ Data structure valid:', !!response.data);
-                    console.log('✓ Farm records:', response.data.length);
+        })
+        .then(response => {
+            console.log('📡 API Response status:', response.status);
+            if (!response.ok) {
+                throw new Error('Failed to fetch chart data');
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('📊 Received data:', data);
+            
+            if (chart) {
+                chart.destroy();
+            }
 
-                    const data = response.data;
-                    data.forEach(item => {
-                        console.log(`✓ Farm ${item.farm_name || item.farm_id} (ID: ${item.farm_id}): Volume = ${item.volume}`);
-                    });
-
-                    if (chart) {
-                        chart.destroy();
-                    }
-
-                    // Create chart with verified data
-                    createChart(data);
-                })
-                .catch(error => {
-                    console.error('❌ Error:', error);
-                    showError('Failed to load chart data. Please try again.');
-                    hideLoading();
-                });
-        }
-
-        function createChart(data) {
-            // Format data for chart
-            const chartData = data.map(item => [
-                item.farm_name || item.farm_id || 'Unknown',
-                parseFloat(item.volume) || 0
-            ]).filter(([name, value]) => name && value >= 0);
-
+            const chartData = data.data || [];
             if (chartData.length === 0) {
-                console.error('❌ No valid data points found after formatting');
-                showError('No valid data available for the selected date range.');
+                showError('No data available for the selected date.');
                 hideLoading();
                 return;
             }
 
-            // Calculate total volume
-            const totalVolume = chartData.reduce((sum, [name, value]) => sum + value, 0);
-
-            console.log('📈 Chart Data Verification:');
-            console.log('✓ Valid data points:', chartData.length);
-            console.log('✓ Total volume calculated:', totalVolume);
-            console.log('✓ Chart data:', chartData);
-
-            // Get the selected chart type
-            const chartType = chartTypeSelector.value;
-            console.log('📊 Creating chart with type:', chartType);
-
-            // Get year for title
-            let selectedDate = new Date(dateSelector.value);
-            // Ensure date is valid
-            if (isNaN(selectedDate.getTime())) {
-                selectedDate = new Date(); // Use current date as fallback
-            }
-            const year = selectedDate.getFullYear();
+            // Process data for chart
+            const categories = chartData.map(item => item.farm_name || item.farm_id);
+            const seriesData = chartData.map(item => item.volume || 0);
 
             // Create chart using direct Highcharts implementation
             console.log('🚀 Creating YTD Volume Chart with direct Highcharts');
             
-            const chart = Highcharts.chart('ytdVolumeChart', {
+            chart = Highcharts.chart('ytdVolumeChart', {
                 chart: {
                     type: chartType === 'column' ? 'column' : chartType,
                     inverted: chartType === 'bar', // For horizontal bar charts
                     height: 400
                 },
                 title: {
-                    text: `YTD Production Volume: (${Math.round(totalVolume).toLocaleString()} MMBTUs)`,
+                    text: 'YTD Volume by Farm',
                     style: {
                         fontSize: '16px',
                         fontWeight: 'bold'
-                    },
-                    margin: 20
+                    }
                 },
                 xAxis: {
                     type: 'category',
@@ -229,12 +189,10 @@
                                 ${this.key}: ${Highcharts.numberFormat(this.y, 0)} MMBTUs`;
                     }
                 },
-                legend: {
-                    enabled: false
-                },
                 series: [{
-                    name: 'Volume',
-                    data: chartData
+                    name: 'YTD Volume',
+                    data: seriesData,
+                    color: 'rgba(75, 192, 192, 1)'
                 }],
                 exporting: {
                     enabled: false // Disabled built-in exporting as we're using custom export menu
@@ -243,29 +201,37 @@
 
             // Initialize enhanced export menu
             initChartExportMenu(chart, document.getElementById('ytdVolumeChart'));
-
+            
             hideLoading();
-            console.log('✅ Chart successfully rendered with export menu');
-        }
+            console.log('✅ YTD Volume Chart with enhanced export created');
+        })
+        .catch(error => {
+            console.error('❌ Error fetching YTD volume data:', error);
+            showError('Error loading chart data: ' + error.message);
+            hideLoading();
+        });
+    }
 
-        // Event listeners
+    // Initialize chart type selectors
+    function initChartTypeSelectors() {
+        window.chartSelectors = initializeChartTypeSelectors();
+    }
+
+    // Initialize when DOM is ready
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('🚀 Initializing YTD Volume Dashboard...');
+        
+        // Initialize chart type selectors
+        initChartTypeSelectors();
+
+        // Set up event listeners
         dateSelector.addEventListener('change', updateChart);
-        chartTypeSelector.addEventListener('change', () => {
-            // When chart type changes, we need to recreate the chart with the new type
-            updateChart();
-        });
 
-        // Initialize chart on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            // Ensure date selector has a valid value
-            if (!dateSelector.value || isNaN(new Date(dateSelector.value).getTime())) {
-                const today = new Date();
-                dateSelector.value = today.toISOString().split('T')[0];
-                console.log('📅 Date selector initialized with current date:', dateSelector.value);
-            }
-            updateChart();
-        });
-    </script>
-</th:block>
+        // Initial chart load
+        updateChart();
+        
+        console.log('✅ YTD Volume Dashboard initialized');
+    });
+</script>
 </body>
 </html>

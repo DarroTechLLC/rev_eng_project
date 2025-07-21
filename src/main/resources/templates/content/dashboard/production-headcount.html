@@ -4,9 +4,40 @@
       layout:decorate="~{layouts/main}">
 <head>
     <title>Production Headcount Dashboard</title>
-    <!-- Enhanced Highcharts with Export Functionality -->
-    <div th:replace="fragments/highcharts-scripts :: highcharts-with-utils"></div>
-    <div th:replace="fragments/highcharts-scripts :: chart-export-menu"></div>
+    <link rel="stylesheet" th:href="@{/css/chart-type-selector.css}">
+    <style>
+        .chart-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .chart-title {
+            font-weight: 600;
+            color: #333;
+            font-size: 16px;
+        }
+
+        .date-selector {
+            padding: 6px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .chart-controls {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .chart-title {
+                font-size: 14px;
+            }
+        }
+    </style>
 </head>
 <body>
 <div layout:fragment="content">
@@ -15,14 +46,15 @@
             <div class="col-12">
                 <div class="card shadow mb-4">
                     <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                        <h6 class="m-0 font-weight-bold text-primary">Historic 52-Week Production per 52-Week Inventory Population</h6>
+                        <h6 class="m-0 font-weight-bold text-primary">Production Headcount</h6>
                         <div class="chart-controls">
+                            <!-- Date Selector -->
+                            <input type="date" id="dateSelector" class="date-selector"
+                                   th:value="${#dates.format(selectedDate, 'yyyy-MM-dd')}" />
                             <!-- Chart Type Selector -->
-                            <select id="chartType" class="form-control d-inline-block w-auto">
-                                <option value="line">Line</option>
-                                <option value="column">Column</option>
-                                <option value="bar">Bar</option>
-                            </select>
+                            <div class="chart-type-selector" id="production-headcount-chart-selector">
+                                <!-- Chart type buttons will be added dynamically -->
+                            </div>
                         </div>
                     </div>
                     <div class="card-body">
@@ -36,173 +68,183 @@
     </div>
 </div>
 
-<!-- Chart Initialization Script -->
-<th:block layout:fragment="scripts">
-    <script th:inline="javascript">
-        // Get company ID from Thymeleaf model
-        const selectedCompanyId = /*[[${selectedCompanyId}]]*/ '';
-        const chartTypeSelector = document.getElementById('chartType');
-        const chartContainer = document.getElementById('productionHeadcountChart');
-        let chart;
+<!-- Scripts -->
+<script th:src="@{/js/highcharts-with-utils.js}"></script>
+<script th:src="@{/js/chart-export-menu.js}"></script>
+<script th:src="@{/js/chart-type-selector.js}"></script>
+<script th:inline="javascript">
+    // Get company ID from Thymeleaf model
+    const selectedCompanyId = /*[[${selectedCompanyId}]]*/ '';
+    const dateSelector = document.getElementById('dateSelector');
+    const chartContainer = document.getElementById('productionHeadcountChart');
+    let chart;
 
-        // Log initial data presence
-        console.log('🔍 Chart Configuration Verification:');
-        console.log('✓ Chart container present:', !!document.getElementById('productionHeadcountChart'));
-        console.log('✓ Chart type selector present:', !!chartTypeSelector);
-        console.log('✓ Company ID present:', !!selectedCompanyId);
+    // Log initial data presence
+    console.log('🔍 Chart Configuration Verification:');
+    console.log('✓ Chart container present:', !!chartContainer);
+    console.log('✓ Date selector present:', !!dateSelector);
+    console.log('✓ Company ID present:', !!selectedCompanyId);
 
-        function showLoading() {
-            document.getElementById('loadingIndicator').style.display = 'block';
-        }
+    function showLoading() {
+        document.getElementById('loadingIndicator').style.display = 'block';
+    }
 
-        function hideLoading() {
-            document.getElementById('loadingIndicator').style.display = 'none';
-        }
+    function hideLoading() {
+        document.getElementById('loadingIndicator').style.display = 'none';
+    }
 
-        function showError(message) {
-            const errorElement = document.getElementById('errorMessage');
-            errorElement.textContent = message;
-            errorElement.style.display = 'block';
-        }
+    function showError(message) {
+        const errorElement = document.getElementById('errorMessage');
+        errorElement.textContent = message;
+        errorElement.style.display = 'block';
+    }
 
-        function hideError() {
-            document.getElementById('errorMessage').style.display = 'none';
-        }
+    function hideError() {
+        document.getElementById('errorMessage').style.display = 'none';
+    }
 
-        function updateChart() {
-            console.log('🏢 Company ID:', selectedCompanyId);
+    function updateChart() {
+        const selectedDate = dateSelector.value;
+        const chartSelector = window.chartSelectors?.find(s => s.containerId === 'production-headcount-chart-selector');
+        const chartType = chartSelector ? chartSelector.getSelectedType() : 'line';
+        
+        console.log('📅 Selected date:', selectedDate);
+        console.log('📊 Chart type:', chartType);
+        console.log('🏢 Company ID:', selectedCompanyId);
 
-            showLoading();
-            hideError();
+        showLoading();
+        hideError();
 
-            // Calculate date range (from 2022 to current date)
-            const from = new Date(2022, 0, 1).toISOString().split('T')[0]; // 2022-01-01
-            const to = new Date().toISOString().split('T')[0]; // Current date
-
-            fetch('/api/charts/multi-farm/production-population-52week-timeline', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    company_id: selectedCompanyId,
-                    from: from,
-                    to: to
-                })
+        fetch('/api/charts/multi-farm/production-headcount', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                company_id: selectedCompanyId,
+                date: selectedDate
             })
-            .then(response => {
-                console.log('📡 API Response status:', response.status);
-                if (!response.ok) {
-                    throw new Error('Failed to fetch chart data');
-                }
-                return response.json();
-            })
-            .then(response => {
-                console.log('📊 Received data:', response);
-                console.log('✓ Data structure valid:', !!response.data);
+        })
+        .then(response => {
+            console.log('📡 API Response status:', response.status);
+            if (!response.ok) {
+                throw new Error('Failed to fetch chart data');
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('📊 Received data:', data);
+            
+            if (chart) {
+                chart.destroy();
+            }
 
-                const data = response.data;
+            const chartData = data.data || [];
+            if (chartData.length === 0) {
+                showError('No data available for the selected date.');
+                hideLoading();
+                return;
+            }
 
-                if (chart) {
-                    chart.destroy();
-                }
-
-                // Process data for chart
-                if (!data || !Array.isArray(data) || data.length === 0) {
-                    console.error('❌ Invalid data provided:', data);
-                    showError('No data available.');
-                    hideLoading();
-                    return;
-                }
-
-                // Format data for chart - assuming data has farm_name and production_per_animal fields
-                const chartData = data.map(item => [
-                    item.farm_name || item.farm_id || 'Unknown',
-                    parseFloat(item.production_per_animal) || 0
-                ]).filter(([name, value]) => name && value >= 0);
-
-                if (chartData.length === 0) {
-                    console.error('❌ No valid data points found after formatting');
-                    showError('No valid data available.');
-                    hideLoading();
-                    return;
-                }
-
-                // Get the selected chart type
-                const chartType = chartTypeSelector.value;
-                console.log('📊 Creating chart with type:', chartType);
-
-                // Create chart using direct Highcharts implementation
-                console.log('🚀 Creating Production Headcount Chart with direct Highcharts');
+            // Process data for chart - create time series data
+            const datasets = [];
+            const farmNames = [...new Set(chartData.map(item => item.farm_name || item.farm_id))];
+            
+            farmNames.forEach(farmName => {
+                const farmData = chartData.filter(item => (item.farm_name || item.farm_id) === farmName);
+                const seriesData = farmData.map(item => [
+                    new Date(item.date).getTime(),
+                    item.headcount || 0
+                ]).sort((a, b) => a[0] - b[0]);
                 
-                chart = Highcharts.chart('productionHeadcountChart', {  // Remove 'const' here
-                    chart: {
-                        type: chartType === 'column' ? 'column' : chartType,
-                        inverted: chartType === 'bar', // For horizontal bar charts
-                        height: 400
-                    },
-                    title: {
-                        text: 'Production per Animal Headcount',
-                        style: {
-                            fontSize: '16px',
-                            fontWeight: 'bold'
-                        }
-                    },
-                    xAxis: {
-                        type: 'category',
-                        title: {
-                            text: 'Farm'
-                        }
-                    },
-                    yAxis: {
-                        min: 0,
-                        title: {
-                            text: 'MMBTUs per Animal'
-                        },
-                        labels: {
-                            formatter: function() {
-                                return Highcharts.numberFormat(this.value, 2);
-                            }
-                        }
-                    },
-                    tooltip: {
-                        formatter: function() {
-                            return `<b>${this.series.name}</b><br/>
-                                    ${this.key}: ${Highcharts.numberFormat(this.y, 2)} MMBTUs per animal`;
-                        }
-                    },
-                    series: [{
-                        name: 'Production per Animal',
-                        data: chartData,  // Now chartData is defined
-                        color: 'rgba(75, 192, 192, 1)'
-                    }],
-                    exporting: {
-                        enabled: false // Disabled built-in exporting as we're using custom export menu
-                    }
+                datasets.push({
+                    name: farmName,
+                    data: seriesData,
+                    type: chartType
                 });
-
-                // Initialize enhanced export menu
-                initChartExportMenu(chart, document.getElementById('productionHeadcountChart'));
-                
-                hideLoading();
-                console.log('✅ Chart successfully rendered with export menu');
-            })
-            .catch(error => {
-                console.error('❌ Error:', error);
-                showError('Failed to load chart data. Please try again.');
-                hideLoading();
             });
-        }
 
-        // Event listeners
-        chartTypeSelector.addEventListener('change', () => {
-            // When chart type changes, we need to recreate the chart with the new type
-            updateChart();
+            // Create chart using direct Highcharts implementation
+            console.log('🚀 Creating Production Headcount Chart with direct Highcharts');
+            
+            chart = Highcharts.chart('productionHeadcountChart', {
+                chart: {
+                    type: chartType === 'column' ? 'column' : chartType,
+                    inverted: chartType === 'bar', // For horizontal bar charts
+                    height: 400
+                },
+                title: {
+                    text: 'Production Headcount by Farm',
+                    style: {
+                        fontSize: '16px',
+                        fontWeight: 'bold'
+                    }
+                },
+                xAxis: {
+                    type: 'datetime',
+                    title: {
+                        text: 'Date'
+                    },
+                    labels: {
+                        format: '{value:%b %Y}'
+                    }
+                },
+                yAxis: {
+                    min: 0,
+                    title: {
+                        text: 'Headcount'
+                    },
+                    labels: {
+                        formatter: function() {
+                            return Highcharts.numberFormat(this.value, 0);
+                        }
+                    }
+                },
+                tooltip: {
+                    formatter: function() {
+                        return `<b>${this.series.name}</b><br/>
+                                ${Highcharts.dateFormat('%b %Y', this.x)}: ${Highcharts.numberFormat(this.y, 0)} employees`;
+                    }
+                },
+                series: datasets,
+                exporting: {
+                    enabled: false // Disabled built-in exporting as we're using custom export menu
+                }
+            });
+
+            // Initialize enhanced export menu
+            initChartExportMenu(chart, document.getElementById('productionHeadcountChart'));
+            
+            hideLoading();
+            console.log('✅ Production Headcount Chart with enhanced export created');
+        })
+        .catch(error => {
+            console.error('❌ Error fetching production headcount data:', error);
+            showError('Error loading chart data: ' + error.message);
+            hideLoading();
         });
+    }
 
-        // Initialize chart on page load
-        document.addEventListener('DOMContentLoaded', updateChart);
-    </script>
-</th:block>
+    // Initialize chart type selectors
+    function initChartTypeSelectors() {
+        window.chartSelectors = initializeChartTypeSelectors();
+    }
+
+    // Initialize when DOM is ready
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('🚀 Initializing Production Headcount Dashboard...');
+        
+        // Initialize chart type selectors
+        initChartTypeSelectors();
+
+        // Set up event listeners
+        dateSelector.addEventListener('change', updateChart);
+
+        // Initial chart load
+        updateChart();
+        
+        console.log('✅ Production Headcount Dashboard initialized');
+    });
+</script>
 </body>
 </html>
