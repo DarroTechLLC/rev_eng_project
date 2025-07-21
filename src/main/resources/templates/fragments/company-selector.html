@@ -2,16 +2,17 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <body>
     <!-- Company Selector Component -->
-    <div th:fragment="company-selector" class="company-selector dropdown">
+    <div th:fragment="company-selector" class="company-selector dropdown" style="position: relative; margin-right: 20px;">
         <!-- Company Dropdown -->
-        <div id="companyDropdown" class="dropdown">
+        <div id="companyDropdown" class="dropdown" style="position: relative; display: inline-block;">
             <!-- Current Selection Display -->
             <div id="currentCompanyDisplay" 
                  th:data-company-slug="${selectedCompany != null ? selectedCompany.name.toLowerCase().replaceAll(' ', '-') : ''}"
                  class="d-flex align-items-center dropdown-toggle" 
                  data-toggle="dropdown" 
                  aria-haspopup="true" 
-                 aria-expanded="false">
+                 aria-expanded="false"
+                 style="padding: 5px 10px; border-radius: 4px; background-color: #f8f9fa; border: 1px solid #ddd; min-width: 60px; cursor: pointer; display: flex; justify-content: center; align-items: center;">
                 <!-- Server-side rendering of selected company -->
                 <img th:if="${selectedCompany != null && selectedCompany.logoUrl != null}"
                      th:src="${selectedCompany.logoUrl}"
@@ -26,10 +27,12 @@
                       th:title="${selectedCompany.name}">
                     <span th:text="${selectedCompany.name.charAt(0)}"></span>
                 </span>
+                <!-- Inline dropdown arrow to ensure consistent appearance -->
+                <span style="display: inline-block; margin-left: 8px; vertical-align: middle; border-top: 0.3em solid; border-right: 0.3em solid transparent; border-bottom: 0; border-left: 0.3em solid transparent;"></span>
             </div>
 
             <!-- Dropdown Content -->
-            <div class="dropdown-content dropdown-menu" id="companyList" aria-labelledby="companyDropdown">
+            <div class="dropdown-content dropdown-menu" id="companyList" aria-labelledby="companyDropdown" style="position: absolute; background-color: #f9f9f9; min-width: 200px; box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2); z-index: 1000; max-height: 300px; overflow-y: auto; border-radius: 4px;">
                 <div class="text-center p-2">Loading companies...</div>
             </div>
         </div>
@@ -144,6 +147,9 @@
                                 // Update current selection display - logo only
                                 displayCompanyLogo(currentDisplay, selectedCompany, true);
 
+                                // Ensure dropdown arrow is present
+                                ensureDropdownArrow(currentDisplay);
+
                                 // Create dropdown items
                                 data.companies.forEach(company => {
                                     const item = document.createElement('div');
@@ -184,8 +190,25 @@
 
                 // Helper function to display company logo or name
                 function displayCompanyLogo(container, company, logoOnly = false) {
-                    container.innerHTML = '';
+                    // Remove existing logo or placeholder elements but keep other elements (like the dropdown arrow)
+                    const existingLogo = container.querySelector('img.company-only-logo, img.company-logo');
+                    if (existingLogo) {
+                        container.removeChild(existingLogo);
+                    }
 
+                    const existingPlaceholder = container.querySelector('.company-logo-placeholder');
+                    if (existingPlaceholder) {
+                        container.removeChild(existingPlaceholder);
+                    }
+
+                    // Clear any text nodes (but keep element nodes)
+                    for (let i = container.childNodes.length - 1; i >= 0; i--) {
+                        if (container.childNodes[i].nodeType === Node.TEXT_NODE) {
+                            container.removeChild(container.childNodes[i]);
+                        }
+                    }
+
+                    // Add the new logo or placeholder as the first child
                     if (company.logoUrl) {
                         const logo = document.createElement('img');
                         logo.src = company.logoUrl;
@@ -195,7 +218,7 @@
                         // Add inline styles to ensure consistent sizing
                         logo.style.maxHeight = '30px';
                         logo.style.maxWidth = '60px';
-                        container.appendChild(logo);
+                        container.insertBefore(logo, container.firstChild);
                     } else {
                         // If no logo, show a placeholder or initials
                         const placeholder = document.createElement('div');
@@ -211,15 +234,38 @@
                         placeholder.style.backgroundColor = '#e9ecef';
                         placeholder.style.borderRadius = '50%';
                         placeholder.style.fontWeight = 'bold';
-                        container.appendChild(placeholder);
+                        container.insertBefore(placeholder, container.firstChild);
                     }
 
                     // Only add the name if not in logoOnly mode
                     if (!logoOnly) {
+                        // Remove any existing company name span
+                        const existingNameSpan = container.querySelector('.company-name');
+                        if (existingNameSpan) {
+                            container.removeChild(existingNameSpan);
+                        }
+
                         const nameSpan = document.createElement('span');
                         nameSpan.textContent = company.companyName;
                         nameSpan.className = 'company-name';
-                        container.appendChild(nameSpan);
+
+                        // Find the dropdown arrow if it exists
+                        let arrowElement = null;
+                        for (let i = 0; i < container.children.length; i++) {
+                            const child = container.children[i];
+                            if (child.tagName === 'SPAN' && !child.classList.contains('company-logo-placeholder') && !child.classList.contains('company-name')) {
+                                // This is likely the arrow
+                                arrowElement = child;
+                                break;
+                            }
+                        }
+
+                        // Insert the name span before the arrow if it exists, otherwise append it
+                        if (arrowElement) {
+                            container.insertBefore(nameSpan, arrowElement);
+                        } else {
+                            container.appendChild(nameSpan);
+                        }
                     }
                 }
 
@@ -296,7 +342,13 @@
                     // Show loading state
                     const currentDisplay = document.getElementById('currentCompanyDisplay');
                     const originalContent = currentDisplay.innerHTML;
+                    // Save the original styles
+                    const originalStyles = currentDisplay.getAttribute('style');
                     currentDisplay.innerHTML = '<div class="d-flex align-items-center"><div class="spinner-border spinner-border-sm text-primary mr-2" role="status"></div></div>';
+                    // Ensure styles are preserved during loading
+                    if (originalStyles) {
+                        currentDisplay.setAttribute('style', originalStyles);
+                    }
 
                     console.log('🏢 Selecting company:', companyId, companyName);
 
@@ -356,14 +408,53 @@
                         } else {
                             // Restore original display
                             currentDisplay.innerHTML = originalContent;
+                            // Ensure styles are preserved
+                            if (originalStyles) {
+                                currentDisplay.setAttribute('style', originalStyles);
+                            }
+                            // Ensure dropdown arrow is present
+                            ensureDropdownArrow(currentDisplay);
                             console.error('❌ Failed to switch company:', data.message);
                         }
                     })
                     .catch(error => {
                         // Restore original display
                         currentDisplay.innerHTML = originalContent;
+                        // Ensure styles are preserved
+                        if (originalStyles) {
+                            currentDisplay.setAttribute('style', originalStyles);
+                        }
+                        // Ensure dropdown arrow is present
+                        ensureDropdownArrow(currentDisplay);
                         console.error('❌ Error switching company:', error);
                     });
+                }
+
+                // Helper function to ensure dropdown arrow is present
+                function ensureDropdownArrow(element) {
+                    // Check if the arrow is already present
+                    let arrowExists = false;
+                    for (let i = 0; i < element.children.length; i++) {
+                        const child = element.children[i];
+                        if (child.tagName === 'SPAN' && !child.classList.contains('company-logo-placeholder')) {
+                            // This is likely the arrow
+                            arrowExists = true;
+                            break;
+                        }
+                    }
+
+                    // Add the arrow if it doesn't exist
+                    if (!arrowExists) {
+                        const arrow = document.createElement('span');
+                        arrow.style.display = 'inline-block';
+                        arrow.style.marginLeft = '8px';
+                        arrow.style.verticalAlign = 'middle';
+                        arrow.style.borderTop = '0.3em solid';
+                        arrow.style.borderRight = '0.3em solid transparent';
+                        arrow.style.borderBottom = '0';
+                        arrow.style.borderLeft = '0.3em solid transparent';
+                        element.appendChild(arrow);
+                    }
                 }
 
                 // Initialize company selector
@@ -376,6 +467,11 @@
                     loadCompanies();
                 } else {
                     console.log('✅ Using server-side hydrated company data:', alreadyHydrated);
+
+                    // Ensure the dropdown arrow is present
+                    const currentDisplay = document.getElementById('currentCompanyDisplay');
+                    ensureDropdownArrow(currentDisplay);
+
                     // Still need to load the dropdown items
                     fetch('/api/companies')
                         .then(response => response.json())
