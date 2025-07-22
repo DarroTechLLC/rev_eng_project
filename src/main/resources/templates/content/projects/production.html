@@ -3,7 +3,7 @@
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{layouts/main}">
 <head>
-    <title>Production Project</title>
+    <title>Production Dashboard</title>
     <link rel="stylesheet" th:href="@{/css/chart-type-selector.css}">
     <style>
         .grid-layout {
@@ -25,6 +25,7 @@
             padding: 20px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             border: 1px solid #e1e5e9;
+            margin-bottom: 20px;
         }
 
         .chart-nav {
@@ -42,46 +43,13 @@
             font-size: 16px;
         }
 
-        .chart-year-selector {
-            position: relative;
-            display: inline-block;
-        }
-
-        .chart-year-selector .items {
-            display: flex;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            overflow: hidden;
-        }
-
-        .chart-year-selector .year {
-            padding: 5px 10px;
-            background-color: #f8f9fc;
-            cursor: pointer;
-            border-right: 1px solid #ddd;
-            transition: all 0.2s ease;
-        }
-
-        .chart-year-selector .year:last-child {
-            border-right: none;
-        }
-
-        .chart-year-selector .year:hover {
-            background-color: #e9ecef;
-        }
-
-        .chart-year-selector .year.selected {
-            background-color: #4e73df;
-            color: white;
-        }
-
         /* Responsive design */
         @media (max-width: 768px) {
             .chart-nav {
                 flex-direction: column;
                 align-items: flex-start;
             }
-            
+
             .chart-title {
                 font-size: 14px;
             }
@@ -91,43 +59,76 @@
 <body>
     <div layout:fragment="content">
         <div class="container-fluid">
-            <h1 class="h3 mb-4 text-gray-800">Production Project</h1>
-            <p>Farm: <span th:text="${selectedFarmName}"></span></p>
+            <h1 class="h3 mb-4 text-gray-800">Production Dashboard</h1>
+
+            <!-- Debug Panel (Collapsible) -->
+            <div class="card shadow mb-4">
+                <a href="#collapseDebugPanel" class="d-block card-header py-3" data-toggle="collapse" role="button" aria-expanded="false" aria-controls="collapseDebugPanel">
+                    <h6 class="m-0 font-weight-bold text-primary">Debug Information (Click to Toggle)</h6>
+                </a>
+                <div class="collapse" id="collapseDebugPanel">
+                    <div class="card-body">
+                        <div class="alert alert-info">
+                            <p><strong>Debug Information:</strong> This panel shows data loading status and counts to help troubleshoot issues.</p>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="card mb-2">
+                                    <div class="card-header">Monthly Production Chart</div>
+                                    <div class="card-body">
+                                        <div id="monthly-chart-debug">
+                                            <p>Status: <span id="monthly-data-status">Waiting for data...</span></p>
+                                            <p>Data Points: <span id="monthly-data-count">0</span></p>
+                                            <div id="monthly-data-years"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card mb-2">
+                                    <div class="card-header">Cumulative Production Chart</div>
+                                    <div class="card-body">
+                                        <div id="cumulative-chart-debug">
+                                            <p>Status: <span id="cumulative-data-status">Waiting for data...</span></p>
+                                            <p>Data Points: <span id="cumulative-data-count">0</span></p>
+                                            <div id="cumulative-data-years"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             <div class="grid-layout">
                 <div class="grid-row">
                     <div class="grid-col">
+                        <!-- Monthly Production Chart -->
                         <div class="chart-panel">
                             <div class="chart-nav">
                                 <div>
                                     <div class="chart-title">Monthly Production</div>
-                                    <div class="chart-year-selector" id="monthly-chart-year-selector">
-                                        <div class="items">
-                                            <!-- Year buttons will be added dynamically -->
-                                        </div>
-                                    </div>
                                 </div>
                                 <div class="chart-type-selector" id="monthly-chart-selector">
                                     <!-- Chart type buttons will be added dynamically -->
                                 </div>
                             </div>
+                            <div id="monthly-chart-status" class="alert alert-info" style="display: none;"></div>
                             <div id="monthly-production-chart"></div>
                         </div>
 
+                        <!-- Cumulative Production Chart -->
                         <div class="chart-panel">
                             <div class="chart-nav">
                                 <div>
                                     <div class="chart-title">Cumulative Production</div>
-                                    <div class="chart-year-selector" id="cumulative-chart-year-selector">
-                                        <div class="items">
-                                            <!-- Year buttons will be added dynamically -->
-                                        </div>
-                                    </div>
                                 </div>
                                 <div class="chart-type-selector" id="cumulative-chart-selector">
                                     <!-- Chart type buttons will be added dynamically -->
                                 </div>
                             </div>
+                            <div id="cumulative-chart-status" class="alert alert-info" style="display: none;"></div>
                             <div id="cumulative-production-chart"></div>
                         </div>
                     </div>
@@ -142,9 +143,9 @@
     <script th:src="@{/js/chart-type-selector.js}"></script>
     <script th:inline="javascript">
         /*<![CDATA[*/
-        const farmId = /*[[${selectedFarmKey}]]*/ 'default-farm-id';
+        const farmId = /*[[${selectedFarmId}]]*/ '';
+        const selectedFarmName = /*[[${selectedFarmName}]]*/ '';
 
-        // Helper function to get current year and date ranges
         function getCurrentYear() {
             return new Date().getFullYear();
         }
@@ -156,73 +157,6 @@
             };
         }
 
-        // Year selector functionality
-        let selectedYears = {
-            'monthly': getCurrentYear(),
-            'cumulative': getCurrentYear()
-        };
-
-        function initYearSelectors() {
-            const curYear = getCurrentYear();
-            const lastYear = curYear - 1;
-            const twoYearsAgo = curYear - 2;
-            const years = [curYear, lastYear, twoYearsAgo];
-
-            // Initialize each year selector
-            initYearSelector('monthly-chart-year-selector', 'monthly', years);
-            initYearSelector('cumulative-chart-year-selector', 'cumulative', years);
-        }
-
-        function initYearSelector(selectorId, chartType, years) {
-            const selector = document.getElementById(selectorId);
-            if (!selector) return;
-
-            const itemsContainer = selector.querySelector('.items');
-            if (!itemsContainer) return;
-
-            // Clear existing items
-            itemsContainer.innerHTML = '';
-
-            // Add year buttons
-            years.forEach(year => {
-                const yearElement = document.createElement('div');
-                yearElement.className = 'year' + (year === selectedYears[chartType] ? ' selected' : '');
-                yearElement.textContent = year;
-                yearElement.addEventListener('click', function() {
-                    // Update selected year
-                    if (year !== selectedYears[chartType]) {
-                        selectedYears[chartType] = year;
-
-                        // Update UI
-                        itemsContainer.querySelectorAll('.year').forEach(el => {
-                            el.classList.remove('selected');
-                        });
-                        yearElement.classList.add('selected');
-
-                        // Reload chart
-                        reloadChart(chartType);
-                    }
-                });
-
-                itemsContainer.appendChild(yearElement);
-            });
-        }
-
-        function reloadChart(chartType) {
-            switch(chartType) {
-                case 'monthly':
-                    const monthlySelector = window.chartSelectors?.find(s => s.containerId === 'monthly-chart-selector');
-                    const monthlyType = monthlySelector ? monthlySelector.getSelectedType() : 'line';
-                    loadMonthlyProductionChart(monthlyType);
-                    break;
-                case 'cumulative':
-                    const cumulativeSelector = window.chartSelectors?.find(s => s.containerId === 'cumulative-chart-selector');
-                    const cumulativeType = cumulativeSelector ? cumulativeSelector.getSelectedType() : 'line';
-                    loadCumulativeProductionChart(cumulativeType);
-                    break;
-            }
-        }
-
         // Initialize chart type selectors
         function initChartTypeSelectors() {
             window.chartSelectors = initializeChartTypeSelectors();
@@ -230,8 +164,10 @@
 
         // Monthly Production Chart
         function loadMonthlyProductionChart(chartType = 'line') {
-            const selectedYear = selectedYears['monthly'];
-            const { from, to } = getDateRange(selectedYear);
+            // Update debug status
+            document.getElementById('monthly-data-status').textContent = 'Loading data...';
+            document.getElementById('monthly-data-count').textContent = '0';
+            document.getElementById('monthly-data-years').innerHTML = '';
 
             // Clear previous chart
             document.getElementById('monthly-production-chart').innerHTML = '';
@@ -239,26 +175,90 @@
             // Show loading indicator
             document.getElementById('monthly-production-chart').innerHTML = '<div style="text-align: center; padding: 20px;">Loading...</div>';
 
-            fetch('/api/charts/single-farm/meter-monthly-timeline', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ farm_id: farmId, from, to })
-            })
-            .then(res => res.json())
-            .then(response => {
-                const data = response.data || [];
+            // Hide any previous status message
+            document.getElementById('monthly-chart-status').style.display = 'none';
 
-                // Process data for monthly chart
-                const seriesData = data.map(d => [d.farm_name || d.farm_id, d.value || 0]);
+            // Get current year and previous years
+            const curYear = getCurrentYear();
+            const lastYear = curYear - 1;
+            const twoYearsAgo = curYear - 2;
+
+            console.log(`🔍 Fetching monthly production data for years: ${twoYearsAgo}, ${lastYear}, ${curYear}`);
+
+            // Fetch data for all three years
+            Promise.all([
+                fetchMonthlyProductionData(twoYearsAgo, chartType, 0),
+                fetchMonthlyProductionData(lastYear, chartType, 1),
+                fetchMonthlyProductionData(curYear, chartType, 2)
+            ])
+            .then(([seriesData2YearsAgo, seriesDataLastYear, seriesDataCurYear]) => {
+                // Filter out empty series
+                const allSeries = [seriesData2YearsAgo, seriesDataLastYear, seriesDataCurYear]
+                    .filter(series => series && series.data && series.data.length > 0);
+
+                // Update debug information
+                document.getElementById('monthly-data-status').textContent = 'Data loaded';
+
+                // Count total data points (non-null values)
+                let totalDataPoints = 0;
+                let yearsWithData = [];
+
+                if (seriesData2YearsAgo && seriesData2YearsAgo.data) {
+                    const nonNullCount = seriesData2YearsAgo.data.filter(val => val !== null).length;
+                    if (nonNullCount > 0) {
+                        yearsWithData.push(`${twoYearsAgo}: ${nonNullCount} data points`);
+                        totalDataPoints += nonNullCount;
+                    }
+                }
+
+                if (seriesDataLastYear && seriesDataLastYear.data) {
+                    const nonNullCount = seriesDataLastYear.data.filter(val => val !== null).length;
+                    if (nonNullCount > 0) {
+                        yearsWithData.push(`${lastYear}: ${nonNullCount} data points`);
+                        totalDataPoints += nonNullCount;
+                    }
+                }
+
+                if (seriesDataCurYear && seriesDataCurYear.data) {
+                    const nonNullCount = seriesDataCurYear.data.filter(val => val !== null).length;
+                    if (nonNullCount > 0) {
+                        yearsWithData.push(`${curYear}: ${nonNullCount} data points`);
+                        totalDataPoints += nonNullCount;
+                    }
+                }
+
+                document.getElementById('monthly-data-count').textContent = totalDataPoints.toString();
+
+                // Display years with data
+                const yearsElement = document.getElementById('monthly-data-years');
+                if (yearsWithData.length > 0) {
+                    yearsElement.innerHTML = '<ul>' + yearsWithData.map(year => `<li>${year}</li>`).join('') + '</ul>';
+                } else {
+                    yearsElement.innerHTML = '<p>No data available for any year</p>';
+                }
+
+                // Check if we have any data to display
+                if (allSeries.length === 0) {
+                    console.log('⚠️ No data available for Monthly Production Chart');
+                    document.getElementById('monthly-chart-status').textContent = 'No data available for the selected years. The database may be empty for this farm.';
+                    document.getElementById('monthly-chart-status').style.display = 'block';
+                    document.getElementById('monthly-production-chart').innerHTML = 
+                        '<div style="text-align: center; padding: 20px;">No data available</div>';
+                    document.getElementById('monthly-data-status').textContent = 'No data available';
+                    return;
+                }
+
+                console.log(`📊 Monthly Production Chart data summary: ${totalDataPoints} total data points across ${allSeries.length} years`);
+                allSeries.forEach(series => {
+                    console.log(`📊 Year ${series.name}: ${series.data.filter(val => val !== null).length} data points`);
+                });
 
                 // Render chart using direct Highcharts implementation
                 console.log('🚀 Creating Monthly Production Chart with direct Highcharts');
-                
+
                 const chart = Highcharts.chart('monthly-production-chart', {
                     chart: {
-                        type: chartType === 'column' ? 'column' : chartType,
+                        type: chartType,
                         inverted: chartType === 'bar', // For horizontal bar charts
                         height: 400
                     },
@@ -270,16 +270,12 @@
                         }
                     },
                     xAxis: {
-                        type: 'datetime',
+                        categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
                         title: {
                             text: 'Month'
-                        },
-                        labels: {
-                            format: '{value:%b %Y}'
                         }
                     },
                     yAxis: {
-                        min: 0,
                         title: {
                             text: 'MMBTUs'
                         },
@@ -292,16 +288,15 @@
                     tooltip: {
                         formatter: function() {
                             return `<b>${this.series.name}</b><br/>
-                                    ${Highcharts.dateFormat('%b %Y', this.x)}: ${Highcharts.numberFormat(this.y, 0)} MMBTUs`;
+                                    ${this.x}: ${Highcharts.numberFormat(this.y, 0)} MMBTUs`;
                         }
                     },
-                    series: [{
-                        name: 'Production',
-                        data: seriesData,
-                        color: 'rgba(54, 162, 235, 1)'
-                    }],
+                    series: allSeries,
                     exporting: {
                         enabled: false // Disabled built-in exporting as we're using custom export menu
+                    },
+                    credits: {
+                        enabled: false // Remove Highcharts.com label
                     }
                 });
 
@@ -310,16 +305,89 @@
                 console.log('✅ Monthly Production Chart with enhanced export created');
             })
             .catch(error => {
-                console.error('Error fetching monthly production data:', error);
+                console.error('❌ Error fetching monthly production data:', error);
                 document.getElementById('monthly-production-chart').innerHTML = 
                     '<div style="text-align: center; padding: 20px; color: red;">Error loading chart data</div>';
+                document.getElementById('monthly-chart-status').textContent = 'Error loading data: ' + error.message;
+                document.getElementById('monthly-chart-status').style.display = 'block';
+                document.getElementById('monthly-data-status').textContent = 'Error: ' + error.message;
+            });
+        }
+
+        // Helper function to fetch and process monthly production data for a specific year
+        function fetchMonthlyProductionData(year, chartType, colorIndex) {
+            const { from, to } = getDateRange(year);
+
+            console.log(`📡 Fetching monthly production data for year ${year} - API: /api/charts/single-farm/meter-monthly-timeline`);
+            console.log(`📡 Request payload: { farm_id: "${farmId}", from: "${from}", to: "${to}" }`);
+
+            return fetch('/api/charts/single-farm/meter-monthly-timeline', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ farm_id: farmId, from, to })
+            })
+            .then(res => {
+                console.log(`📡 API response status for year ${year}: ${res.status} ${res.statusText}`);
+                return res.json();
+            })
+            .then(response => {
+                const data = response.data || [];
+
+                // Log detailed information about the response
+                console.log(`📡 API response for year ${year}:`, response);
+                console.log(`📊 Received ${data.length} data points for year ${year}`);
+
+                if (data.length === 0) {
+                    console.log(`⚠️ No data received for year ${year}`);
+                    return null;
+                }
+
+                // Log the first few data points to help with debugging
+                if (data.length > 0) {
+                    console.log(`📊 Sample data for year ${year}:`, data.slice(0, Math.min(3, data.length)));
+                }
+
+                // Process data for chart
+                const monthlyData = new Array(12).fill(null);
+
+                // Create a map to store data by month
+                const map = new Map();
+                data.forEach(d => {
+                    const date = new Date(d.timestamp);
+                    const month = date.getMonth();
+                    map.set(month, d.value);
+                });
+
+                // Fill in data for all 12 months
+                for (let i = 0; i < 12; i++) {
+                    const value = map.get(i);
+                    monthlyData[i] = value !== undefined ? value : null;
+                }
+
+                // Log the processed data
+                console.log(`📊 Processed data for year ${year}:`, monthlyData);
+                console.log(`📊 Non-null data points for year ${year}: ${monthlyData.filter(val => val !== null).length}`);
+
+                return {
+                    name: year.toString(),
+                    color: getChartColor(colorIndex),
+                    data: monthlyData
+                };
+            })
+            .catch(error => {
+                console.error(`❌ Error fetching data for year ${year}:`, error);
+                return null;
             });
         }
 
         // Cumulative Production Chart
         function loadCumulativeProductionChart(chartType = 'line') {
-            const selectedYear = selectedYears['cumulative'];
-            const { from, to } = getDateRange(selectedYear);
+            // Update debug status
+            document.getElementById('cumulative-data-status').textContent = 'Loading data...';
+            document.getElementById('cumulative-data-count').textContent = '0';
+            document.getElementById('cumulative-data-years').innerHTML = '';
 
             // Clear previous chart
             document.getElementById('cumulative-production-chart').innerHTML = '';
@@ -327,31 +395,108 @@
             // Show loading indicator
             document.getElementById('cumulative-production-chart').innerHTML = '<div style="text-align: center; padding: 20px;">Loading...</div>';
 
-            fetch('/api/charts/single-farm/meter-monthly-timeline', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ farm_id: farmId, from, to })
-            })
-            .then(res => res.json())
-            .then(response => {
-                const data = response.data || [];
+            // Hide any previous status message
+            document.getElementById('cumulative-chart-status').style.display = 'none';
 
-                // Process data for cumulative chart
-                const seriesData = [];
-                let cumulative = 0;
-                data.forEach(d => {
-                    cumulative += (d.value || 0);
-                    seriesData.push([d.farm_name || d.farm_id, cumulative]);
+            // Get current year and previous years
+            const curYear = getCurrentYear();
+            const lastYear = curYear - 1;
+            const twoYearsAgo = curYear - 2;
+
+            console.log(`🔍 Fetching cumulative production data for years: ${twoYearsAgo}, ${lastYear}, ${curYear} (plus forecast and budget)`);
+
+            // Fetch data for all three years, plus forecast and budget for current year
+            Promise.all([
+                fetchCumulativeProductionData(twoYearsAgo, chartType, 0),
+                fetchCumulativeProductionData(lastYear, chartType, 1),
+                fetchCumulativeProductionData(curYear, chartType, 2),
+                fetchForecastData(curYear, chartType, 3),
+                fetchBudgetData(curYear, chartType, 4)
+            ])
+            .then(([seriesData2YearsAgo, seriesDataLastYear, seriesDataCurYear, forecastData, budgetData]) => {
+                // Filter out empty series
+                const allSeries = [seriesData2YearsAgo, seriesDataLastYear, seriesDataCurYear, forecastData, budgetData]
+                    .filter(series => series && series.data && series.data.length > 0);
+
+                // Update debug information
+                document.getElementById('cumulative-data-status').textContent = 'Data loaded';
+
+                // Count total data points (non-null values)
+                let totalDataPoints = 0;
+                let seriesInfo = [];
+
+                if (seriesData2YearsAgo && seriesData2YearsAgo.data) {
+                    const nonNullCount = seriesData2YearsAgo.data.filter(val => val !== null).length;
+                    if (nonNullCount > 0) {
+                        seriesInfo.push(`${twoYearsAgo}: ${nonNullCount} data points`);
+                        totalDataPoints += nonNullCount;
+                    }
+                }
+
+                if (seriesDataLastYear && seriesDataLastYear.data) {
+                    const nonNullCount = seriesDataLastYear.data.filter(val => val !== null).length;
+                    if (nonNullCount > 0) {
+                        seriesInfo.push(`${lastYear}: ${nonNullCount} data points`);
+                        totalDataPoints += nonNullCount;
+                    }
+                }
+
+                if (seriesDataCurYear && seriesDataCurYear.data) {
+                    const nonNullCount = seriesDataCurYear.data.filter(val => val !== null).length;
+                    if (nonNullCount > 0) {
+                        seriesInfo.push(`${curYear}: ${nonNullCount} data points`);
+                        totalDataPoints += nonNullCount;
+                    }
+                }
+
+                if (forecastData && forecastData.data) {
+                    const nonNullCount = forecastData.data.filter(val => val !== null).length;
+                    if (nonNullCount > 0) {
+                        seriesInfo.push(`${curYear} Forecast: ${nonNullCount} data points`);
+                        totalDataPoints += nonNullCount;
+                    }
+                }
+
+                if (budgetData && budgetData.data) {
+                    const nonNullCount = budgetData.data.filter(val => val !== null).length;
+                    if (nonNullCount > 0) {
+                        seriesInfo.push(`${curYear} Budget: ${nonNullCount} data points`);
+                        totalDataPoints += nonNullCount;
+                    }
+                }
+
+                document.getElementById('cumulative-data-count').textContent = totalDataPoints.toString();
+
+                // Display series information
+                const yearsElement = document.getElementById('cumulative-data-years');
+                if (seriesInfo.length > 0) {
+                    yearsElement.innerHTML = '<ul>' + seriesInfo.map(info => `<li>${info}</li>`).join('') + '</ul>';
+                } else {
+                    yearsElement.innerHTML = '<p>No data available for any series</p>';
+                }
+
+                // Check if we have any data to display
+                if (allSeries.length === 0) {
+                    console.log('⚠️ No data available for Cumulative Production Chart');
+                    document.getElementById('cumulative-chart-status').textContent = 'No data available for the selected years. The database may be empty for this farm.';
+                    document.getElementById('cumulative-chart-status').style.display = 'block';
+                    document.getElementById('cumulative-production-chart').innerHTML = 
+                        '<div style="text-align: center; padding: 20px;">No data available</div>';
+                    document.getElementById('cumulative-data-status').textContent = 'No data available';
+                    return;
+                }
+
+                console.log(`📊 Cumulative Production Chart data summary: ${totalDataPoints} total data points across ${allSeries.length} series`);
+                allSeries.forEach(series => {
+                    console.log(`📊 Series ${series.name}: ${series.data.filter(val => val !== null).length} data points`);
                 });
 
                 // Render chart using direct Highcharts implementation
                 console.log('🚀 Creating Cumulative Production Chart with direct Highcharts');
-                
+
                 const chart = Highcharts.chart('cumulative-production-chart', {
                     chart: {
-                        type: chartType === 'column' ? 'column' : chartType,
+                        type: chartType,
                         inverted: chartType === 'bar', // For horizontal bar charts
                         height: 400
                     },
@@ -363,16 +508,12 @@
                         }
                     },
                     xAxis: {
-                        type: 'datetime',
+                        categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
                         title: {
                             text: 'Month'
-                        },
-                        labels: {
-                            format: '{value:%b %Y}'
                         }
                     },
                     yAxis: {
-                        min: 0,
                         title: {
                             text: 'MMBTUs'
                         },
@@ -385,16 +526,15 @@
                     tooltip: {
                         formatter: function() {
                             return `<b>${this.series.name}</b><br/>
-                                    ${Highcharts.dateFormat('%b %Y', this.x)}: ${Highcharts.numberFormat(this.y, 0)} MMBTUs`;
+                                    ${this.x}: ${Highcharts.numberFormat(this.y, 0)} MMBTUs`;
                         }
                     },
-                    series: [{
-                        name: 'Cumulative Production',
-                        data: seriesData,
-                        color: 'rgba(75, 192, 192, 1)'
-                    }],
+                    series: allSeries,
                     exporting: {
                         enabled: false // Disabled built-in exporting as we're using custom export menu
+                    },
+                    credits: {
+                        enabled: false // Remove Highcharts.com label
                     }
                 });
 
@@ -403,18 +543,259 @@
                 console.log('✅ Cumulative Production Chart with enhanced export created');
             })
             .catch(error => {
-                console.error('Error fetching cumulative production data:', error);
+                console.error('❌ Error fetching cumulative production data:', error);
                 document.getElementById('cumulative-production-chart').innerHTML = 
                     '<div style="text-align: center; padding: 20px; color: red;">Error loading chart data</div>';
+                document.getElementById('cumulative-chart-status').textContent = 'Error loading data: ' + error.message;
+                document.getElementById('cumulative-chart-status').style.display = 'block';
+                document.getElementById('cumulative-data-status').textContent = 'Error: ' + error.message;
             });
+        }
+
+        // Helper function to fetch and process cumulative production data for a specific year
+        function fetchCumulativeProductionData(year, chartType, colorIndex) {
+            const { from, to } = getDateRange(year);
+
+            console.log(`📡 Fetching cumulative production data for year ${year} - API: /api/charts/single-farm/meter-monthly-timeline`);
+            console.log(`📡 Request payload: { farm_id: "${farmId}", from: "${from}", to: "${to}" }`);
+
+            return fetch('/api/charts/single-farm/meter-monthly-timeline', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ farm_id: farmId, from, to })
+            })
+            .then(res => {
+                console.log(`📡 API response status for year ${year} (cumulative): ${res.status} ${res.statusText}`);
+                return res.json();
+            })
+            .then(response => {
+                const data = response.data || [];
+
+                // Log detailed information about the response
+                console.log(`📡 API response for year ${year} (cumulative):`, response);
+                console.log(`📊 Received ${data.length} data points for year ${year} (cumulative)`);
+
+                if (data.length === 0) {
+                    console.log(`⚠️ No data received for year ${year} (cumulative)`);
+                    return null;
+                }
+
+                // Log the first few data points to help with debugging
+                if (data.length > 0) {
+                    console.log(`📊 Sample data for year ${year} (cumulative):`, data.slice(0, Math.min(3, data.length)));
+                }
+
+                // Process data for cumulative chart
+                const monthlyData = new Array(12).fill(null);
+                let cumulative = 0;
+
+                // Create a map to store data by month
+                const map = new Map();
+                data.forEach(d => {
+                    const date = new Date(d.timestamp);
+                    const month = date.getMonth();
+
+                    cumulative += (d.value || 0);
+                    map.set(month, cumulative);
+                });
+
+                // Fill in data for all 12 months
+                for (let i = 0; i < 12; i++) {
+                    const value = map.get(i);
+                    monthlyData[i] = value !== undefined ? value : null;
+                }
+
+                // Log the processed data
+                console.log(`📊 Processed cumulative data for year ${year}:`, monthlyData);
+                console.log(`📊 Non-null cumulative data points for year ${year}: ${monthlyData.filter(val => val !== null).length}`);
+
+                // Log the final cumulative value
+                const finalValue = monthlyData.filter(val => val !== null).pop();
+                console.log(`📊 Final cumulative value for year ${year}: ${finalValue !== undefined ? finalValue : 'N/A'}`);
+
+                return {
+                    name: year.toString(),
+                    color: getChartColor(colorIndex),
+                    data: monthlyData
+                };
+            })
+            .catch(error => {
+                console.error(`❌ Error fetching cumulative data for year ${year}:`, error);
+                return null;
+            });
+        }
+
+        // Helper function to fetch and process forecast data for the current year
+        function fetchForecastData(year, chartType, colorIndex) {
+            const { from, to } = getDateRange(year);
+            const currentMonth = new Date().getMonth();
+
+            console.log(`📡 Fetching forecast data for year ${year} - API: /api/charts/single-farm/production-forecast-timeline`);
+            console.log(`📡 Request payload: { farm_id: "${farmId}", from: "${from}", to: "${to}" }`);
+
+            return fetch('/api/charts/single-farm/production-forecast-timeline', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ farm_id: farmId, from, to })
+            })
+            .then(res => {
+                console.log(`📡 API response status for ${year} forecast: ${res.status} ${res.statusText}`);
+                return res.json();
+            })
+            .then(response => {
+                const data = response.data || [];
+
+                // Log detailed information about the response
+                console.log(`📡 API response for ${year} forecast:`, response);
+                console.log(`📊 Received ${data.length} data points for ${year} forecast`);
+
+                if (data.length === 0) {
+                    console.log(`⚠️ No forecast data received for year ${year}`);
+                    return null;
+                }
+
+                // Log the first few data points to help with debugging
+                if (data.length > 0) {
+                    console.log(`📊 Sample forecast data for year ${year}:`, data.slice(0, Math.min(3, data.length)));
+                }
+
+                // Process data for forecast chart
+                const monthlyData = new Array(12).fill(null);
+                let cumulative = 0;
+
+                // Create a map to store data by month
+                const map = new Map();
+                data.forEach(d => {
+                    const date = new Date(d.timestamp);
+                    const month = date.getMonth();
+
+                    cumulative += (d.value || 0);
+                    map.set(month, cumulative);
+                });
+
+                // Fill in data for all 12 months, but only from current month onwards
+                for (let i = 0; i < 12; i++) {
+                    if (i >= currentMonth) {
+                        const value = map.get(i);
+                        monthlyData[i] = value !== undefined ? value : null;
+                    }
+                }
+
+                // Log the processed data
+                console.log(`📊 Processed forecast data for year ${year}:`, monthlyData);
+                console.log(`📊 Non-null forecast data points for year ${year}: ${monthlyData.filter(val => val !== null).length}`);
+                console.log(`📊 Current month: ${currentMonth}, showing forecast from month ${currentMonth} onwards`);
+
+                return {
+                    name: `${year} Forecast`,
+                    color: getChartColor(colorIndex),
+                    data: monthlyData
+                };
+            })
+            .catch(error => {
+                console.error(`❌ Error fetching forecast data for year ${year}:`, error);
+                return null;
+            });
+        }
+
+        // Helper function to fetch and process budget data for the current year
+        function fetchBudgetData(year, chartType, colorIndex) {
+            const { from, to } = getDateRange(year);
+
+            console.log(`📡 Fetching budget data for year ${year} - API: /api/charts/single-farm/production-budget-timeline`);
+            console.log(`📡 Request payload: { farm_id: "${farmId}", from: "${from}", to: "${to}" }`);
+
+            return fetch('/api/charts/single-farm/production-budget-timeline', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ farm_id: farmId, from, to })
+            })
+            .then(res => {
+                console.log(`📡 API response status for ${year} budget: ${res.status} ${res.statusText}`);
+                return res.json();
+            })
+            .then(response => {
+                const data = response.data || [];
+
+                // Log detailed information about the response
+                console.log(`📡 API response for ${year} budget:`, response);
+                console.log(`📊 Received ${data.length} data points for ${year} budget`);
+
+                if (data.length === 0) {
+                    console.log(`⚠️ No budget data received for year ${year}`);
+                    return null;
+                }
+
+                // Log the first few data points to help with debugging
+                if (data.length > 0) {
+                    console.log(`📊 Sample budget data for year ${year}:`, data.slice(0, Math.min(3, data.length)));
+                }
+
+                // Process data for budget chart
+                const monthlyData = new Array(12).fill(null);
+                let cumulative = 0;
+
+                // Create a map to store data by month
+                const map = new Map();
+                data.forEach(d => {
+                    const date = new Date(d.timestamp);
+                    const month = date.getMonth();
+
+                    cumulative += (d.value || 0);
+                    map.set(month, cumulative);
+                });
+
+                // Fill in data for all 12 months
+                for (let i = 0; i < 12; i++) {
+                    const value = map.get(i);
+                    monthlyData[i] = value !== undefined ? value : null;
+                }
+
+                // Log the processed data
+                console.log(`📊 Processed budget data for year ${year}:`, monthlyData);
+                console.log(`📊 Non-null budget data points for year ${year}: ${monthlyData.filter(val => val !== null).length}`);
+
+                // Log the final budget value
+                const finalValue = monthlyData.filter(val => val !== null).pop();
+                console.log(`📊 Final annual budget value for year ${year}: ${finalValue !== undefined ? finalValue : 'N/A'}`);
+
+                return {
+                    name: `${year} Budget`,
+                    color: getChartColor(colorIndex),
+                    data: monthlyData
+                };
+            })
+            .catch(error => {
+                console.error(`❌ Error fetching budget data for year ${year}:`, error);
+                return null;
+            });
+        }
+
+        // Helper function to get chart colors
+        function getChartColor(index) {
+            const colors = [
+                '#7cb5ec', // blue
+                '#90ed7d', // green
+                '#f7a35c', // orange
+                '#8085e9', // purple
+                '#f15c80', // pink
+                '#e4d354', // yellow
+                '#2b908f', // teal
+                '#f45b5b', // red
+                '#91e8e1'  // light blue
+            ];
+            return colors[index % colors.length];
         }
 
         // Initialize all charts when the page loads
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('🚀 Initializing Production Project page...');
-            
-            // Initialize year selectors
-            initYearSelectors();
+            console.log('🚀 Initializing Production Dashboard...');
 
             // Initialize chart type selectors
             initChartTypeSelectors();
@@ -422,8 +803,8 @@
             // Load all charts
             loadMonthlyProductionChart();
             loadCumulativeProductionChart();
-            
-            console.log('✅ Production Project page initialized');
+
+            console.log('✅ Production Dashboard initialized');
         });
         /*]]>*/
     </script>
