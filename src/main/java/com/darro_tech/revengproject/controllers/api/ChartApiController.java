@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.darro_tech.revengproject.dto.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,10 +16,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.darro_tech.revengproject.dto.ChartDateRequest;
-import com.darro_tech.revengproject.dto.CompanyDateRequest;
-import com.darro_tech.revengproject.dto.CompanyMTDVolumeRequest;
-import com.darro_tech.revengproject.dto.FarmVolumeData;
 import com.darro_tech.revengproject.services.ChartService;
 
 @RestController
@@ -132,6 +129,50 @@ public class ChartApiController {
         } catch (Exception e) {
             logger.error("❌ Error processing request: {}", e.getMessage(), e);
 
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("data", new ArrayList<>());
+            errorResponse.put("error", true);
+            errorResponse.put("errorMessage", e.getMessage());
+
+            return ResponseEntity.ok(errorResponse);
+        }
+    }
+    @PostMapping("/multi-farm/farm-volumes-for-range")
+    public ResponseEntity<Map<String, Object>> getMultiFarmVolumesForRange(@RequestBody CompanyDateRangeRequest request) {
+        logger.info("📊 Processing multi-farm volumes for range - companyId: {}, from: {}, to: {}",
+                request.getCompany_id(), request.getFrom(), request.getTo());
+
+        try {
+            // Get volume data from service
+            List<FarmVolumeData> volumeData = chartService.getVolumeByFarmForDateRange(
+                    request.getCompany_id(),
+                    request.getFrom(),
+                    request.getTo()
+            );
+
+            logger.info("📈 Found {} farm volume records", volumeData.size());
+
+            // Format data for response
+            List<Map<String, Object>> formattedData = new ArrayList<>();
+            for (FarmVolumeData data : volumeData) {
+                Map<String, Object> formatted = new HashMap<>();
+                formatted.put("farmId", data.getFarm_id());
+                formatted.put("farmName", data.getFarmName());
+                formatted.put("volume", data.getVolume());
+                formattedData.add(formatted);
+
+                logger.info("🏠 Farm: {} ({}), Volume: {}", data.getFarmName(), data.getFarm_id(), data.getVolume());
+            }
+
+            // Create response with data array
+            Map<String, Object> response = new HashMap<>();
+            response.put("data", formattedData);
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("❌ Error processing multi-farm volumes for range: {}", e.getMessage(), e);
+
+            // Return error response
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("data", new ArrayList<>());
             errorResponse.put("error", true);

@@ -32,7 +32,7 @@
                 flex-direction: column;
                 align-items: flex-start;
             }
-            
+
             .chart-title {
                 font-size: 14px;
             }
@@ -103,11 +103,67 @@
         document.getElementById('errorMessage').style.display = 'none';
     }
 
-    function updateChart() {
+    async function addChartSeries(year, idx) {
+        const curDate = new Date(dateSelector.value);
+        const curDay = String(curDate.getDate()).padStart(2, '0');
+        const curMonth = String(curDate.getMonth() + 1).padStart(2, '0');
+
+        const from = `${year}-01-01`;
+        const to = `${year}-${curMonth}-${curDay}`;
+
+        try {
+            const response = await fetch('/api/charts/multi-farm/farm-volumes-for-range', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    company_id: selectedCompanyId,
+                    from: from,
+                    to: to
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch chart data');
+            }
+
+            const data = await response.json();
+            const chartData = data.data || [];
+
+            // Calculate total volume for this year
+            const totalVolume = chartData.reduce((sum, item) => sum + (item.volume || 0), 0);
+
+            // Create data pairs like NextJS: [farmName, volume]
+            const seriesData = chartData.map(item => {
+                const farmName = item.farmName || item.farmId;
+                const volume = item.volume || 0;
+                return [farmName, volume];
+            });
+
+            // Define chart colors
+            const chartColors = [
+                'rgba(75, 192, 192, 1)',  // Teal
+                'rgba(54, 162, 235, 1)',  // Blue
+                'rgba(255, 99, 132, 1)'   // Red
+            ];
+
+            return {
+                name: `${year}: (${Math.round(totalVolume).toLocaleString()} MMBTUs)`,
+                data: seriesData,
+                color: chartColors[idx % chartColors.length]
+            };
+        } catch (error) {
+            console.error(`❌ Error fetching data for year ${year}:`, error);
+            return null;
+        }
+    }
+
+    async function updateChart() {
         const selectedDate = dateSelector.value;
         const chartSelector = window.chartSelectors?.find(s => s.containerId === 'ytd-volume-chart-selector');
         const chartType = chartSelector ? chartSelector.getSelectedType() : 'column';
-        
+
         console.log('📅 Selected date:', selectedDate);
         console.log('📊 Chart type:', chartType);
         console.log('🏢 Company ID:', selectedCompanyId);
@@ -115,48 +171,38 @@
         showLoading();
         hideError();
 
-        fetch('/api/charts/multi-farm/farm-volumes-for-date', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                company_id: selectedCompanyId,
-                date: selectedDate
-            })
-        })
-        .then(response => {
-            console.log('📡 API Response status:', response.status);
-            if (!response.ok) {
-                throw new Error('Failed to fetch chart data');
-            }
-            return response.json();
-        })
-        .then(data => {
-            console.log('📊 Received data:', data);
-            
-            if (chart) {
-                chart.destroy();
-            }
+        try {
+            // Get current year and previous years
+            const curDate = new Date(selectedDate);
+            const curYear = curDate.getFullYear();
+            const lastYear = curYear - 1;
+            const twoYearsAgo = curYear - 2;
 
-            // Process data for chart - match NextJS implementation exactly
-            const chartData = data.data || [];
-            if (chartData.length === 0) {
-                showError('No data available for the selected date.');
+            // Fetch data for all three years
+            const seriesPromises = [
+                addChartSeries(twoYearsAgo, 0),
+                addChartSeries(lastYear, 1),
+                addChartSeries(curYear, 2)
+            ];
+
+            const seriesData = await Promise.all(seriesPromises);
+
+            // Filter out null series (in case of errors)
+            const validSeries = seriesData.filter(series => series !== null);
+
+            if (validSeries.length === 0) {
+                showError('No data available for the selected date range.');
                 hideLoading();
                 return;
             }
 
-            // Create data pairs like NextJS: [farmName, volume]
-            const seriesData = chartData.map(item => {
-                const farmName = item.farm_name || item.farm_id;
-                const volume = item.volume || 0;
-                return [farmName, volume];
-            });
+            if (chart) {
+                chart.destroy();
+            }
 
             // Create chart using direct Highcharts implementation
             console.log('🚀 Creating YTD Volume Chart with direct Highcharts');
-            
+
             chart = Highcharts.chart('ytdVolumeChart', {
                 chart: {
                     type: chartType === 'column' ? 'column' : chartType,
@@ -164,7 +210,7 @@
                     height: 400
                 },
                 title: {
-                    text: 'YTD Volume by Farm',
+                    text: 'YTD Production',
                     style: {
                         fontSize: '16px',
                         fontWeight: 'bold'
@@ -193,11 +239,7 @@
                                 ${this.key}: ${Highcharts.numberFormat(this.y, 0)} MMBTUs`;
                     }
                 },
-                series: [{
-                    name: 'YTD Volume',
-                    data: seriesData,
-                    color: 'rgba(75, 192, 192, 1)'
-                }],
+                series: validSeries,
                 exporting: {
                     enabled: false // Disabled built-in exporting as we're using custom export menu
                 }
@@ -205,15 +247,14 @@
 
             // Initialize enhanced export menu
             initChartExportMenu(chart, document.getElementById('ytdVolumeChart'));
-            
+
             hideLoading();
             console.log('✅ YTD Volume Chart with enhanced export created');
-        })
-        .catch(error => {
-            console.error('❌ Error fetching YTD volume data:', error);
+        } catch (error) {
+            console.error('❌ Error creating YTD volume chart:', error);
             showError('Error loading chart data: ' + error.message);
             hideLoading();
-        });
+        }
     }
 
     // Initialize chart type selectors
@@ -224,7 +265,7 @@
     // Initialize when DOM is ready
     document.addEventListener('DOMContentLoaded', function() {
         console.log('🚀 Initializing YTD Volume Dashboard...');
-        
+
         // Initialize chart type selectors
         initChartTypeSelectors();
 
@@ -233,7 +274,7 @@
 
         // Initial chart load
         updateChart();
-        
+
         console.log('✅ YTD Volume Dashboard initialized');
     });
 </script>
