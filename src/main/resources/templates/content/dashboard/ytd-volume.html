@@ -104,9 +104,24 @@
     }
 
     async function addChartSeries(year, idx) {
+        // Ensure year is a valid number
+        if (isNaN(year) || !isFinite(year)) {
+            console.error(`❌ Invalid year: ${year}`);
+            return null;
+        }
+
+        // Ensure year has 4 digits
+        if (year < 1000 || year > 9999) {
+            console.error(`❌ Year out of range: ${year}`);
+            return null;
+        }
+
         const curDate = new Date(dateSelector.value);
-        const curDay = String(curDate.getDate()).padStart(2, '0');
-        const curMonth = String(curDate.getMonth() + 1).padStart(2, '0');
+        // If date is invalid, use current date
+        const validDate = isNaN(curDate.getTime()) ? new Date() : curDate;
+
+        const curDay = String(validDate.getDate()).padStart(2, '0');
+        const curMonth = String(validDate.getMonth() + 1).padStart(2, '0');
 
         const from = `${year}-01-01`;
         const to = `${year}-${curMonth}-${curDay}`;
@@ -172,11 +187,24 @@
         hideError();
 
         try {
+            // Validate the date
+            let curDate = new Date(selectedDate);
+
+            // Check if date is valid, if not use current date
+            if (isNaN(curDate.getTime())) {
+                console.warn('⚠️ Invalid date selected, using current date as fallback');
+                curDate = new Date();
+                // Update date selector with current date
+                const today = curDate.toISOString().split('T')[0];
+                dateSelector.value = today;
+            }
+
             // Get current year and previous years
-            const curDate = new Date(selectedDate);
             const curYear = curDate.getFullYear();
             const lastYear = curYear - 1;
             const twoYearsAgo = curYear - 2;
+
+            console.log('📅 Using years:', twoYearsAgo, lastYear, curYear);
 
             // Fetch data for all three years
             const seriesPromises = [
