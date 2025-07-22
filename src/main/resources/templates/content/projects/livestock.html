@@ -3,7 +3,7 @@
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{layouts/main}">
 <head>
-    <title>Livestock Project</title>
+    <title>Livestock Dashboard</title>
     <link rel="stylesheet" th:href="@{/css/chart-type-selector.css}">
     <style>
         .grid-layout {
@@ -25,6 +25,7 @@
             padding: 20px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             border: 1px solid #e1e5e9;
+            margin-bottom: 20px;
         }
 
         .chart-nav {
@@ -42,46 +43,13 @@
             font-size: 16px;
         }
 
-        .chart-year-selector {
-            position: relative;
-            display: inline-block;
-        }
-
-        .chart-year-selector .items {
-            display: flex;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            overflow: hidden;
-        }
-
-        .chart-year-selector .year {
-            padding: 5px 10px;
-            background-color: #f8f9fc;
-            cursor: pointer;
-            border-right: 1px solid #ddd;
-            transition: all 0.2s ease;
-        }
-
-        .chart-year-selector .year:last-child {
-            border-right: none;
-        }
-
-        .chart-year-selector .year:hover {
-            background-color: #e9ecef;
-        }
-
-        .chart-year-selector .year.selected {
-            background-color: #4e73df;
-            color: white;
-        }
-
         /* Responsive design */
         @media (max-width: 768px) {
             .chart-nav {
                 flex-direction: column;
                 align-items: flex-start;
             }
-            
+
             .chart-title {
                 font-size: 14px;
             }
@@ -91,46 +59,78 @@
 <body>
     <div layout:fragment="content">
         <div class="container-fluid">
-            <h1 class="h3 mb-4 text-gray-800">Livestock Project</h1>
-            <p>Farm: <span th:text="${selectedFarmName}"></span></p>
+            <h1 class="h3 mb-4 text-gray-800">Livestock Dashboard</h1>
+
+            <!-- Debug Panel (Collapsible) -->
+            <div class="card shadow mb-4">
+                <a href="#collapseDebugPanel" class="d-block card-header py-3" data-toggle="collapse" role="button" aria-expanded="false" aria-controls="collapseDebugPanel">
+                    <h6 class="m-0 font-weight-bold text-primary">Debug Information (Click to Toggle)</h6>
+                </a>
+                <div class="collapse" id="collapseDebugPanel">
+                    <div class="card-body">
+                        <div class="alert alert-info">
+                            <p><strong>Debug Information:</strong> This panel shows data loading status and counts to help troubleshoot issues.</p>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="card mb-2">
+                                    <div class="card-header">Animal Headcount Chart</div>
+                                    <div class="card-body">
+                                        <div id="headcount-chart-debug">
+                                            <p>Status: <span id="headcount-data-status">Waiting for data...</span></p>
+                                            <p>Data Points: <span id="headcount-data-count">0</span></p>
+                                            <div id="headcount-data-years"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card mb-2">
+                                    <div class="card-header">Head vs Weight Chart</div>
+                                    <div class="card-body">
+                                        <div id="head-weight-chart-debug">
+                                            <p>Status: <span id="head-weight-data-status">Waiting for data...</span></p>
+                                            <p>Data Points: <span id="head-weight-data-count">0</span></p>
+                                            <div id="head-weight-data-details"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             <div class="grid-layout">
                 <div class="grid-row">
                     <div class="grid-col">
+                        <!-- Animal Headcount Chart -->
                         <div class="chart-panel">
                             <div class="chart-nav">
                                 <div>
                                     <div class="chart-title">Animal Headcount</div>
-                                    <div class="chart-year-selector" id="headcount-chart-year-selector">
-                                        <div class="items">
-                                            <!-- Year buttons will be added dynamically -->
-                                        </div>
-                                    </div>
                                 </div>
                                 <div class="chart-type-selector" id="headcount-chart-selector">
                                     <!-- Chart type buttons will be added dynamically -->
                                 </div>
                             </div>
+                            <div id="headcount-chart-status" class="alert alert-info" style="display: none;"></div>
                             <div id="animal-headcount-chart"></div>
                         </div>
-                    </div>
-                </div>
-                <div class="grid-row">
-                    <div class="grid-col">
+
+                        <h1 class="h4 mb-4 text-gray-800">52 Week Metrics</h1>
+
+                        <!-- Head vs Weight 52 Week Chart -->
                         <div class="chart-panel">
                             <div class="chart-nav">
                                 <div>
                                     <div class="chart-title">Historic Production per Animal Headcount vs. Weight Unit</div>
-                                    <div class="chart-year-selector" id="head-weight-chart-year-selector">
-                                        <div class="items">
-                                            <!-- Year buttons will be added dynamically -->
-                                        </div>
-                                    </div>
                                 </div>
                                 <div class="chart-type-selector" id="head-weight-chart-selector">
                                     <!-- Chart type buttons will be added dynamically -->
                                 </div>
                             </div>
+                            <div id="head-weight-chart-status" class="alert alert-info" style="display: none;"></div>
                             <div id="head-weight-chart"></div>
                         </div>
                     </div>
@@ -159,73 +159,6 @@
             };
         }
 
-        // Year selector functionality
-        let selectedYears = {
-            'headcount': getCurrentYear(),
-            'head-weight': getCurrentYear()
-        };
-
-        function initYearSelectors() {
-            const curYear = getCurrentYear();
-            const lastYear = curYear - 1;
-            const twoYearsAgo = curYear - 2;
-            const years = [curYear, lastYear, twoYearsAgo];
-
-            // Initialize each year selector
-            initYearSelector('headcount-chart-year-selector', 'headcount', years);
-            initYearSelector('head-weight-chart-year-selector', 'head-weight', years);
-        }
-
-        function initYearSelector(selectorId, chartType, years) {
-            const selector = document.getElementById(selectorId);
-            if (!selector) return;
-
-            const itemsContainer = selector.querySelector('.items');
-            if (!itemsContainer) return;
-
-            // Clear existing items
-            itemsContainer.innerHTML = '';
-
-            // Add year buttons
-            years.forEach(year => {
-                const yearElement = document.createElement('div');
-                yearElement.className = 'year' + (year === selectedYears[chartType] ? ' selected' : '');
-                yearElement.textContent = year;
-                yearElement.addEventListener('click', function() {
-                    // Update selected year
-                    if (year !== selectedYears[chartType]) {
-                        selectedYears[chartType] = year;
-
-                        // Update UI
-                        itemsContainer.querySelectorAll('.year').forEach(el => {
-                            el.classList.remove('selected');
-                        });
-                        yearElement.classList.add('selected');
-
-                        // Reload chart
-                        reloadChart(chartType);
-                    }
-                });
-
-                itemsContainer.appendChild(yearElement);
-            });
-        }
-
-        function reloadChart(chartType) {
-            switch(chartType) {
-                case 'headcount':
-                    const headcountSelector = window.chartSelectors?.find(s => s.containerId === 'headcount-chart-selector');
-                    const headcountType = headcountSelector ? headcountSelector.getSelectedType() : 'line';
-                    loadAnimalHeadcountChart(headcountType);
-                    break;
-                case 'head-weight':
-                    const headWeightSelector = window.chartSelectors?.find(s => s.containerId === 'head-weight-chart-selector');
-                    const headWeightType = headWeightSelector ? headWeightSelector.getSelectedType() : 'line';
-                    loadHeadWeightChart(headWeightType);
-                    break;
-            }
-        }
-
         // Initialize chart type selectors
         function initChartTypeSelectors() {
             window.chartSelectors = initializeChartTypeSelectors();
@@ -233,8 +166,10 @@
 
         // Animal Headcount Chart
         function loadAnimalHeadcountChart(chartType = 'line') {
-            const selectedYear = selectedYears['headcount'];
-            const { from, to } = getDateRange(selectedYear);
+            // Update debug status
+            document.getElementById('headcount-data-status').textContent = 'Loading data...';
+            document.getElementById('headcount-data-count').textContent = '0';
+            document.getElementById('headcount-data-years').innerHTML = '';
 
             // Clear previous chart
             document.getElementById('animal-headcount-chart').innerHTML = '';
@@ -242,46 +177,206 @@
             // Show loading indicator
             document.getElementById('animal-headcount-chart').innerHTML = '<div style="text-align: center; padding: 20px;">Loading...</div>';
 
-            fetch('/api/charts/single-farm/animal-headcount', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ farm_id: farmId, from, to })
-            })
-            .then(res => res.json())
-            .then(response => {
-                const data = response.data || [];
+            // Hide any previous status message
+            document.getElementById('headcount-chart-status').style.display = 'none';
 
-                // Process data for headcount chart
-                const seriesData = data.map(d => [d.farm_name || d.farm_id, d.headcount]);
+            // Get current year and previous years
+            const curYear = getCurrentYear();
+            const lastYear = curYear - 1;
+            const twoYearsAgo = curYear - 2;
+
+            console.log(`🔍 Fetching animal headcount data for years: ${twoYearsAgo}, ${lastYear}, ${curYear}`);
+
+            // Get date ranges
+            const fromDate = `${twoYearsAgo}-01-01`;
+            const toDate = new Date().toISOString().split('T')[0];
+            const forecastFromDate = new Date().toISOString().split('T')[0]; // Current date
+            const forecastToDate = `${curYear}-12-31`;
+
+            // Fetch historical population data for all three years
+            Promise.all([
+                // Historical data for current year and previous years
+                fetch('/api/charts/single-farm/population-timeline', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        farm_id: farmId,
+                        from: fromDate,
+                        to: toDate
+                    })
+                }).then(response => {
+                    console.log(`📡 API response status for population data: ${response.status} ${response.statusText}`);
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch population data');
+                    }
+                    return response.json();
+                }),
+                
+                // Forecast data for current year
+                fetch('/api/charts/single-farm/population-forecast-timeline', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        farm_id: farmId,
+                        from: forecastFromDate,
+                        to: forecastToDate
+                    })
+                }).then(response => {
+                    console.log(`📡 API response status for forecast data: ${response.status} ${response.statusText}`);
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch forecast data');
+                    }
+                    return response.json();
+                }),
+                
+                // Budget data for current year
+                fetch('/api/charts/single-farm/population-budget-timeline', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        farm_id: farmId,
+                        from: `${curYear}-01-01`,
+                        to: `${curYear}-12-31`
+                    })
+                }).then(response => {
+                    console.log(`📡 API response status for budget data: ${response.status} ${response.statusText}`);
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch budget data');
+                    }
+                    return response.json();
+                })
+            ])
+            .then(([populationResponse, forecastResponse, budgetResponse]) => {
+                console.log('📊 Received population data:', populationResponse);
+                console.log('📊 Received forecast data:', forecastResponse);
+                console.log('📊 Received budget data:', budgetResponse);
+
+                // Process data for chart
+                const populationData = populationResponse.data || [];
+                const forecastData = forecastResponse.data || [];
+                const budgetData = budgetResponse.data || [];
+
+                // Update debug information
+                document.getElementById('headcount-data-status').textContent = 'Data loaded';
+                const totalDataPoints = populationData.length + forecastData.length + budgetData.length;
+                document.getElementById('headcount-data-count').textContent = totalDataPoints.toString();
+
+                // Group population data by year
+                const yearData = {};
+                populationData.forEach(item => {
+                    const date = new Date(item.timestamp);
+                    const year = date.getFullYear();
+                    
+                    if (!yearData[year]) {
+                        yearData[year] = {
+                            name: year.toString(),
+                            data: new Array(12).fill(null)
+                        };
+                    }
+                    
+                    // Add data point to the appropriate month (0-11)
+                    const month = date.getMonth();
+                    yearData[year].data[month] = item.value;
+                });
+
+                // Process forecast data
+                const forecastSeries = {
+                    name: `${curYear} Forecast`,
+                    data: new Array(12).fill(null)
+                };
+                
+                forecastData.forEach(item => {
+                    const date = new Date(item.timestamp);
+                    const month = date.getMonth();
+                    forecastSeries.data[month] = item.value;
+                });
+
+                // Process budget data
+                const budgetSeries = {
+                    name: `${curYear} Budget`,
+                    data: new Array(12).fill(null)
+                };
+                
+                budgetData.forEach(item => {
+                    const date = new Date(item.timestamp);
+                    const month = date.getMonth();
+                    budgetSeries.data[month] = item.value;
+                });
+
+                // Convert to series array
+                const series = Object.values(yearData);
+                
+                // Add forecast and budget series if they have data
+                if (forecastData.length > 0) {
+                    series.push(forecastSeries);
+                }
+                
+                if (budgetData.length > 0) {
+                    series.push(budgetSeries);
+                }
+
+                // Display years with data in debug panel
+                const yearsElement = document.getElementById('headcount-data-years');
+                if (Object.keys(yearData).length > 0) {
+                    const yearInfo = Object.keys(yearData).map(year => {
+                        const nonNullCount = yearData[year].data.filter(val => val !== null).length;
+                        return `${year}: ${nonNullCount} data points`;
+                    });
+                    
+                    if (forecastData.length > 0) {
+                        yearInfo.push(`${curYear} Forecast: ${forecastData.length} data points`);
+                    }
+                    
+                    if (budgetData.length > 0) {
+                        yearInfo.push(`${curYear} Budget: ${budgetData.length} data points`);
+                    }
+                    
+                    yearsElement.innerHTML = '<ul>' + yearInfo.map(info => `<li>${info}</li>`).join('') + '</ul>';
+                } else {
+                    yearsElement.innerHTML = '<p>No data available for any year</p>';
+                }
+
+                // Check if we have any data to display
+                if (series.length === 0) {
+                    console.log('⚠️ No data available for Animal Headcount Chart');
+                    document.getElementById('headcount-chart-status').textContent = 'No data available for the selected years. The database may be empty for this farm.';
+                    document.getElementById('headcount-chart-status').style.display = 'block';
+                    document.getElementById('animal-headcount-chart').innerHTML = 
+                        '<div style="text-align: center; padding: 20px;">No data available</div>';
+                    document.getElementById('headcount-data-status').textContent = 'No data available';
+                    return;
+                }
 
                 // Create chart using direct Highcharts implementation
                 console.log('🚀 Creating Animal Headcount Chart with direct Highcharts');
-                
+
                 const chart = Highcharts.chart('animal-headcount-chart', {
                     chart: {
-                        type: chartType === 'column' ? 'column' : chartType,
-                        inverted: chartType === 'bar', // For horizontal bar charts
+                        type: chartType,
                         height: 400
                     },
                     title: {
-                        text: 'Animal Headcount by Farm',
+                        text: 'Animal Headcount',
                         style: {
                             fontSize: '16px',
                             fontWeight: 'bold'
                         }
                     },
                     xAxis: {
-                        type: 'category',
+                        categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
                         title: {
-                            text: 'Farm'
+                            text: 'Month'
                         }
                     },
                     yAxis: {
-                        min: 0,
                         title: {
-                            text: 'Headcount'
+                            text: 'Weekly Average'
                         },
                         labels: {
                             formatter: function() {
@@ -292,33 +387,39 @@
                     tooltip: {
                         formatter: function() {
                             return `<b>${this.series.name}</b><br/>
-                                    ${this.key}: ${Highcharts.numberFormat(this.y, 0)} animals`;
+                                    ${this.x}: ${Highcharts.numberFormat(this.y, 0)}`;
                         }
                     },
-                    series: [{
-                        name: 'Animal Headcount',
-                        data: seriesData,
-                        color: 'rgba(54, 162, 235, 1)'
-                    }],
+                    series: series,
                     exporting: {
                         enabled: false // Disabled built-in exporting as we're using custom export menu
+                    },
+                    credits: {
+                        enabled: false // Remove Highcharts.com label
                     }
                 });
 
                 // Initialize enhanced export menu
                 initChartExportMenu(chart, document.getElementById('animal-headcount-chart'));
+
+                console.log('✅ Animal Headcount Chart with enhanced export created');
             })
             .catch(error => {
-                console.error('Error fetching animal headcount data:', error);
+                console.error('❌ Error fetching animal headcount data:', error);
                 document.getElementById('animal-headcount-chart').innerHTML = 
-                    '<div style="text-align: center; padding: 20px; color: red;">Error loading chart data</div>';
+                    '<div style="text-align: center; padding: 20px; color: red;">Error loading chart data: ' + error.message + '</div>';
+                document.getElementById('headcount-chart-status').textContent = 'Error loading data: ' + error.message;
+                document.getElementById('headcount-chart-status').style.display = 'block';
+                document.getElementById('headcount-data-status').textContent = 'Error: ' + error.message;
             });
         }
 
         // Head vs Weight 52 Week Chart
-        function loadHeadWeightChart(chartType = 'line') {
-            const selectedYear = selectedYears['head-weight'];
-            const { from, to } = getDateRange(selectedYear);
+        function loadHeadVsWeightChart(chartType = 'line') {
+            // Update debug status
+            document.getElementById('head-weight-data-status').textContent = 'Loading data...';
+            document.getElementById('head-weight-data-count').textContent = '0';
+            document.getElementById('head-weight-data-details').innerHTML = '';
 
             // Clear previous chart
             document.getElementById('head-weight-chart').innerHTML = '';
@@ -326,28 +427,84 @@
             // Show loading indicator
             document.getElementById('head-weight-chart').innerHTML = '<div style="text-align: center; padding: 20px;">Loading...</div>';
 
-            fetch('/api/charts/single-farm/head-vs-weight-52week', {
+            // Hide any previous status message
+            document.getElementById('head-weight-chart-status').style.display = 'none';
+
+            console.log('🔍 Fetching head vs weight 52-week data');
+
+            // Get date range (from 2022-01-01 to current date)
+            const fromDate = '2022-01-01';
+            const toDate = new Date().toISOString().split('T')[0];
+
+            fetch('/api/charts/single-farm/population-52week-timeline', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ farm_id: farmId, from, to })
+                body: JSON.stringify({
+                    farm_id: farmId,
+                    from: fromDate,
+                    to: toDate
+                })
             })
-            .then(res => res.json())
             .then(response => {
+                console.log(`📡 API response status for head vs weight data: ${response.status} ${response.statusText}`);
+                if (!response.ok) {
+                    throw new Error('Failed to fetch head vs weight data');
+                }
+                return response.json();
+            })
+            .then(response => {
+                console.log('📊 Received head vs weight data:', response);
+
                 const data = response.data || [];
 
-                // Process data for head vs weight chart
-                const headData = data.map(d => [d.farm_name || d.farm_id, d.headcount]);
-                const weightData = data.map(d => [d.farm_name || d.farm_id, d.weight]);
+                // Update debug information
+                document.getElementById('head-weight-data-status').textContent = 'Data loaded';
+                document.getElementById('head-weight-data-count').textContent = data.length.toString();
+
+                // Display data details in debug panel
+                const detailsElement = document.getElementById('head-weight-data-details');
+                if (data.length > 0) {
+                    const headcountAvg = data.reduce((sum, item) => sum + item.animal_headcount, 0) / data.length;
+                    const weightAvg = data.reduce((sum, item) => sum + item.animal_weight_unit, 0) / data.length;
+                    
+                    detailsElement.innerHTML = `
+                        <p>Date range: ${fromDate} to ${toDate}</p>
+                        <p>Average headcount: ${headcountAvg.toFixed(2)}</p>
+                        <p>Average weight unit: ${weightAvg.toFixed(2)}</p>
+                    `;
+                } else {
+                    detailsElement.innerHTML = '<p>No data available</p>';
+                }
+
+                // Check if we have any data to display
+                if (data.length === 0) {
+                    console.log('⚠️ No data available for Head vs Weight Chart');
+                    document.getElementById('head-weight-chart-status').textContent = 'No data available for the selected date range. The database may be empty for this farm.';
+                    document.getElementById('head-weight-chart-status').style.display = 'block';
+                    document.getElementById('head-weight-chart').innerHTML = 
+                        '<div style="text-align: center; padding: 20px;">No data available</div>';
+                    document.getElementById('head-weight-data-status').textContent = 'No data available';
+                    return;
+                }
+
+                // Process data for chart
+                const headcountData = [];
+                const weightData = [];
+
+                data.forEach(item => {
+                    const timestamp = new Date(item.timestamp).getTime();
+                    headcountData.push([timestamp, item.animal_headcount]);
+                    weightData.push([timestamp, item.animal_weight_unit]);
+                });
 
                 // Create chart using direct Highcharts implementation
                 console.log('🚀 Creating Head vs Weight Chart with direct Highcharts');
-                
+
                 const chart = Highcharts.chart('head-weight-chart', {
                     chart: {
-                        type: chartType === 'column' ? 'column' : chartType,
-                        inverted: chartType === 'bar', // For horizontal bar charts
+                        type: chartType,
                         height: 400
                     },
                     title: {
@@ -358,69 +515,109 @@
                         }
                     },
                     xAxis: {
-                        type: 'category',
+                        type: 'datetime',
                         title: {
-                            text: 'Farm'
+                            text: 'Date'
                         }
                     },
                     yAxis: [{
+                        // Primary y-axis
                         title: {
-                            text: 'MMBTUs / Hd / Year'
+                            text: 'MMBTUs / Hd / Year',
+                            style: {
+                                color: '#7cb5ec'
+                            }
+                        },
+                        labels: {
+                            format: '{value}',
+                            style: {
+                                color: '#7cb5ec'
+                            }
                         }
                     }, {
+                        // Secondary y-axis
                         title: {
-                            text: 'MMBTUs / AU / Year'
+                            text: 'MMBTUs / AU / Year',
+                            style: {
+                                color: '#90ed7d'
+                            }
+                        },
+                        labels: {
+                            format: '{value}',
+                            style: {
+                                color: '#90ed7d'
+                            }
                         },
                         opposite: true
                     }],
                     tooltip: {
                         formatter: function() {
                             return `<b>${this.series.name}</b><br/>
-                                    Farm: ${this.key}<br/>
-                                    Value: ${Highcharts.numberFormat(this.y, this.series.name === 'Animal Headcount (Pop)' ? 0 : 2)}`;
+                                    ${Highcharts.dateFormat('%Y-%m-%d', this.x)}: ${Highcharts.numberFormat(this.y, 2)}`;
                         }
                     },
                     series: [{
                         name: 'Animal Headcount (Pop)',
-                        data: headData,
+                        data: headcountData,
                         yAxis: 0,
-                        color: 'rgba(255, 99, 132, 1)'
+                        color: '#7cb5ec'
                     }, {
                         name: 'Animal Weight Unit (AU)',
                         data: weightData,
                         yAxis: 1,
-                        color: 'rgba(153, 102, 255, 1)'
+                        color: '#90ed7d'
                     }],
                     exporting: {
                         enabled: false // Disabled built-in exporting as we're using custom export menu
+                    },
+                    credits: {
+                        enabled: false // Remove Highcharts.com label
                     }
                 });
 
                 // Initialize enhanced export menu
                 initChartExportMenu(chart, document.getElementById('head-weight-chart'));
+
+                console.log('✅ Head vs Weight Chart with enhanced export created');
             })
             .catch(error => {
-                console.error('Error fetching head vs weight data:', error);
+                console.error('❌ Error fetching head vs weight data:', error);
                 document.getElementById('head-weight-chart').innerHTML = 
-                    '<div style="text-align: center; padding: 20px; color: red;">Error loading chart data</div>';
+                    '<div style="text-align: center; padding: 20px; color: red;">Error loading chart data: ' + error.message + '</div>';
+                document.getElementById('head-weight-chart-status').textContent = 'Error loading data: ' + error.message;
+                document.getElementById('head-weight-chart-status').style.display = 'block';
+                document.getElementById('head-weight-data-status').textContent = 'Error: ' + error.message;
             });
+        }
+
+        // Helper function to get chart colors
+        function getChartColor(index) {
+            const colors = [
+                '#7cb5ec', // blue
+                '#90ed7d', // green
+                '#f7a35c', // orange
+                '#8085e9', // purple
+                '#f15c80', // pink
+                '#e4d354', // yellow
+                '#2b908f', // teal
+                '#f45b5b', // red
+                '#91e8e1'  // light blue
+            ];
+            return colors[index % colors.length];
         }
 
         // Initialize all charts when the page loads
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('🚀 Initializing Livestock Project page...');
-            
-            // Initialize year selectors
-            initYearSelectors();
+            console.log('🚀 Initializing Livestock Dashboard...');
 
             // Initialize chart type selectors
             initChartTypeSelectors();
 
             // Load all charts
             loadAnimalHeadcountChart();
-            loadHeadWeightChart();
-            
-            console.log('✅ Livestock Project page initialized');
+            loadHeadVsWeightChart();
+
+            console.log('✅ Livestock Dashboard initialized');
         });
         /*]]>*/
     </script>

@@ -824,6 +824,214 @@ public class ChartService {
     }
 
     /**
+     * Get population timeline data for a specific farm within a date range
+     */
+    public List<Map<String, Object>> getSingleFarmPopulationTimeline(String farmId, LocalDate fromDate, LocalDate toDate) {
+        logger.info("🔍 Fetching population timeline for farm: {} from {} to {}", farmId, fromDate, toDate);
+
+        try {
+            // In a real implementation, we would query the database for population data
+            // For now, we'll generate sample data for demonstration purposes
+            List<Map<String, Object>> populationData = new ArrayList<>();
+
+            // Get farm name
+            Farm farm = farmRepository.findById(farmId).orElse(null);
+            String farmName = farm != null ? farm.getName() : farmId;
+            logger.info("Farm name: {}", farmName);
+
+            // Generate monthly data points from fromDate to toDate
+            LocalDate currentDate = fromDate;
+            while (!currentDate.isAfter(toDate)) {
+                Map<String, Object> dataPoint = new HashMap<>();
+
+                // Set timestamp to the first day of the month
+                LocalDate monthDate = LocalDate.of(currentDate.getYear(), currentDate.getMonth(), 1);
+                dataPoint.put("timestamp", monthDate.toString());
+
+                // Generate a random value between 1000 and 5000 for the population
+                double value = 1000 + Math.random() * 4000;
+                dataPoint.put("value", value);
+
+                populationData.add(dataPoint);
+
+                // Move to next month
+                currentDate = currentDate.plusMonths(1);
+            }
+
+            // Log data presence verification
+            logger.info("📊 Data verification:");
+            logger.info("✓ Total records: {}", populationData.size());
+            logger.info("✓ Total population: {}",
+                    populationData.stream()
+                            .mapToDouble(data -> ((Number) data.get("value")).doubleValue())
+                            .sum());
+
+            return populationData;
+        } catch (Exception e) {
+            logger.error("❌ Error in getSingleFarmPopulationTimeline: {}", e.getMessage(), e);
+            return new ArrayList<>();
+        }
+    }
+
+    /**
+     * Get population forecast timeline data for a specific farm within a date range
+     */
+    public List<Map<String, Object>> getSingleFarmPopulationForecastTimeline(String farmId, LocalDate fromDate, LocalDate toDate) {
+        logger.info("🔍 Fetching population forecast timeline for farm: {} from {} to {}", farmId, fromDate, toDate);
+
+        try {
+            // In a real implementation, we would query the database for population forecast data
+            // For now, we'll generate sample data for demonstration purposes
+            List<Map<String, Object>> forecastData = new ArrayList<>();
+
+            // Get farm name
+            Farm farm = farmRepository.findById(farmId).orElse(null);
+            String farmName = farm != null ? farm.getName() : farmId;
+            logger.info("Farm name: {}", farmName);
+
+            // Generate monthly data points from fromDate to toDate
+            LocalDate currentDate = fromDate;
+            while (!currentDate.isAfter(toDate)) {
+                Map<String, Object> dataPoint = new HashMap<>();
+
+                // Set timestamp to the first day of the month
+                LocalDate monthDate = LocalDate.of(currentDate.getYear(), currentDate.getMonth(), 1);
+                dataPoint.put("timestamp", monthDate.toString());
+
+                // Generate a random value between 1000 and 5000 for the forecast
+                // Make it slightly higher than historical data to show growth
+                double value = 1200 + Math.random() * 4000;
+                dataPoint.put("value", value);
+
+                forecastData.add(dataPoint);
+
+                // Move to next month
+                currentDate = currentDate.plusMonths(1);
+            }
+
+            // Log data presence verification
+            logger.info("📊 Data verification:");
+            logger.info("✓ Total records: {}", forecastData.size());
+            logger.info("✓ Total forecast: {}",
+                    forecastData.stream()
+                            .mapToDouble(data -> ((Number) data.get("value")).doubleValue())
+                            .sum());
+
+            return forecastData;
+        } catch (Exception e) {
+            logger.error("❌ Error in getSingleFarmPopulationForecastTimeline: {}", e.getMessage(), e);
+            return new ArrayList<>();
+        }
+    }
+
+    /**
+     * Get population budget timeline data for a specific farm within a date range
+     */
+    public List<Map<String, Object>> getSingleFarmPopulationBudgetTimeline(String farmId, LocalDate fromDate, LocalDate toDate) {
+        logger.info("🔍 Fetching population budget timeline for farm: {} from {} to {}", farmId, fromDate, toDate);
+
+        try {
+            // In a real implementation, we would query the database for population budget data
+            // For now, we'll generate sample data for demonstration purposes
+            List<Map<String, Object>> budgetData = new ArrayList<>();
+
+            // Get farm name
+            Farm farm = farmRepository.findById(farmId).orElse(null);
+            String farmName = farm != null ? farm.getName() : farmId;
+            logger.info("Farm name: {}", farmName);
+
+            // Generate monthly data points from fromDate to toDate
+            LocalDate currentDate = fromDate;
+            while (!currentDate.isAfter(toDate)) {
+                Map<String, Object> dataPoint = new HashMap<>();
+
+                // Set timestamp to the first day of the month
+                LocalDate monthDate = LocalDate.of(currentDate.getYear(), currentDate.getMonth(), 1);
+                dataPoint.put("timestamp", monthDate.toString());
+
+                // Generate a random value between 1000 and 5000 for the budget
+                // Make it slightly different from historical data
+                double value = 1100 + Math.random() * 4200;
+                dataPoint.put("value", value);
+
+                budgetData.add(dataPoint);
+
+                // Move to next month
+                currentDate = currentDate.plusMonths(1);
+            }
+
+            // Log data presence verification
+            logger.info("📊 Data verification:");
+            logger.info("✓ Total records: {}", budgetData.size());
+            logger.info("✓ Total budget: {}",
+                    budgetData.stream()
+                            .mapToDouble(data -> ((Number) data.get("value")).doubleValue())
+                            .sum());
+
+            return budgetData;
+        } catch (Exception e) {
+            logger.error("❌ Error in getSingleFarmPopulationBudgetTimeline: {}", e.getMessage(), e);
+            return new ArrayList<>();
+        }
+    }
+
+    /**
+     * Get population 52-week timeline data for a specific farm within a date range
+     */
+    public List<Map<String, Object>> getSingleFarmPopulation52WeekTimeline(String farmId, LocalDate fromDate, LocalDate toDate) {
+        logger.info("🔍 Fetching population 52-week timeline for farm: {} from {} to {}", farmId, fromDate, toDate);
+
+        try {
+            // In a real implementation, we would query the database for population 52-week data
+            // For now, we'll generate sample data for demonstration purposes
+            List<Map<String, Object>> populationData = new ArrayList<>();
+
+            // Get farm name
+            Farm farm = farmRepository.findById(farmId).orElse(null);
+            String farmName = farm != null ? farm.getName() : farmId;
+            logger.info("Farm name: {}", farmName);
+
+            // Generate weekly data points from fromDate to toDate
+            LocalDate currentDate = fromDate;
+            while (!currentDate.isAfter(toDate)) {
+                Map<String, Object> dataPoint = new HashMap<>();
+
+                // Set timestamp
+                dataPoint.put("timestamp", currentDate.toString());
+
+                // Generate random values for animal headcount and weight unit
+                double animalHeadcount = 3.5 + Math.random() * 1.5; // 3.5-5.0
+                double animalWeightUnit = 2.0 + Math.random() * 1.0; // 2.0-3.0
+
+                dataPoint.put("animal_headcount", animalHeadcount);
+                dataPoint.put("animal_weight_unit", animalWeightUnit);
+
+                populationData.add(dataPoint);
+
+                // Move to next week
+                currentDate = currentDate.plusWeeks(1);
+            }
+
+            // Log data presence verification
+            logger.info("📊 Data verification:");
+            logger.info("✓ Total records: {}", populationData.size());
+            logger.info("✓ Average animal headcount: {}",
+                    populationData.stream()
+                            .mapToDouble(data -> ((Number) data.get("animal_headcount")).doubleValue())
+                            .average().orElse(0));
+            logger.info("✓ Average animal weight unit: {}",
+                    populationData.stream()
+                            .mapToDouble(data -> ((Number) data.get("animal_weight_unit")).doubleValue())
+                            .average().orElse(0));
+
+            return populationData;
+        } catch (Exception e) {
+            logger.error("❌ Error in getSingleFarmPopulation52WeekTimeline: {}", e.getMessage(), e);
+            return new ArrayList<>();
+        }
+    }
+
+    /**
      * Get lagoon levels within a date range
      */
     public List<Map<String, Object>> getSingleFarmLagoonLevels(String farmId, LocalDate fromDate, LocalDate toDate) {
