@@ -544,4 +544,169 @@ public class ChartApiController {
             return ResponseEntity.ok(errorResponse);
         }
     }
+
+    @PostMapping("/single-farm/lagoon-timeline")
+    public ResponseEntity<Map<String, Object>> getSingleFarmLagoonTimeline(@RequestBody FarmDateRangeRequest request) {
+        logger.info("📊 Processing single farm lagoon timeline - farmId: {}, from: {}, to: {}",
+                request.getFarm_id(), request.getFrom(), request.getTo());
+
+        try {
+            // Get lagoon levels data from service
+            List<Map<String, Object>> lagoonData = chartService.getSingleFarmLagoonLevels(
+                    request.getFarm_id(),
+                    request.getFrom(),
+                    request.getTo()
+            );
+
+            logger.info("📈 Found {} lagoon level records", lagoonData.size());
+
+            // Create response with data array
+            Map<String, Object> response = new HashMap<>();
+            response.put("data", lagoonData);
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("❌ Error processing single farm lagoon timeline: {}", e.getMessage(), e);
+
+            // Return error response
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("data", new ArrayList<>());
+            errorResponse.put("error", true);
+            errorResponse.put("errorMessage", e.getMessage());
+
+            return ResponseEntity.ok(errorResponse);
+        }
+    }
+
+    @PostMapping("/single-farm/mass-balance-timeline")
+    public ResponseEntity<Map<String, Object>> getSingleFarmMassBalanceTimeline(@RequestBody FarmDateRangeRequest request) {
+        logger.info("📊 Processing single farm mass balance timeline - farmId: {}, from: {}, to: {}",
+                request.getFarm_id(), request.getFrom(), request.getTo());
+
+        try {
+            // Get mass balance data from service
+            List<Map<String, Object>> massBalanceData = chartService.getSingleFarmMassBalanceTimeline(
+                    request.getFarm_id(),
+                    request.getFrom(),
+                    request.getTo()
+            );
+
+            logger.info("📈 Found {} mass balance records", massBalanceData.size());
+
+            // Create response with data array
+            Map<String, Object> response = new HashMap<>();
+            response.put("data", massBalanceData);
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("❌ Error processing single farm mass balance timeline: {}", e.getMessage(), e);
+
+            // Return error response
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("data", new ArrayList<>());
+            errorResponse.put("error", true);
+            errorResponse.put("errorMessage", e.getMessage());
+
+            return ResponseEntity.ok(errorResponse);
+        }
+    }
+
+    @PostMapping("/single-farm/ci-scores")
+    public ResponseEntity<Map<String, Object>> getSingleFarmCiScores(@RequestBody FarmDateRangeRequest request) {
+        logger.info("📊 Processing single farm CI scores - farmId: {}", request.getFarm_id());
+
+        try {
+            // For CI scores, we need to get the company ID for the farm
+            // In a real implementation, we would look up the company ID for the farm
+            // For now, we'll use a placeholder company ID
+            String companyId = "placeholder-company-id";
+
+            // Get CI scores data from service
+            List<Map<String, Object>> ciScoresData = chartService.getMultiFarmCiScoresCombinedTable(companyId);
+
+            logger.info("📈 Found {} CI scores records", ciScoresData.size());
+
+            // Create response with data array
+            Map<String, Object> response = new HashMap<>();
+            response.put("data", ciScoresData);
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("❌ Error processing single farm CI scores: {}", e.getMessage(), e);
+
+            // Return error response
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("data", new ArrayList<>());
+            errorResponse.put("error", true);
+            errorResponse.put("errorMessage", e.getMessage());
+
+            return ResponseEntity.ok(errorResponse);
+        }
+    }
+
+    @PostMapping("/single-farm/methane-recovery-timeline")
+    public ResponseEntity<Map<String, Object>> getSingleFarmMethaneRecoveryTimeline(@RequestBody FarmDateRangeRequest request) {
+        logger.info("📊 Processing single farm methane recovery timeline - farmId: {}, from: {}, to: {}",
+                request.getFarm_id(), request.getFrom(), request.getTo());
+
+        try {
+            // Get methane recovery data from service
+            List<Map<String, Object>> methaneRecoveryData = chartService.getSingleFarmCh4RecoveryTimeline(
+                    request.getFarm_id(),
+                    request.getFrom(),
+                    request.getTo()
+            );
+
+            logger.info("📈 Found {} methane recovery records", methaneRecoveryData.size());
+
+            // Create response with data array
+            Map<String, Object> response = new HashMap<>();
+            response.put("data", methaneRecoveryData);
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("❌ Error processing single farm methane recovery timeline: {}", e.getMessage(), e);
+
+            // Return error response
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("data", new ArrayList<>());
+            errorResponse.put("error", true);
+            errorResponse.put("errorMessage", e.getMessage());
+
+            return ResponseEntity.ok(errorResponse);
+        }
+    }
+
+    @PostMapping("/single-farm/temperature-timeline")
+    public ResponseEntity<Map<String, Object>> getSingleFarmTemperatureTimeline(@RequestBody FarmDateRangeRequest request) {
+        logger.info("📊 Processing single farm temperature timeline - farmId: {}, from: {}, to: {}",
+                request.getFarm_id(), request.getFrom(), request.getTo());
+
+        try {
+            // Get temperature data from service
+            List<Map<String, Object>> temperatureData = chartService.getSingleFarmTemperatureTimeline(
+                    request.getFarm_id(),
+                    request.getFrom(),
+                    request.getTo()
+            );
+
+            logger.info("📈 Found {} temperature records", temperatureData.size());
+
+            // Create response with data array
+            Map<String, Object> response = new HashMap<>();
+            response.put("data", temperatureData);
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("❌ Error processing single farm temperature timeline: {}", e.getMessage(), e);
+
+            // Return error response
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("data", new ArrayList<>());
+            errorResponse.put("error", true);
+            errorResponse.put("errorMessage", e.getMessage());
+
+            return ResponseEntity.ok(errorResponse);
+        }
+    }
 }
