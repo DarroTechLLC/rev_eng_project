@@ -412,4 +412,136 @@ public class ChartApiController {
             return ResponseEntity.ok(errorResponse);
         }
     }
+
+    @PostMapping("/single-farm/population-timeline")
+    public ResponseEntity<Map<String, Object>> getSingleFarmPopulationTimeline(@RequestBody FarmDateRangeRequest request) {
+        logger.info("📊 Processing single farm population timeline - farmId: {}, from: {}, to: {}",
+                request.getFarm_id(), request.getFrom(), request.getTo());
+
+        try {
+            // Get population data from service
+            List<Map<String, Object>> populationData = chartService.getSingleFarmPopulationTimeline(
+                    request.getFarm_id(),
+                    request.getFrom(),
+                    request.getTo()
+            );
+
+            logger.info("📈 Found {} population records", populationData.size());
+
+            // Create response with data array
+            Map<String, Object> response = new HashMap<>();
+            response.put("data", populationData);
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("❌ Error processing single farm population timeline: {}", e.getMessage(), e);
+
+            // Return error response
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("data", new ArrayList<>());
+            errorResponse.put("error", true);
+            errorResponse.put("errorMessage", e.getMessage());
+
+            return ResponseEntity.ok(errorResponse);
+        }
+    }
+
+    @PostMapping("/single-farm/population-forecast-timeline")
+    public ResponseEntity<Map<String, Object>> getSingleFarmPopulationForecastTimeline(@RequestBody FarmDateRangeRequest request) {
+        logger.info("📊 Processing single farm population forecast timeline - farmId: {}, from: {}, to: {}",
+                request.getFarm_id(), request.getFrom(), request.getTo());
+
+        try {
+            // Get population forecast data from service
+            List<Map<String, Object>> forecastData = chartService.getSingleFarmPopulationForecastTimeline(
+                    request.getFarm_id(),
+                    request.getFrom(),
+                    request.getTo()
+            );
+
+            logger.info("📈 Found {} population forecast records", forecastData.size());
+
+            // Create response with data array
+            Map<String, Object> response = new HashMap<>();
+            response.put("data", forecastData);
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("❌ Error processing single farm population forecast timeline: {}", e.getMessage(), e);
+
+            // Return error response
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("data", new ArrayList<>());
+            errorResponse.put("error", true);
+            errorResponse.put("errorMessage", e.getMessage());
+
+            return ResponseEntity.ok(errorResponse);
+        }
+    }
+
+    @PostMapping("/single-farm/population-budget-timeline")
+    public ResponseEntity<Map<String, Object>> getSingleFarmPopulationBudgetTimeline(@RequestBody FarmDateRangeRequest request) {
+        logger.info("📊 Processing single farm population budget timeline - farmId: {}, from: {}, to: {}",
+                request.getFarm_id(), request.getFrom(), request.getTo());
+
+        try {
+            // Get population budget data from service
+            List<Map<String, Object>> budgetData = chartService.getSingleFarmPopulationBudgetTimeline(
+                    request.getFarm_id(),
+                    request.getFrom(),
+                    request.getTo()
+            );
+
+            logger.info("📈 Found {} population budget records", budgetData.size());
+
+            // Create response with data array
+            Map<String, Object> response = new HashMap<>();
+            response.put("data", budgetData);
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("❌ Error processing single farm population budget timeline: {}", e.getMessage(), e);
+
+            // Return error response
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("data", new ArrayList<>());
+            errorResponse.put("error", true);
+            errorResponse.put("errorMessage", e.getMessage());
+
+            return ResponseEntity.ok(errorResponse);
+        }
+    }
+
+    @PostMapping("/single-farm/population-52week-timeline")
+    public ResponseEntity<Map<String, Object>> getSingleFarmPopulation52WeekTimeline(@RequestBody FarmDateRangeRequest request) {
+        logger.info("📊 Processing single farm population 52-week timeline - farmId: {}, from: {}, to: {}",
+                request.getFarm_id(), request.getFrom(), request.getTo());
+
+        try {
+            // Get population 52-week data from service
+            List<Map<String, Object>> populationData = chartService.getSingleFarmPopulation52WeekTimeline(
+                    request.getFarm_id(),
+                    request.getFrom(),
+                    request.getTo()
+            );
+
+            logger.info("📈 Found {} population 52-week records", populationData.size());
+
+            // Create response with data array
+            Map<String, Object> response = new HashMap<>();
+            response.put("data", populationData);
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("❌ Error processing single farm population 52-week timeline: {}", e.getMessage(), e);
+
+            // Return error response
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("data", new ArrayList<>());
+            errorResponse.put("error", true);
+            errorResponse.put("errorMessage", e.getMessage());
+
+            return ResponseEntity.ok(errorResponse);
+        }
+    }
 }
