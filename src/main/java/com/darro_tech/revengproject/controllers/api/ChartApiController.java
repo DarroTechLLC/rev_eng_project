@@ -214,4 +214,103 @@ public class ChartApiController {
             return ResponseEntity.ok(errorResponse);
         }
     }
+
+    @PostMapping("/company/population-timeline")
+    public ResponseEntity<Map<String, Object>> getCompanyPopulationTimeline(@RequestBody CompanyDateRangeRequest request) {
+        logger.info("📊 Processing company population timeline - companyId: {}, from: {}, to: {}",
+                request.getCompany_id(), request.getFrom(), request.getTo());
+
+        try {
+            // Get company population data from service
+            List<Map<String, Object>> populationData = chartService.getCompanyPopulationTimeline(
+                    request.getCompany_id(),
+                    request.getFrom(),
+                    request.getTo()
+            );
+
+            logger.info("📈 Found {} company population records", populationData.size());
+
+            // Create response with data array
+            Map<String, Object> response = new HashMap<>();
+            response.put("data", populationData);
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("❌ Error processing company population timeline: {}", e.getMessage(), e);
+
+            // Return error response
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("data", new ArrayList<>());
+            errorResponse.put("error", true);
+            errorResponse.put("errorMessage", e.getMessage());
+
+            return ResponseEntity.ok(errorResponse);
+        }
+    }
+
+    @PostMapping("/company/population-forecast-timeline")
+    public ResponseEntity<Map<String, Object>> getCompanyPopulationForecastTimeline(@RequestBody CompanyDateRangeRequest request) {
+        logger.info("📊 Processing company population forecast timeline - companyId: {}, from: {}, to: {}",
+                request.getCompany_id(), request.getFrom(), request.getTo());
+
+        try {
+            // Get company population forecast data from service
+            List<Map<String, Object>> forecastData = chartService.getCompanyPopulationForecastTimeline(
+                    request.getCompany_id(),
+                    request.getFrom(),
+                    request.getTo()
+            );
+
+            logger.info("📈 Found {} company population forecast records", forecastData.size());
+
+            // Create response with data array
+            Map<String, Object> response = new HashMap<>();
+            response.put("data", forecastData);
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("❌ Error processing company population forecast timeline: {}", e.getMessage(), e);
+
+            // Return error response
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("data", new ArrayList<>());
+            errorResponse.put("error", true);
+            errorResponse.put("errorMessage", e.getMessage());
+
+            return ResponseEntity.ok(errorResponse);
+        }
+    }
+
+    @PostMapping("/company/population-budget-timeline")
+    public ResponseEntity<Map<String, Object>> getCompanyPopulationBudgetTimeline(@RequestBody CompanyDateRangeRequest request) {
+        logger.info("📊 Processing company population budget timeline - companyId: {}, from: {}, to: {}",
+                request.getCompany_id(), request.getFrom(), request.getTo());
+
+        try {
+            // Get company population budget data from service
+            List<Map<String, Object>> budgetData = chartService.getCompanyPopulationBudgetTimeline(
+                    request.getCompany_id(),
+                    request.getFrom(),
+                    request.getTo()
+            );
+
+            logger.info("📈 Found {} company population budget records", budgetData.size());
+
+            // Create response with data array
+            Map<String, Object> response = new HashMap<>();
+            response.put("data", budgetData);
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("❌ Error processing company population budget timeline: {}", e.getMessage(), e);
+
+            // Return error response
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("data", new ArrayList<>());
+            errorResponse.put("error", true);
+            errorResponse.put("errorMessage", e.getMessage());
+
+            return ResponseEntity.ok(errorResponse);
+        }
+    }
 }
