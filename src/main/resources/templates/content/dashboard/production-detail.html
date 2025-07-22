@@ -81,7 +81,7 @@
                 flex-direction: column;
                 align-items: flex-start;
             }
-            
+
             .chart-title {
                 font-size: 14px;
             }
@@ -281,7 +281,7 @@
 
                 // Render chart using direct Highcharts implementation
                 console.log('🚀 Creating Cumulative Production Chart with direct Highcharts');
-                
+
                 const chart = Highcharts.chart('cumulative-production-chart', {
                     chart: {
                         type: chartType === 'column' ? 'column' : chartType,
@@ -328,6 +328,9 @@
                     }],
                     exporting: {
                         enabled: false // Disabled built-in exporting as we're using custom export menu
+                    },
+                    credits: {
+                        enabled: false // Remove Highcharts.com label
                     }
                 });
 
@@ -435,7 +438,7 @@
 
                 // Render chart using direct Highcharts implementation
                 console.log('🚀 Creating Production YTD Chart with direct Highcharts');
-                
+
                 const chart = Highcharts.chart('production-ytd-chart', {
                     chart: {
                         type: chartType === 'column' ? 'column' : chartType,
@@ -478,6 +481,9 @@
                     series: allSeries,
                     exporting: {
                         enabled: false // Disabled built-in exporting as we're using custom export menu
+                    },
+                    credits: {
+                        enabled: false // Remove Highcharts.com label
                     }
                 });
 
@@ -589,7 +595,7 @@
 
                 // Render chart using direct Highcharts implementation
                 console.log('🚀 Creating Production vs Budget Chart with direct Highcharts');
-                
+
                 const chart = Highcharts.chart('productionBudgetChart', {
                     chart: {
                         type: chartType === 'column' ? 'column' : chartType,
@@ -640,6 +646,9 @@
                     }],
                     exporting: {
                         enabled: false // Disabled built-in exporting as we're using custom export menu
+                    },
+                    credits: {
+                        enabled: false // Remove Highcharts.com label
                     }
                 });
 
@@ -694,7 +703,7 @@
 
                 // Render chart using direct Highcharts implementation
                 console.log('🚀 Creating Production vs Budget Pie Chart with direct Highcharts');
-                
+
                 const chart = Highcharts.chart('productionBudgetPieChart', {
                     chart: {
                         type: 'pie',
@@ -719,6 +728,9 @@
                     }],
                     exporting: {
                         enabled: false // Disabled built-in exporting as we're using custom export menu
+                    },
+                    credits: {
+                        enabled: false // Remove Highcharts.com label
                     }
                 });
 
@@ -785,7 +797,7 @@
 
                 // Render chart using direct Highcharts implementation
                 console.log('🚀 Creating Production by Farm Pie Chart with direct Highcharts');
-                
+
                 const chart = Highcharts.chart('productionFarmPieChart', {
                     chart: {
                         type: 'pie',
@@ -810,6 +822,9 @@
                     }],
                     exporting: {
                         enabled: false // Disabled built-in exporting as we're using custom export menu
+                    },
+                    credits: {
+                        enabled: false // Remove Highcharts.com label
                     }
                 });
 
@@ -827,7 +842,7 @@
         // Initialize all charts when the page loads
         document.addEventListener('DOMContentLoaded', function() {
             console.log('🚀 Initializing Production Detail Dashboard...');
-            
+
             // Initialize year selectors
             initYearSelectors();
 
@@ -838,7 +853,7 @@
             loadCumulativeProductionChart();
             loadProductionYTDChart();
             loadProductionBudgetChart();
-            
+
             console.log('✅ Production Detail Dashboard initialized');
         });
         /*]]>*/
