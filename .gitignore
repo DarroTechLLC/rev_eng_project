@@ -36,4 +36,4 @@ out/
 .env
 frontend/node_modules/
 frontend/package-lock.json
-logs/
+logs/application.log

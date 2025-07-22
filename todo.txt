@@ -1,11 +1,13 @@
 -------------------------Working on----------------
 -charts:
 current:
--ytd volume
 
 
 #done/matched to expected implementation:
-daily volume, mtd volume
+daily volume, mtd volume-ytd volume
+                        -animal headcount
+                        production/animalheadcount
+
 
 
 --------------------------Up Next-----------------

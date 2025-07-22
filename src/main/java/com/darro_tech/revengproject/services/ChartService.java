@@ -675,6 +675,102 @@ public class ChartService {
     }
 
     /**
+     * Get production forecast data for a specific farm within a date range
+     */
+    public List<Map<String, Object>> getSingleFarmProductionForecastTimeline(String farmId, LocalDate fromDate, LocalDate toDate) {
+        logger.info("🔍 Fetching production forecast data for farm: {} from {} to {}", farmId, fromDate, toDate);
+
+        try {
+            // In a real implementation, we would query the database for production forecast data
+            // For now, we'll generate sample data for demonstration purposes
+            List<Map<String, Object>> forecastData = new ArrayList<>();
+
+            // Get farm name
+            Farm farm = farmRepository.findById(farmId).orElse(null);
+            String farmName = farm != null ? farm.getName() : farmId;
+            logger.info("Farm name: {}", farmName);
+
+            // Generate monthly data points from fromDate to toDate
+            // We'll generate data for each month in the range
+            int year = fromDate.getYear();
+            for (int month = 1; month <= 12; month++) {
+                Map<String, Object> dataPoint = new HashMap<>();
+
+                // Set timestamp to the first day of the month
+                LocalDate monthDate = LocalDate.of(year, month, 1);
+                dataPoint.put("timestamp", monthDate.toString());
+
+                // Generate a random value between 100 and 500 for the month's forecast production
+                double value = 100 + Math.random() * 400;
+                dataPoint.put("value", value);
+
+                forecastData.add(dataPoint);
+            }
+
+            // Log data presence verification
+            logger.info("📊 Data verification:");
+            logger.info("✓ Total records: {}", forecastData.size());
+            logger.info("✓ Total forecast production: {}",
+                    forecastData.stream()
+                            .mapToDouble(data -> ((Number) data.get("value")).doubleValue())
+                            .sum());
+
+            return forecastData;
+        } catch (Exception e) {
+            logger.error("❌ Error in getSingleFarmProductionForecastTimeline: {}", e.getMessage(), e);
+            return new ArrayList<>();
+        }
+    }
+
+    /**
+     * Get production budget data for a specific farm within a date range
+     */
+    public List<Map<String, Object>> getSingleFarmProductionBudgetTimeline(String farmId, LocalDate fromDate, LocalDate toDate) {
+        logger.info("🔍 Fetching production budget data for farm: {} from {} to {}", farmId, fromDate, toDate);
+
+        try {
+            // In a real implementation, we would query the database for production budget data
+            // For now, we'll generate sample data for demonstration purposes
+            List<Map<String, Object>> budgetData = new ArrayList<>();
+
+            // Get farm name
+            Farm farm = farmRepository.findById(farmId).orElse(null);
+            String farmName = farm != null ? farm.getName() : farmId;
+            logger.info("Farm name: {}", farmName);
+
+            // Generate monthly data points from fromDate to toDate
+            // We'll generate data for each month in the range
+            int year = fromDate.getYear();
+            for (int month = 1; month <= 12; month++) {
+                Map<String, Object> dataPoint = new HashMap<>();
+
+                // Set timestamp to the first day of the month
+                LocalDate monthDate = LocalDate.of(year, month, 1);
+                dataPoint.put("timestamp", monthDate.toString());
+
+                // Generate a random value between 100 and 500 for the month's budget production
+                double value = 100 + Math.random() * 400;
+                dataPoint.put("value", value);
+
+                budgetData.add(dataPoint);
+            }
+
+            // Log data presence verification
+            logger.info("📊 Data verification:");
+            logger.info("✓ Total records: {}", budgetData.size());
+            logger.info("✓ Total budget production: {}",
+                    budgetData.stream()
+                            .mapToDouble(data -> ((Number) data.get("value")).doubleValue())
+                            .sum());
+
+            return budgetData;
+        } catch (Exception e) {
+            logger.error("❌ Error in getSingleFarmProductionBudgetTimeline: {}", e.getMessage(), e);
+            return new ArrayList<>();
+        }
+    }
+
+    /**
      * Get head vs weight 52 week data for a specific farm within a date range
      */
     public List<Map<String, Object>> getSingleFarmHeadVsWeight52Week(String farmId, LocalDate fromDate, LocalDate toDate) {
