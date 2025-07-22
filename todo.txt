@@ -1,10 +1,11 @@
 -------------------------Working on----------------
 -charts:
 current:
-mtd-volume
+-ytd volume
+
 
 #done/matched to expected implementation:
-daily volume
+daily volume, mtd volume
 
 
 --------------------------Up Next-----------------
