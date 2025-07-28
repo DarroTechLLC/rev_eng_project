@@ -126,38 +126,64 @@
 
         <!-- Topbar Navbar -->
         <ul class="navbar-nav ml-auto">
-            <!-- Nav Item - Search Dropdown (Visible Only XS) -->
-            <li class="nav-item dropdown no-arrow d-sm-none">
-                <a class="nav-link dropdown-toggle" href="#" id="searchDropdown" role="button"
+            <!-- Nav Item - User Initials (Visible Only XS) -->
+            <li class="nav-item dropdown no-arrow d-sm-none mr-2">
+                <a class="nav-link dropdown-toggle" href="#" id="userInitialsDropdown" role="button"
                     data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                    <i class="fas fa-search fa-fw"></i>
+                    <div class="initials-circle rounded-circle" style="width: 2rem; height: 2rem; font-size: 0.875rem;">
+                        <span th:if="${user != null && user.firstName != null && user.lastName != null}" 
+                              th:text="${#strings.substring(user.firstName, 0, 1) + #strings.substring(user.lastName, 0, 1)}">UN</span>
+                        <span th:unless="${user != null && user.firstName != null && user.lastName != null}">UN</span>
+                    </div>
                 </a>
-                <!-- Dropdown - Messages -->
-                <div class="dropdown-menu dropdown-menu-right p-3 shadow animated--grow-in"
-                    aria-labelledby="searchDropdown">
-                    <form class="form-inline mr-auto w-100 navbar-search">
-                        <div class="input-group">
-                            <input type="text" class="form-control bg-light border-0 small"
-                                placeholder="Search for..." aria-label="Search"
-                                aria-describedby="basic-addon2">
-                            <div class="input-group-append">
-                                <button class="btn btn-primary" type="button">
-                                    <i class="fas fa-search fa-sm"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </form>
+                <!-- Dropdown - User Information -->
+                <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in"
+                    aria-labelledby="userInitialsDropdown">
+                    <!-- Admin menu items -->
+                    <a class="dropdown-item admin-only" th:href="@{/admin/users}">
+                        <i class="fas fa-users fa-sm fa-fw mr-2 text-gray-400"></i>
+                        Manage Users
+                    </a>
+                    <a class="dropdown-item admin-only" th:href="@{/admin/companies}">
+                        <i class="fas fa-building fa-sm fa-fw mr-2 text-gray-400"></i>
+                        Companies
+                    </a>
+                    <a class="dropdown-item admin-only" th:href="@{/admin/farms}">
+                        <i class="fas fa-tractor fa-sm fa-fw mr-2 text-gray-400"></i>
+                        Farms
+                    </a>
+                    <!-- Super Admin menu items -->
+                    <a class="dropdown-item super-admin-only" th:href="@{/admin/alerts}">
+                        <i class="fas fa-bell fa-sm fa-fw mr-2 text-gray-400"></i>
+                        Website Alerts
+                    </a>
+                    <!-- Available to all users -->
+                    <a class="dropdown-item" href="#" data-toggle="modal" data-target="#changePasswordModal">
+                        <i class="fas fa-key fa-sm fa-fw mr-2 text-gray-400"></i>
+                        Change Password
+                    </a>
+                    <a class="dropdown-item" th:href="@{/account/change-password}">
+                        <i class="fas fa-fingerprint fa-sm fa-fw mr-2 text-gray-400"></i>
+                        Biometric Authentication
+                    </a>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" href="#" data-toggle="modal" data-target="#logoutModal">
+                        <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i>
+                        Logout
+                    </a>
                 </div>
             </li>
 
-            <!-- Nav Item - Website Alerts -->
+            <!-- Nav Item - Website Alerts (Visible on all devices) -->
             <li class="nav-item dropdown no-arrow mx-1" id="websiteAlertsContainer">
-                <a class="nav-link dropdown-toggle" href="#" id="alertsDropdown" role="button"
+                <a class="nav-link dropdown-toggle py-1 py-sm-2" href="#" id="alertsDropdown" role="button"
                     data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"
                     data-placement="bottom" title="Website Alerts">
-                    <i class="fas fa-bell fa-lg" style="color: #4e73df; filter: drop-shadow(0px 0px 2px rgba(78, 115, 223, 0.3));"></i>
+                    <i class="fas fa-bell fa-lg d-none d-sm-inline-block" style="color: #4e73df; filter: drop-shadow(0px 0px 2px rgba(78, 115, 223, 0.3));"></i>
+                    <!-- Larger bell icon for mobile -->
+                    <i class="fas fa-bell fa-2x d-sm-none" style="color: #4e73df; filter: drop-shadow(0px 0px 3px rgba(78, 115, 223, 0.5));"></i>
                     <!-- Counter - Alerts -->
-                    <span id="alertCount" class="badge badge-danger badge-counter"></span>
+                    <span id="alertCount" class="badge badge-danger badge-counter" style="font-size: 0.75rem; position: absolute; top: 0; right: 0;"></span>
                 </a>
                 <!-- Dropdown - Alerts -->
                 <div id="alertMessagesPanel" class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in"
