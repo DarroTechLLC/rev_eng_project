@@ -272,8 +272,6 @@
                         companySlug.toLowerCase() === 'texhoma' ||
                         companySlug.toLowerCase() === 'vendor') {
                         console.log('⚠️ Special handling for company: ' + companySlug);
-
-                        // Always redirect to dashboard for these companies
                         const safeUrl = `/${companySlug.toLowerCase()}/dashboard/daily-volume`;
                         console.log(`🛡️ Using safe URL for special company: ${safeUrl}`);
                         return safeUrl;
@@ -282,48 +280,45 @@
                     // Check if this is an admin path
                     if (pathSegments.length > 0 && pathSegments[0] === 'admin') {
                         console.log('👨‍💼 Admin page detected, keeping admin context');
-                        // For admin pages, we maintain the current URL but refresh to apply the session change
-                        console.log('🔄 Admin route - refreshing page to maintain state');
-                        return window.location.href; // Return current URL to maintain query params
+                        return window.location.href;
                     }
+
+                    // Get the current view type (e.g., 'daily-report', 'weekly-report', etc.)
+                    const currentView = pathSegments[pathSegments.length - 1];
+                    console.log('🔍 Current view:', currentView);
 
                     // If we're on a regular company page
                     let newUrl = '';
 
-                    if (pathSegments.length > 0) {
-                        // Handle analytics routes - maintain the analytics page for the new company
-                        if (pathSegments.includes('analytics') && pathSegments.length > 2) {
-                            const analyticsType = pathSegments[2]; // e.g., 'trend-analysis', 'anomaly-detection', 'production-forecasting'
-                            newUrl = `/${companySlug}/analytics/${analyticsType}`;
-                            console.log(`📊 Analytics page detected - maintaining analytics type: ${newUrl}`);
-                        } else if (pathSegments.includes('projects')) {
-                            // Always redirect to the company's projects root when in a project view
-                            // This ensures we get the correct default farm for the new company
-                            newUrl = `/${companySlug}/projects`;
-                            console.log(`🔄 Project page detected - redirecting to company projects root: ${newUrl}`);
-                            console.log(`ℹ️ The server will select a default farm for company: ${companySlug}`);
-                        } else if (pathSegments.length > 1 && pathSegments[1] === 'dashboard' && pathSegments.length > 2) {
-                            // For dashboard pages with a specific view, maintain that view
-                            newUrl = `/${companySlug}/dashboard/${pathSegments[2]}`;
-                            console.log(`🔄 Dashboard with view - maintaining view: ${newUrl}`);
-                        } else {
-                            // Default to daily-volume dashboard for all other cases
-                            newUrl = `/${companySlug}/dashboard/daily-volume`;
-                            console.log(`🔄 Using default dashboard: ${newUrl}`);
-                        }
+                    // Handle different view types
+                    if (currentView === 'daily-report') {
+                        newUrl = `/${companySlug}/daily-report`;
+                        console.log('📄 Daily report view detected');
+                    } else if (currentView === 'weekly-report') {
+                        newUrl = `/${companySlug}/weekly-report`;
+                        console.log('📄 Weekly report view detected');
+                    } else if (pathSegments.includes('analytics') && pathSegments.length > 2) {
+                        const analyticsType = pathSegments[2];
+                        newUrl = `/${companySlug}/analytics/${analyticsType}`;
+                        console.log('📊 Analytics view detected');
+                    } else if (pathSegments.includes('projects')) {
+                        newUrl = `/${companySlug}/projects`;
+                        console.log('🏢 Projects view detected');
+                    } else if (pathSegments.length > 1 && pathSegments[1] === 'dashboard' && pathSegments.length > 2) {
+                        newUrl = `/${companySlug}/dashboard/${pathSegments[2]}`;
+                        console.log('🔄 Dashboard view detected');
                     } else {
-                        // If we're on the root page, go to the company's dashboard
                         newUrl = `/${companySlug}/dashboard/daily-volume`;
-                        console.log(`🔄 Root page - redirecting to company dashboard: ${newUrl}`);
+                        console.log('🔄 Default view');
                     }
 
                     // Keep any query parameters
                     if (queryParams) {
                         newUrl += queryParams;
-                        console.log(`🔗 Added query params to URL: ${newUrl}`);
+                        console.log('🔗 Added query params:', queryParams);
                     }
 
-                    console.log(`🚀 Final navigation: ${path} → ${newUrl}`);
+                    console.log('🚀 Navigation:', path, '→', newUrl);
                     return newUrl;
                 }
 

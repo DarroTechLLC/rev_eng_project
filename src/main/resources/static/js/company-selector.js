@@ -164,23 +164,28 @@
         let newUrl = '';
 
         if (pathSegments.length > 0) {
-            // Handle analytics routes - maintain the analytics page for the new company
+            // Get the current view type (e.g., 'daily-report', 'weekly-report', etc.)
+            const viewType = pathSegments[pathSegments.length - 1];
+
+            // Handle different view types
             if (pathSegments.includes('analytics') && pathSegments.length > 2) {
-                const analyticsType = pathSegments[2]; // e.g., 'trend-analysis', 'anomaly-detection', 'production-forecasting'
+                const analyticsType = pathSegments[2];
                 newUrl = `/${companySlug}/analytics/${analyticsType}`;
                 console.log(`📊 Analytics page detected - maintaining analytics type: ${newUrl}`);
             } else if (pathSegments.includes('projects')) {
                 // Always redirect to the company's projects root when in a project view
-                // This ensures we get the correct default farm for the new company
                 newUrl = `/${companySlug}/projects`;
                 console.log(`🔄 Project page detected - redirecting to company projects root: ${newUrl}`);
-                console.log(`ℹ️ The server will select a default farm for company: ${companySlug}`);
+            } else if (viewType === 'daily-report' || viewType === 'weekly-report') {
+                // Maintain report views
+                newUrl = `/${companySlug}/${viewType}`;
+                console.log(`📄 Report view detected - maintaining view: ${newUrl}`);
             } else if (pathSegments.length > 1 && pathSegments[1] === 'dashboard' && pathSegments.length > 2) {
                 // For dashboard pages with a specific view, maintain that view
                 newUrl = `/${companySlug}/dashboard/${pathSegments[2]}`;
                 console.log(`🔄 Dashboard with view - maintaining view: ${newUrl}`);
             } else {
-                // Default to daily-volume dashboard for all other cases
+                // Default to daily-volume dashboard only if we can't determine the current view
                 newUrl = `/${companySlug}/dashboard/daily-volume`;
                 console.log(`🔄 Using default dashboard: ${newUrl}`);
             }
