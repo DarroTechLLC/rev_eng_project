@@ -238,7 +238,167 @@ async function registerBiometric() {
     }
 }
 
-// Authenticate with a biometric credential
+// Authenticate with a biometric credential automatically (without username)
+async function authenticateWithBiometricAuto() {
+    try {
+        // Check if WebAuthn is supported
+        if (!isWebAuthnSupported()) {
+            console.error('WebAuthn is not supported by this browser');
+            return { error: 'WebAuthn is not supported by this browser' };
+        }
+
+        console.log('Authenticating with biometric automatically (no username required)');
+
+        // Get authentication options from server
+        let response;
+        try {
+            response = await fetch('/webauthn/authenticate/options/auto', {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
+        } catch (fetchError) {
+            console.error('Network error when fetching authentication options:', fetchError);
+            return { error: 'Network error: ' + fetchError.message };
+        }
+
+        if (!response.ok) {
+            let errorMessage = 'Failed to get authentication options';
+            try {
+                // Check if the response is JSON
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    const error = await response.json();
+                    errorMessage = error.error || errorMessage;
+
+                    // Extract additional error information if available
+                    if (error.errorCode) {
+                        return { 
+                            error: errorMessage, 
+                            errorCode: error.errorCode, 
+                            message: error.message 
+                        };
+                    }
+                } else {
+                    // If not JSON, get the text
+                    const text = await response.text();
+                    console.error('Non-JSON response:', text);
+                    errorMessage += ' (Server returned non-JSON response)';
+                }
+            } catch (parseError) {
+                console.error('Error parsing error response:', parseError);
+                errorMessage += ' (Error parsing response)';
+            }
+            console.error(errorMessage);
+            return { error: errorMessage };
+        }
+
+        let data;
+        try {
+            data = await response.json();
+        } catch (jsonError) {
+            console.error('Error parsing JSON response:', jsonError);
+            return { error: 'Error parsing server response: ' + jsonError.message };
+        }
+
+        const challengeId = data.challengeId;
+        if (!challengeId || !data.options) {
+            console.error('Invalid response format:', data);
+            return { error: 'Invalid server response format' };
+        }
+
+        console.log('Got authentication options, preparing WebAuthn request');
+
+        // Prepare options for WebAuthn API
+        const publicKeyOptions = preparePublicKeyOptions(data.options);
+
+        // Get credential
+        let credential;
+        try {
+            credential = await navigator.credentials.get({
+                publicKey: publicKeyOptions
+            });
+        } catch (credentialError) {
+            console.error('Error getting credential from authenticator:', credentialError);
+            return { error: 'Error accessing authenticator: ' + credentialError.message };
+        }
+
+        console.log('Got credential from authenticator, sending to server for verification');
+
+        // Prepare credential for server
+        const credentialData = {
+            id: credential.id,
+            type: credential.type,
+            rawId: arrayBufferToBase64(credential.rawId),
+            response: {
+                clientDataJSON: arrayBufferToBase64(credential.response.clientDataJSON),
+                authenticatorData: arrayBufferToBase64(credential.response.authenticatorData),
+                signature: arrayBufferToBase64(credential.response.signature),
+                userHandle: credential.response.userHandle ? arrayBufferToBase64(credential.response.userHandle) : null
+            }
+        };
+
+        // Send credential to server for verification
+        let verifyResponse;
+        try {
+            verifyResponse = await fetch('/webauthn/authenticate/verify', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    challengeId,
+                    credential: {
+                        id: credential.id
+                    }
+                })
+            });
+        } catch (verifyFetchError) {
+            console.error('Network error when verifying authentication:', verifyFetchError);
+            return { error: 'Network error during verification: ' + verifyFetchError.message };
+        }
+
+        if (!verifyResponse.ok) {
+            let errorMessage = 'Failed to verify authentication';
+            try {
+                // Check if the response is JSON
+                const contentType = verifyResponse.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    const error = await verifyResponse.json();
+                    errorMessage = error.error || errorMessage;
+                } else {
+                    // If not JSON, get the text
+                    const text = await verifyResponse.text();
+                    console.error('Non-JSON verification response:', text);
+                    errorMessage += ' (Server returned non-JSON response)';
+                }
+            } catch (parseError) {
+                console.error('Error parsing verification error response:', parseError);
+                errorMessage += ' (Error parsing response)';
+            }
+            console.error(errorMessage);
+            return { error: errorMessage };
+        }
+
+        let verifyData;
+        try {
+            verifyData = await verifyResponse.json();
+        } catch (jsonError) {
+            console.error('Error parsing verification JSON response:', jsonError);
+            return { error: 'Error parsing verification response: ' + jsonError.message };
+        }
+
+        console.log('Authentication successful');
+        return verifyData;
+    } catch (error) {
+        console.error('Error authenticating with biometric:', error);
+        return { error: error.message || 'Error authenticating with biometric' };
+    }
+}
+
+// Authenticate with a biometric credential (with username)
 async function authenticateWithBiometric(username) {
     try {
         // Check if WebAuthn is supported
@@ -506,14 +666,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const biometricLoginButton = document.getElementById('biometric-login-button');
     if (biometricLoginButton) {
         biometricLoginButton.addEventListener('click', async function() {
-            const usernameInput = document.getElementById('username');
-            if (!usernameInput || !usernameInput.value) {
-                alert('Please enter your username first');
-                return;
-            }
-
-            const username = usernameInput.value;
-            const result = await authenticateWithBiometric(username);
+            // Use the automatic biometric authentication that doesn't require username
+            const result = await authenticateWithBiometricAuto();
 
             if (result.error) {
                 if (result.errorCode === 'NO_CREDENTIALS') {

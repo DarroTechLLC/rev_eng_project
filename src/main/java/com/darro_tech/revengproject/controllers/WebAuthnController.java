@@ -239,6 +239,45 @@ public class WebAuthnController {
     }
 
     /**
+     * Generate authentication options for using a biometric credential without requiring username
+     */
+    @GetMapping("/authenticate/options/auto")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> getAuthenticationOptionsAuto() {
+        try {
+            logger.debug("Received automatic authentication options request");
+
+            // Generate a random challenge
+            byte[] challenge = new byte[32];
+            new SecureRandom().nextBytes(challenge);
+
+            // Store the challenge for verification
+            String challengeId = UUID.randomUUID().toString();
+            challengeStorage.put(challengeId, challenge);
+
+            // Create authentication options
+            Map<String, Object> publicKeyCredentialRequestOptions = new HashMap<>();
+            publicKeyCredentialRequestOptions.put("challenge", Base64.getEncoder().encodeToString(challenge));
+
+            // Add timeout
+            publicKeyCredentialRequestOptions.put("timeout", 60000);
+
+            // Add user verification preference
+            publicKeyCredentialRequestOptions.put("userVerification", "preferred");
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("options", publicKeyCredentialRequestOptions);
+            response.put("challengeId", challengeId);
+
+            logger.debug("Generated automatic authentication options");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("Error generating automatic authentication options", e);
+            return ResponseEntity.badRequest().body(Map.of("error", "Error generating authentication options: " + e.getMessage()));
+        }
+    }
+
+    /**
      * Generate authentication options for using a biometric credential
      */
     @PostMapping("/authenticate/options")
@@ -320,9 +359,10 @@ public class WebAuthnController {
             String challengeId = (String) body.get("challengeId");
             Map<String, Object> credential = (Map<String, Object>) body.get("credential");
 
-            if (username == null || username.isEmpty()) {
-                logger.warn("Username is required but was not provided");
-                return ResponseEntity.badRequest().body(Map.of("error", "Username is required"));
+            String credentialId = (String) credential.get("id");
+            if (credentialId == null) {
+                logger.warn("Credential ID is missing from request");
+                return ResponseEntity.badRequest().body(Map.of("error", "Credential ID is required"));
             }
 
             // Verify challenge
@@ -332,23 +372,39 @@ public class WebAuthnController {
                 return ResponseEntity.badRequest().body(Map.of("error", "Challenge not found or expired"));
             }
 
-            // Get user credentials
-            Map<String, byte[]> userCredentials = credentialStorage.get(username);
-            if (userCredentials == null || userCredentials.isEmpty()) {
-                logger.warn("No credentials found for user: {}", username);
-                return ResponseEntity.badRequest().body(Map.of("error", "No credentials found for user"));
-            }
+            // If username is not provided, find the user by credential ID
+            if (username == null || username.isEmpty()) {
+                logger.debug("Username not provided, finding user by credential ID: {}", credentialId);
 
-            String credentialId = (String) credential.get("id");
-            if (credentialId == null) {
-                logger.warn("Credential ID is missing from request");
-                return ResponseEntity.badRequest().body(Map.of("error", "Credential ID is required"));
-            }
+                // Search through all users' credentials to find the matching credential ID
+                for (Map.Entry<String, Map<String, byte[]>> entry : credentialStorage.entrySet()) {
+                    String potentialUsername = entry.getKey();
+                    Map<String, byte[]> userCreds = entry.getValue();
 
-            // Check if the credential ID exists for the user
-            if (!userCredentials.containsKey(credentialId)) {
-                logger.warn("Credential ID {} not found for user: {}", credentialId, username);
-                return ResponseEntity.badRequest().body(Map.of("error", "Credential not found for user"));
+                    if (userCreds.containsKey(credentialId)) {
+                        username = potentialUsername;
+                        logger.debug("Found username {} for credential ID {}", username, credentialId);
+                        break;
+                    }
+                }
+
+                if (username == null || username.isEmpty()) {
+                    logger.warn("No user found for credential ID: {}", credentialId);
+                    return ResponseEntity.badRequest().body(Map.of("error", "No user found for this credential"));
+                }
+            } else {
+                // If username is provided, verify the credential belongs to that user
+                Map<String, byte[]> userCredentials = credentialStorage.get(username);
+                if (userCredentials == null || userCredentials.isEmpty()) {
+                    logger.warn("No credentials found for user: {}", username);
+                    return ResponseEntity.badRequest().body(Map.of("error", "No credentials found for user"));
+                }
+
+                // Check if the credential ID exists for the user
+                if (!userCredentials.containsKey(credentialId)) {
+                    logger.warn("Credential ID {} not found for user: {}", credentialId, username);
+                    return ResponseEntity.badRequest().body(Map.of("error", "Credential not found for user"));
+                }
             }
 
             // In a real implementation, we would verify the assertion here
