@@ -2,6 +2,9 @@ package com.darro_tech.revengproject.controllers;
 
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -19,12 +22,16 @@ import org.springframework.web.bind.annotation.PathVariable;
 
 import com.darro_tech.revengproject.dto.BudgetComparison;
 import com.darro_tech.revengproject.models.Company;
+import com.darro_tech.revengproject.models.DailyReportCompany;
 import com.darro_tech.revengproject.models.Farm;
 import com.darro_tech.revengproject.models.User;
+import com.darro_tech.revengproject.repositories.DailyReportCompanyRepository;
 import com.darro_tech.revengproject.services.CompanyService;
+import com.darro_tech.revengproject.services.DailyReportService;
 import com.darro_tech.revengproject.services.FarmService;
 import com.darro_tech.revengproject.services.UserRoleService;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 
 /**
@@ -50,6 +57,12 @@ public class RoutingController extends BaseController {
 
     @Autowired
     private UserRoleService userRoleService;
+
+    @Autowired
+    private DailyReportService dailyReportService;
+
+    @Autowired
+    private DailyReportCompanyRepository dailyReportRepository;
 
     /**
      * Dashboard main entry - redirects to default dashboard view IMPORTANT:
@@ -171,10 +184,11 @@ public class RoutingController extends BaseController {
     public String mtdVolume(
             @PathVariable String companyName,
             Model model,
-            HttpSession session) {
+            HttpSession session,
+            HttpServletRequest request) {
 
         logger.info("📈 Routing: MTD Volume route accessed - /{}/mtd-volume", companyName);
-        return handleDirectDashboardAccess(companyName, "mtd-volume", model, session);
+        return handleDirectDashboardAccess(companyName, "mtd-volume", model, session, request);
     }
 
     /**
@@ -184,10 +198,11 @@ public class RoutingController extends BaseController {
     public String ytdVolume(
             @PathVariable String companyName,
             Model model,
-            HttpSession session) {
+            HttpSession session,
+            HttpServletRequest request) {
 
         logger.info("📊 Routing: YTD Volume route accessed - /{}/ytd-volume", companyName);
-        return handleDirectDashboardAccess(companyName, "ytd-volume", model, session);
+        return handleDirectDashboardAccess(companyName, "ytd-volume", model, session, request);
     }
 
     /**
@@ -197,10 +212,11 @@ public class RoutingController extends BaseController {
     public String productionHeadcount(
             @PathVariable String companyName,
             Model model,
-            HttpSession session) {
+            HttpSession session,
+            HttpServletRequest request) {
 
         logger.info("👥 Routing: Production Headcount route accessed - /{}/production-headcount", companyName);
-        return handleDirectDashboardAccess(companyName, "production-headcount", model, session);
+        return handleDirectDashboardAccess(companyName, "production-headcount", model, session, request);
     }
 
     /**
@@ -210,10 +226,11 @@ public class RoutingController extends BaseController {
     public String animalHeadcount(
             @PathVariable String companyName,
             Model model,
-            HttpSession session) {
+            HttpSession session,
+            HttpServletRequest request) {
 
         logger.info("🐄 Routing: Animal Headcount route accessed - /{}/animal-headcount", companyName);
-        return handleDirectDashboardAccess(companyName, "animal-headcount", model, session);
+        return handleDirectDashboardAccess(companyName, "animal-headcount", model, session, request);
     }
 
     /**
@@ -223,10 +240,11 @@ public class RoutingController extends BaseController {
     public String weeklyReport(
             @PathVariable String companyName,
             Model model,
-            HttpSession session) {
+            HttpSession session,
+            HttpServletRequest request) {
 
         logger.info("📅 Routing: Weekly Report route accessed - /{}/weekly-report", companyName);
-        return handleDirectDashboardAccess(companyName, "weekly-report", model, session);
+        return handleDirectDashboardAccess(companyName, "weekly-report", model, session, request);
     }
 
     /**
@@ -236,10 +254,11 @@ public class RoutingController extends BaseController {
     public String dailyReport(
             @PathVariable String companyName,
             Model model,
-            HttpSession session) {
+            HttpSession session,
+            HttpServletRequest request) {
 
         logger.info("📆 Routing: Daily Report route accessed - /{}/daily-report", companyName);
-        return handleDirectDashboardAccess(companyName, "daily-report", model, session);
+        return handleDirectDashboardAccess(companyName, "daily-report", model, session, request);
     }
 
     /**
@@ -249,10 +268,11 @@ public class RoutingController extends BaseController {
     public String productionDetail(
             @PathVariable String companyName,
             Model model,
-            HttpSession session) {
+            HttpSession session,
+            HttpServletRequest request) {
 
         logger.info("🔍 Routing: Production Detail route accessed - /{}/production-detail", companyName);
-        return handleDirectDashboardAccess(companyName, "production-detail", model, session);
+        return handleDirectDashboardAccess(companyName, "production-detail", model, session, request);
     }
 
     /**
@@ -262,22 +282,25 @@ public class RoutingController extends BaseController {
     public String marketData(
             @PathVariable String companyName,
             Model model,
-            HttpSession session) {
+            HttpSession session,
+            HttpServletRequest request) {
 
         logger.info("📉 Routing: Market Data route accessed - /{}/market-data", companyName);
-        return handleDirectDashboardAccess(companyName, "market-data", model, session);
+        return handleDirectDashboardAccess(companyName, "market-data", model, session, request);
     }
 
     /**
-     * Special route for Align daily report
-     * Format: /align/daily-report
+     * Special route for Align daily report Format: /align/daily-report
      */
     @GetMapping("/align/daily-report")
-    public String alignDailyReport(Model model, HttpSession session) {
+    public String alignDailyReport(
+            Model model,
+            HttpSession session,
+            HttpServletRequest request) {
         logger.info("📆 Routing: Daily Report route accessed - /align/daily-report");
 
         // Handle like a company dashboard but use 'align' as the company name
-        return handleDirectDashboardAccess("align", "daily-report", model, session);
+        return handleDirectDashboardAccess("align", "daily-report", model, session, request);
     }
 
     /**
@@ -510,7 +533,8 @@ public class RoutingController extends BaseController {
             String companyName,
             String dashboardType,
             Model model,
-            HttpSession session) {
+            HttpSession session,
+            HttpServletRequest request) {
 
         logger.debug("🔄 Handling direct dashboard access: {}/{}", companyName, dashboardType);
 
@@ -622,20 +646,68 @@ public class RoutingController extends BaseController {
         if ("daily-report".equals(dashboardType)) {
             logger.debug("📊 Adding default objects for daily report");
 
-            // Initialize empty production lists
-            model.addAttribute("dailyProduction", new ArrayList<>());
-            model.addAttribute("mtdProduction", new ArrayList<>());
-            model.addAttribute("farmPerformance", new ArrayList<>());
+            // Get date parameter or use today's date
+            String dateParam = request.getParameter("date");
+            LocalDate selectedDate = dateParam != null
+                    ? LocalDate.parse(dateParam)
+                    : LocalDate.now();
 
-            // Initialize totals
-            model.addAttribute("dailyTotal", 0.0);
-            model.addAttribute("mtdTotal", 0.0);
-            model.addAttribute("ytdTotal", 0.0);
+            // Get max date (yesterday)
+            LocalDate maxDate = LocalDate.now().minusDays(1);
 
-            model.addAttribute("reportDate", java.time.LocalDate.now().toString());
+            // Ensure selected date is not in the future
+            if (selectedDate.isAfter(maxDate)) {
+                selectedDate = maxDate;
+            }
 
-            logger.debug("📊 Added empty data structures for daily report to prevent null pointer exceptions");
+            // Format dates for the view
+            String selectedDateStr = selectedDate.toString();
+            String maxDateStr = maxDate.toString();
+
+            // Build PDF URL
+            String pdfUrl = String.format("/api/reports/daily-pdf/%s?company_id=%s&date=%s",
+                    company.getName(), company.getId(), selectedDateStr);
+
+            // Check if report exists for this date
+            try {
+                List<DailyReportCompany> reports = dailyReportRepository.findByCompanyIdAndDateBetween(
+                        company.getId(),
+                        selectedDate.atStartOfDay(ZoneId.systemDefault()).toInstant(),
+                        selectedDate.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant()
+                );
+
+                if (reports.isEmpty()) {
+                    model.addAttribute("errorMessage", "No Report Available");
+                    model.addAttribute("errorDetails",
+                            String.format("No daily report was generated for %s on %s. Please try a different date.",
+                                    company.getName(),
+                                    selectedDate.format(DateTimeFormatter.ofPattern("MMMM d, yyyy"))));
+                    pdfUrl = null;
+                } else {
+                    DailyReportCompany report = reports.get(0);
+                    if (report.getPdf() == null || report.getPdf().length == 0) {
+                        model.addAttribute("errorMessage", "Report Data Error");
+                        model.addAttribute("errorDetails",
+                                "The report exists but contains no data. This may indicate a system error. Please contact support.");
+                        pdfUrl = null;
+                    }
+                }
+            } catch (Exception e) {
+                logger.error("❌ Error checking report existence", e);
+                model.addAttribute("errorMessage", "System Error");
+                model.addAttribute("errorDetails",
+                        "An error occurred while checking for report availability. Please try again later or contact support if the problem persists.");
+                pdfUrl = null;
+            }
+
+            // Add attributes to model
+            model.addAttribute("selectedDate", selectedDateStr);
+            model.addAttribute("maxDate", maxDateStr);
+            model.addAttribute("pdfUrl", pdfUrl);
+
+            logger.debug("📊 Added date selection and PDF URL for daily report");
         }
+
         logger.info("🔄 Returning dashboard view: dashboard/{}", dashboardType);
         return view("dashboard/" + dashboardType, model);
     }

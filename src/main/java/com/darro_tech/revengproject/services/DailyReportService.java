@@ -1,94 +1,61 @@
 package com.darro_tech.revengproject.services;
 
+import java.time.Instant;
 import java.time.LocalDate;
-import java.util.ArrayList;
+import java.time.ZoneId;
+import java.util.Base64;
 import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.darro_tech.revengproject.dto.DailyReportDTO;
+import com.darro_tech.revengproject.models.DailyReportCompany;
+import com.darro_tech.revengproject.repositories.DailyReportCompanyRepository;
 
 @Service
 public class DailyReportService {
 
     private static final Logger logger = LoggerFactory.getLogger(DailyReportService.class);
 
-    public DailyReportDTO getDailyReport(String companyId, LocalDate reportDate) {
-        logger.info("📊 Generating daily report for company {} on date {}", companyId, reportDate);
+    @Autowired
+    private DailyReportCompanyRepository dailyReportRepository;
 
-        // TODO: Implement actual data fetching from database
-        return DailyReportDTO.builder()
-                .companyId(companyId)
-                .reportDate(reportDate)
-                .companyName("Sample Company")
-                .dailyProduction(generateSampleDailyProduction())
-                .mtdProduction(generateSampleMtdProduction())
-                .farmPerformance(generateSampleFarmPerformance())
-                .build();
-    }
+    public String getPdfData(String companyId, LocalDate date) {
+        logger.info("📊 Getting PDF data for company {} on date {}", companyId, date);
 
-    private List<DailyReportDTO.FarmProduction> generateSampleDailyProduction() {
-        List<DailyReportDTO.FarmProduction> production = new ArrayList<>();
-        production.add(DailyReportDTO.FarmProduction.builder()
-                .farmName("Farm A")
-                .volume(150.5)
-                .percentOfTotal(45.2)
-                .build());
-        production.add(DailyReportDTO.FarmProduction.builder()
-                .farmName("Farm B")
-                .volume(120.3)
-                .percentOfTotal(36.1)
-                .build());
-        production.add(DailyReportDTO.FarmProduction.builder()
-                .farmName("Farm C")
-                .volume(62.8)
-                .percentOfTotal(18.7)
-                .build());
-        return production;
-    }
+        try {
+            // Convert LocalDate to Instant for the start of the day
+            Instant startOfDay = date.atStartOfDay(ZoneId.systemDefault()).toInstant();
+            Instant startOfNextDay = date.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant();
 
-    private List<DailyReportDTO.FarmProduction> generateSampleMtdProduction() {
-        List<DailyReportDTO.FarmProduction> production = new ArrayList<>();
-        production.add(DailyReportDTO.FarmProduction.builder()
-                .farmName("Farm A")
-                .volume(3200.5)
-                .percentOfTotal(42.3)
-                .build());
-        production.add(DailyReportDTO.FarmProduction.builder()
-                .farmName("Farm B")
-                .volume(2800.2)
-                .percentOfTotal(37.0)
-                .build());
-        production.add(DailyReportDTO.FarmProduction.builder()
-                .farmName("Farm C")
-                .volume(1560.8)
-                .percentOfTotal(20.7)
-                .build());
-        return production;
-    }
+            // Find reports for the given date range
+            List<DailyReportCompany> reports = dailyReportRepository.findByCompanyIdAndDateBetween(
+                    companyId, startOfDay, startOfNextDay);
 
-    private List<DailyReportDTO.FarmPerformance> generateSampleFarmPerformance() {
-        List<DailyReportDTO.FarmPerformance> performance = new ArrayList<>();
-        performance.add(DailyReportDTO.FarmPerformance.builder()
-                .farmName("Farm A")
-                .dailyVolume(150.5)
-                .mtdVolume(3200.5)
-                .ytdVolume(45000.0)
-                .build());
-        performance.add(DailyReportDTO.FarmPerformance.builder()
-                .farmName("Farm B")
-                .dailyVolume(120.3)
-                .mtdVolume(2800.2)
-                .ytdVolume(38000.0)
-                .build());
-        performance.add(DailyReportDTO.FarmPerformance.builder()
-                .farmName("Farm C")
-                .dailyVolume(62.8)
-                .mtdVolume(1560.8)
-                .ytdVolume(22000.0)
-                .build());
-        return performance;
+            if (reports.isEmpty()) {
+                logger.info("❌ No reports found for company {} on date {}", companyId, date);
+                return "No daily report is available.";
+            }
+
+            // Get the first report's PDF data
+            DailyReportCompany report = reports.get(0);
+            byte[] pdfData = report.getPdf();
+
+            if (pdfData == null || pdfData.length == 0) {
+                logger.warn("❌ PDF data is null or empty for report ID: {}", report.getId());
+                return "No daily report is available.";
+            }
+
+            // Convert PDF data to base64
+            String base64Pdf = Base64.getEncoder().encodeToString(pdfData);
+            logger.info("✅ Successfully retrieved PDF data for company {} on date {}", companyId, date);
+
+            return base64Pdf;
+        } catch (Exception e) {
+            logger.error("❌ Error getting PDF data", e);
+            return "No daily report is available.";
+        }
     }
 }

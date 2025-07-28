@@ -4,321 +4,167 @@
       layout:decorate="~{layouts/main-layout}">
 <head>
     <title>Daily Report</title>
-    
-    <!-- Enhanced Highcharts with Export Functionality -->
-    <div th:replace="fragments/highcharts-scripts :: highcharts-with-utils"></div>
-    <div th:replace="fragments/highcharts-scripts :: chart-export-menu"></div>
-    
-    <!-- Custom styles for this template -->
     <style>
-        .section-card {
-            margin-bottom: 1.5rem;
+        #main-content {
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 60px);
+            background: #f8f9fc;
         }
-        .section-header {
-            background-color: #4e73df;
-            color: white;
-            padding: 0.75rem 1.25rem;
-            font-weight: 500;
-            border-radius: 0.35rem 0.35rem 0 0;
-        }
-        .section-body {
-            padding: 1.25rem;
-            background-color: #fff;
-            border: 1px solid #e3e6f0;
-            border-top: none;
-            border-radius: 0 0 0.35rem 0.35rem;
-        }
-        .chart-container {
+        .report-header {
+            padding: 12px;
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+            background: white;
+            border-bottom: 1px solid #e6e6e6;
             position: relative;
-            height: 300px;
-            margin-bottom: 1rem;
+            z-index: 1;
         }
-        .table-sm th, .table-sm td {
-            padding: 0.3rem;
+        .report-title {
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+        .report-date-selector {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .report-date-selector input[type="date"] {
+            margin-right: 4px;
+            border: solid 2px #e6e6e6;
+            padding: 0 6px;
+            border-radius: 6px;
+            height: 32px;
+        }
+        .report-date-selector button {
+            padding: 6px 12px;
+            border-radius: 6px;
+            border: none;
+            background: #4e73df;
+            color: white;
+            cursor: pointer;
+            font-size: 0.875rem;
+        }
+        .report-date-selector button:hover {
+            background: #2e59d9;
+        }
+        .report-date-selector button:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+        }
+        .pdf-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #f8f9fc;
+            position: relative;
+            z-index: 0;
+        }
+        .pdf-viewer {
+            flex: 1;
+            border: none;
+            width: 100%;
+            height: 100%;
+            background: white;
+        }
+        .no-pdf-message {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            color: #666;
+            font-size: 1.1rem;
+            background: white;
+            border: 1px solid #e6e6e6;
+            margin: 1rem;
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            gap: 1rem;
+        }
+        .no-pdf-message .error-icon {
+            font-size: 3rem;
+            color: #e74a3b;
+        }
+        .no-pdf-message .error-title {
+            font-weight: bold;
+            color: #333;
+        }
+        .no-pdf-message .error-details {
+            color: #666;
+            max-width: 400px;
         }
     </style>
 </head>
 <body>
-<div layout:fragment="content">
-    <div class="container-fluid">
-        <!-- Page Heading -->
-        <div class="d-sm-flex align-items-center justify-content-between mb-4">
-            <h1 class="h3 mb-0 text-gray-800">Daily Report</h1>
-            <div class="d-flex align-items-center">
-                <div class="input-group mr-2">
-                    <input type="date" id="reportDate" class="form-control" th:value="${reportDate}">
-                    <div class="input-group-append">
-                        <button class="btn btn-primary" type="button" id="updateReportBtn">
-                            <i class="fas fa-sync-alt fa-sm"></i> Update
-                        </button>
-                    </div>
-                </div>
-                <a href="#" class="btn btn-sm btn-primary shadow-sm" id="downloadPdfBtn">
-                    <i class="fas fa-download fa-sm text-white-50"></i> Download PDF
-                </a>
+    <div layout:fragment="content">
+        <div class="report-header">
+            <div class="report-title">Daily Report</div>
+            <div class="report-date-selector">
+                <input type="date" 
+                       th:value="${selectedDate}"
+                       th:max="${maxDate}"
+                       onchange="updateReport(this.value)"/>
+                <button onclick="resetDate()" 
+                        th:disabled="${selectedDate == maxDate}">Reset</button>
             </div>
         </div>
-
-        <!-- Alert Messages -->
-        <div class="alert alert-info alert-dismissible fade show d-none" role="alert" id="infoAlert">
-            <span id="infoMessage"></span>
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-            </button>
-        </div>
-        <div class="alert alert-danger alert-dismissible fade show d-none" role="alert" id="errorAlert">
-            <span id="errorMessage"></span>
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-            </button>
-        </div>
-
-        <!-- Daily Trend Section -->
-        <div class="section-card">
-            <div class="section-header">
-                <h2 class="h5 m-0">Daily Production Trend</h2>
-            </div>
-            <div class="section-body">
-                <div class="row">
-                    <!-- Daily Trend Chart -->
-                    <div class="col-md-12">
-                        <div class="chart-container">
-                            <div id="dailyTrendChart"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Farm Performance Section -->
-        <div class="section-card">
-            <div class="section-header">
-                <h2 class="h5 m-0">Farm Performance</h2>
-            </div>
-            <div class="section-body">
-                <div class="row">
-                    <!-- Farm Distribution Chart -->
-                    <div class="col-md-6">
-                        <div class="chart-container">
-                            <div id="farmDistributionChart"></div>
-                        </div>
-                    </div>
-
-                    <!-- Farm Performance Table -->
-                    <div class="col-md-6">
-                        <h3 class="h6">Farm Performance Summary</h3>
-                        <div class="table-responsive">
-                            <table class="table table-sm table-bordered table-hover">
-                                <thead class="thead-light">
-                                <tr>
-                                    <th>Farm</th>
-                                    <th>Daily</th>
-                                    <th>MTD</th>
-                                    <th>YTD</th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                <tr th:each="farm : ${farmPerformance}">
-                                    <td th:text="${farm.farmName}">Farm Name</td>
-                                    <td class="text-right" th:text="${#numbers.formatDecimal(farm.dailyVolume, 1, 2)}">0.00</td>
-                                    <td class="text-right" th:text="${#numbers.formatDecimal(farm.mtdVolume, 1, 2)}">0.00</td>
-                                    <td class="text-right" th:text="${#numbers.formatDecimal(farm.ytdVolume, 1, 2)}">0.00</td>
-                                </tr>
-                                <tr th:if="${farmPerformance == null || farmPerformance.isEmpty()}">
-                                    <td colspan="4" class="text-center">No data available</td>
-                                </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Production Metrics Section -->
-        <div class="section-card">
-            <div class="section-header">
-                <h2 class="h5 m-0">Production Metrics</h2>
-            </div>
-            <div class="section-body">
-                <div class="row">
-                    <!-- Daily Production -->
-                    <div class="col-md-4">
-                        <div class="card border-left-primary shadow h-100 py-2">
-                            <div class="card-body">
-                                <div class="row no-gutters align-items-center">
-                                    <div class="col mr-2">
-                                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                            Daily Production
-                                        </div>
-                                        <div class="h5 mb-0 font-weight-bold text-gray-800" th:text="${#numbers.formatDecimal(dailyTotal, 1, 2)}">0.00</div>
-                                    </div>
-                                    <div class="col-auto">
-                                        <i class="fas fa-calendar fa-2x text-gray-300"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- MTD Production -->
-                    <div class="col-md-4">
-                        <div class="card border-left-success shadow h-100 py-2">
-                            <div class="card-body">
-                                <div class="row no-gutters align-items-center">
-                                    <div class="col mr-2">
-                                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                                            MTD Production
-                                        </div>
-                                        <div class="h5 mb-0 font-weight-bold text-gray-800" th:text="${#numbers.formatDecimal(mtdTotal, 1, 2)}">0.00</div>
-                                    </div>
-                                    <div class="col-auto">
-                                        <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- YTD Production -->
-                    <div class="col-md-4">
-                        <div class="card border-left-info shadow h-100 py-2">
-                            <div class="card-body">
-                                <div class="row no-gutters align-items-center">
-                                    <div class="col mr-2">
-                                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
-                                            YTD Production
-                                        </div>
-                                        <div class="h5 mb-0 font-weight-bold text-gray-800" th:text="${#numbers.formatDecimal(ytdTotal, 1, 2)}">0.00</div>
-                                    </div>
-                                    <div class="col-auto">
-                                        <i class="fas fa-chart-line fa-2x text-gray-300"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+        
+        <div class="pdf-container">
+            <iframe th:if="${pdfUrl != null && !errorMessage}" 
+                    class="pdf-viewer"
+                    th:src="${pdfUrl}">
+            </iframe>
+            <div th:if="${pdfUrl == null || errorMessage}" class="no-pdf-message">
+                <div class="error-icon">📄</div>
+                <div class="error-title" th:text="${errorMessage ?: 'No Report Available'}">No Report Available</div>
+                <div class="error-details" th:text="${errorDetails ?: 'No PDF report is available for the selected date. Please try a different date or contact support if you believe this is an error.'}">
+                    No PDF report is available for the selected date. Please try a different date or contact support if you believe this is an error.
                 </div>
             </div>
         </div>
     </div>
-</div>
 
-<!-- Chart Initialization Script -->
-<th:block layout:fragment="scripts">
-    <script th:inline="javascript">
-        document.addEventListener('DOMContentLoaded', function() {
-            // Get company name from the URL
-            const pathParts = window.location.pathname.split('/');
-            const companyName = pathParts[1];
-            const selectedCompanyId = /*[[${selectedCompany?.id}]]*/ '';
+    <th:block layout:fragment="scripts">
+        <script th:inline="javascript">
+            const maxDate = /*[[${maxDate}]]*/ '';
+            const currentCompanyId = /*[[${selectedCompany.id}]]*/ '';
+            
+            function updateReport(date) {
+                // Ensure date is not in the future
+                if (date > maxDate) {
+                    date = maxDate;
+                }
+                window.location.href = window.location.pathname + '?date=' + date;
+            }
+            
+            function resetDate() {
+                updateReport(maxDate);
+            }
+            
+            // Initialize date input max value
+            document.querySelector('input[type="date"]').max = maxDate;
 
-            // Handle special case for /align/ URLs
-            const isAlignRoute = companyName === 'align';
-
-            // Initialize charts
-            initializeCharts();
-
-            // Handle report date change
-            $('#updateReportBtn').click(function() {
-                const selectedDate = $('#reportDate').val();
-                if (selectedDate) {
-                    if (isAlignRoute) {
-                        window.location.href = `/align/daily-report?date=${selectedDate}`;
-                    } else {
-                        window.location.href = `/${companyName}/daily-report?date=${selectedDate}`;
-                    }
+            // Listen for company selector changes
+            document.addEventListener('DOMContentLoaded', function() {
+                const companySelector = document.querySelector('#companySelector');
+                if (companySelector) {
+                    companySelector.addEventListener('change', function(e) {
+                        const newCompanyId = e.target.value;
+                        if (newCompanyId !== currentCompanyId) {
+                            // Update URL to maintain daily-report view
+                            const path = window.location.pathname;
+                            const newPath = path.replace(/\/[^/]+\/daily-report/, '/' + e.target.selectedOptions[0].text.toLowerCase() + '/daily-report');
+                            window.location.href = newPath + window.location.search;
+                        }
+                    });
                 }
             });
-
-            // Handle PDF download
-            $('#downloadPdfBtn').click(function(e) {
-                e.preventDefault();
-                const selectedDate = $('#reportDate').val();
-                const url = `/api/reports/daily-pdf/${companyName}`;
-                const params = selectedDate ? `?date=${selectedDate}` : '';
-
-                // Create a temporary link to download the PDF
-                const link = document.createElement('a');
-                link.href = url + params;
-                link.download = `daily-report-${companyName}-${selectedDate || 'current'}.pdf`;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-            });
-        });
-
-        function initializeCharts() {
-            // Initialize daily trend chart
-            if (document.getElementById('dailyTrendChart')) {
-                const sampleData = generateSampleTimeSeriesData(7, 10, 40);
-                createProductionTrendChart('dailyTrendChart', sampleData, 'Daily Production Trend');
-            }
-
-            // Initialize farm distribution chart
-            if (document.getElementById('farmDistributionChart')) {
-                const farmNames = ['Farm A', 'Farm B', 'Farm C', 'Farm D'];
-                const farmData = generateSampleFarmDistribution(farmNames);
-                createFarmDistributionChart('farmDistributionChart', farmData, 'Production by Farm');
-            }
-        }
-
-        /**
-         * Function to fetch real data from API (for production implementation)
-         */
-        function fetchDailyTrendData(companyId) {
-            const reportDate = document.getElementById('reportDate').value;
-            const today = new Date().toISOString().split('T')[0];
-            const date = reportDate || today;
-
-            // Calculate date range (7 days before the selected date)
-            const endDate = new Date(date);
-            const startDate = new Date(date);
-            startDate.setDate(startDate.getDate() - 6);
-
-            const from = startDate.toISOString().split('T')[0];
-            const to = endDate.toISOString().split('T')[0];
-
-            fetch('/api/reports/daily-trend', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    company_id: companyId,
-                    from: from,
-                    to: to
-                })
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Failed to fetch chart data');
-                }
-                return response.json();
-            })
-            .then(data => {
-                // Process and display the data
-                const chartData = data.map(item => [
-                    new Date(item.date).getTime(),
-                    item.value
-                ]);
-                createProductionTrendChart('dailyTrendChart', chartData, 'Daily Production Trend');
-            })
-            .catch(error => {
-                console.error('Error fetching chart data:', error);
-                // Show error message
-                document.getElementById('errorMessage').textContent = 'Failed to load chart data. Please try again later.';
-                document.getElementById('errorAlert').classList.remove('d-none');
-
-                // Fall back to sample data
-                const sampleData = generateSampleTimeSeriesData();
-                createProductionTrendChart('dailyTrendChart', sampleData, 'Daily Production Trend (Sample Data)');
-            });
-        }
-    </script>
-
-    <!-- Daily Report Layout Fix Script -->
-    <script th:src="@{/js/daily-report-fix.js}"></script>
-</th:block>
+        </script>
+    </th:block>
 </body>
 </html>
