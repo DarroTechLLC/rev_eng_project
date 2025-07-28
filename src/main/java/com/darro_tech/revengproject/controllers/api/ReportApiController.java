@@ -42,7 +42,24 @@ public class ReportApiController extends BaseController {
 
         try {
             // Parse the date string to Instant
-            LocalDate localDate = LocalDate.parse(date);
+            LocalDate localDate;
+            try {
+                localDate = LocalDate.parse(date);
+            } catch (Exception e) {
+                logger.warn("❌ Invalid date format: {}", date);
+                return ResponseEntity.badRequest()
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body("{\"error\": \"Invalid date format. Please use YYYY-MM-DD format.\"}");
+            }
+
+            // Check if date is in the future
+            if (localDate.isAfter(LocalDate.now())) {
+                logger.warn("❌ Future date requested: {}", date);
+                return ResponseEntity.badRequest()
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body("{\"error\": \"Cannot request reports for future dates.\"}");
+            }
+
             Instant startOfDay = localDate.atStartOfDay(ZoneId.systemDefault()).toInstant();
             Instant startOfNextDay = localDate.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant();
 
@@ -52,7 +69,9 @@ public class ReportApiController extends BaseController {
 
             if (reports.isEmpty()) {
                 logger.info("❌ No reports found for company {} on date {}", companyId, date);
-                return ResponseEntity.notFound().build();
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body("{\"error\": \"No report available for the selected date.\"}");
             }
 
             // Get the first report's PDF data
@@ -61,7 +80,9 @@ public class ReportApiController extends BaseController {
 
             if (pdfData == null || pdfData.length == 0) {
                 logger.warn("❌ PDF data is null or empty for report ID: {}", report.getId());
-                return ResponseEntity.notFound().build();
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body("{\"error\": \"Report data is not available for the selected date.\"}");
             }
 
             // Set headers for PDF response
@@ -75,7 +96,9 @@ public class ReportApiController extends BaseController {
 
         } catch (Exception e) {
             logger.error("❌ Error getting PDF data", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body("{\"error\": \"An error occurred while retrieving the report. Please try again later.\"}");
         }
     }
 }

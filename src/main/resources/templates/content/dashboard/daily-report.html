@@ -96,6 +96,18 @@
             color: #666;
             max-width: 400px;
         }
+
+        .error-message {
+            display: none;
+            padding: 1rem;
+            margin: 1rem;
+            border-radius: 8px;
+            background-color: #fff3f3;
+            border: 1px solid #ffcdd2;
+            color: #d32f2f;
+            font-size: 1rem;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
@@ -113,9 +125,12 @@
         </div>
         
         <div class="pdf-container">
+            <div id="errorMessage" class="error-message"></div>
             <iframe th:if="${pdfUrl != null && !errorMessage}" 
                     class="pdf-viewer"
-                    th:src="${pdfUrl}">
+                    th:src="${pdfUrl}"
+                    onload="handleIframeLoad(this)"
+                    onerror="handleIframeError(this)">
             </iframe>
             <div th:if="${pdfUrl == null || errorMessage}" class="no-pdf-message">
                 <div class="error-icon">📄</div>
@@ -144,10 +159,74 @@
                 updateReport(maxDate);
             }
             
+            function handleIframeLoad(iframe) {
+                // Hide any previous error messages
+                document.getElementById('errorMessage').style.display = 'none';
+                
+                // Try to detect if the iframe loaded an error response
+                try {
+                    const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                    const content = iframeDoc.body.textContent;
+                    
+                    try {
+                        const errorData = JSON.parse(content);
+                        if (errorData.error) {
+                            // Show error message
+                            const errorDiv = document.getElementById('errorMessage');
+                            errorDiv.textContent = errorData.error;
+                            errorDiv.style.display = 'block';
+                            
+                            // Hide iframe
+                            iframe.style.display = 'none';
+                            
+                            // Show no-pdf message
+                            const noPdfMessage = document.querySelector('.no-pdf-message');
+                            if (noPdfMessage) {
+                                noPdfMessage.style.display = 'flex';
+                                const errorTitle = noPdfMessage.querySelector('.error-title');
+                                const errorDetails = noPdfMessage.querySelector('.error-details');
+                                if (errorTitle) errorTitle.textContent = 'Report Not Available';
+                                if (errorDetails) errorDetails.textContent = errorData.error;
+                            }
+                        }
+                    } catch (e) {
+                        // Not JSON, probably actual PDF content
+                        iframe.style.display = 'block';
+                        const noPdfMessage = document.querySelector('.no-pdf-message');
+                        if (noPdfMessage) noPdfMessage.style.display = 'none';
+                    }
+                } catch (e) {
+                    // Cross-origin error, probably actual PDF content
+                    iframe.style.display = 'block';
+                    const noPdfMessage = document.querySelector('.no-pdf-message');
+                    if (noPdfMessage) noPdfMessage.style.display = 'none';
+                }
+            }
+            
+            function handleIframeError(iframe) {
+                // Show error message
+                const errorDiv = document.getElementById('errorMessage');
+                errorDiv.textContent = 'Failed to load the report. Please try again later.';
+                errorDiv.style.display = 'block';
+                
+                // Hide iframe
+                iframe.style.display = 'none';
+                
+                // Show no-pdf message
+                const noPdfMessage = document.querySelector('.no-pdf-message');
+                if (noPdfMessage) {
+                    noPdfMessage.style.display = 'flex';
+                    const errorTitle = noPdfMessage.querySelector('.error-title');
+                    const errorDetails = noPdfMessage.querySelector('.error-details');
+                    if (errorTitle) errorTitle.textContent = 'Error Loading Report';
+                    if (errorDetails) errorDetails.textContent = 'Failed to load the report. Please try again later.';
+                }
+            }
+            
             // Initialize date input max value
             document.querySelector('input[type="date"]').max = maxDate;
 
-            // Override company selector behavior
+            // Company selector override
             document.addEventListener('DOMContentLoaded', function() {
                 const companySelector = document.querySelector('#companySelector');
                 if (companySelector) {
