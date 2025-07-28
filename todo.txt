@@ -1,9 +1,6 @@
 -------------------------Working on----------------
-
-
-
---------------------------Up Next-----------------
 -remove search from toonav in small view replace wi initials
+--------------------------Up Next-----------------
 
 -dark mode option in user dropdown for any user
 
