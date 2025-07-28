@@ -13,19 +13,17 @@
             background: #f8f9fc;
         }
         .report-header {
-            padding: 12px;
+            padding: 12px 24px;
             display: flex;
             flex-direction: row;
             justify-content: space-between;
             align-items: center;
-            background: white;
-            border-bottom: 1px solid #e6e6e6;
-            position: relative;
-            z-index: 1;
+            background: transparent;
         }
         .report-title {
             font-weight: bold;
             font-size: 1.1rem;
+            color: #333;
         }
         .report-date-selector {
             display: flex;
@@ -38,6 +36,7 @@
             padding: 0 6px;
             border-radius: 6px;
             height: 32px;
+            background: white;
         }
         .report-date-selector button {
             padding: 6px 12px;
@@ -59,9 +58,7 @@
             flex: 1;
             display: flex;
             flex-direction: column;
-            background: #f8f9fc;
-            position: relative;
-            z-index: 0;
+            padding: 0 24px 24px;
         }
         .pdf-viewer {
             flex: 1;
@@ -69,6 +66,8 @@
             width: 100%;
             height: 100%;
             background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
         .no-pdf-message {
             display: flex;
@@ -79,12 +78,11 @@
             color: #666;
             font-size: 1.1rem;
             background: white;
-            border: 1px solid #e6e6e6;
-            margin: 1rem;
             border-radius: 8px;
             padding: 2rem;
             text-align: center;
             gap: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
         .no-pdf-message .error-icon {
             font-size: 3rem;
@@ -149,17 +147,32 @@
             // Initialize date input max value
             document.querySelector('input[type="date"]').max = maxDate;
 
-            // Listen for company selector changes
+            // Override company selector behavior
             document.addEventListener('DOMContentLoaded', function() {
                 const companySelector = document.querySelector('#companySelector');
                 if (companySelector) {
-                    companySelector.addEventListener('change', function(e) {
+                    // Remove any existing event listeners
+                    const newSelector = companySelector.cloneNode(true);
+                    companySelector.parentNode.replaceChild(newSelector, companySelector);
+                    
+                    // Add our custom event listener
+                    newSelector.addEventListener('change', function(e) {
+                        e.preventDefault(); // Prevent default form submission
+                        e.stopPropagation(); // Stop event bubbling
+                        
                         const newCompanyId = e.target.value;
                         if (newCompanyId !== currentCompanyId) {
-                            // Update URL to maintain daily-report view
-                            const path = window.location.pathname;
-                            const newPath = path.replace(/\/[^/]+\/daily-report/, '/' + e.target.selectedOptions[0].text.toLowerCase() + '/daily-report');
-                            window.location.href = newPath + window.location.search;
+                            const selectedOption = e.target.selectedOptions[0];
+                            const companyName = selectedOption.text.toLowerCase().replace(/\s+/g, '-');
+                            
+                            // Build new URL maintaining daily-report view
+                            const currentParams = new URLSearchParams(window.location.search);
+                            const newUrl = '/' + companyName + '/daily-report' + 
+                                         (currentParams.toString() ? '?' + currentParams.toString() : '');
+                            
+                            // Navigate to new URL
+                            window.location.href = newUrl;
+                            return false;
                         }
                     });
                 }
