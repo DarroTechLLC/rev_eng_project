@@ -123,7 +123,7 @@
                         th:disabled="${selectedDate == maxDate}">Reset</button>
             </div>
         </div>
-        
+
         <div class="pdf-container">
             <div id="errorMessage" class="error-message"></div>
             <iframe th:if="${pdfUrl != null && !errorMessage}" 
@@ -146,7 +146,7 @@
         <script th:inline="javascript">
             const maxDate = /*[[${maxDate}]]*/ '';
             const currentCompanyId = /*[[${selectedCompany.id}]]*/ '';
-            
+
             function updateReport(date) {
                 // Ensure date is not in the future
                 if (date > maxDate) {
@@ -154,20 +154,23 @@
                 }
                 window.location.href = window.location.pathname + '?date=' + date;
             }
-            
+
+            // Make updateReport accessible globally for auto-refresh
+            window.updateReport = updateReport;
+
             function resetDate() {
                 updateReport(maxDate);
             }
-            
+
             function handleIframeLoad(iframe) {
                 // Hide any previous error messages
                 document.getElementById('errorMessage').style.display = 'none';
-                
+
                 // Try to detect if the iframe loaded an error response
                 try {
                     const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
                     const content = iframeDoc.body.textContent;
-                    
+
                     try {
                         const errorData = JSON.parse(content);
                         if (errorData.error) {
@@ -175,10 +178,10 @@
                             const errorDiv = document.getElementById('errorMessage');
                             errorDiv.textContent = errorData.error;
                             errorDiv.style.display = 'block';
-                            
+
                             // Hide iframe
                             iframe.style.display = 'none';
-                            
+
                             // Show no-pdf message
                             const noPdfMessage = document.querySelector('.no-pdf-message');
                             if (noPdfMessage) {
@@ -202,16 +205,16 @@
                     if (noPdfMessage) noPdfMessage.style.display = 'none';
                 }
             }
-            
+
             function handleIframeError(iframe) {
                 // Show error message
                 const errorDiv = document.getElementById('errorMessage');
                 errorDiv.textContent = 'Failed to load the report. Please try again later.';
                 errorDiv.style.display = 'block';
-                
+
                 // Hide iframe
                 iframe.style.display = 'none';
-                
+
                 // Show no-pdf message
                 const noPdfMessage = document.querySelector('.no-pdf-message');
                 if (noPdfMessage) {
@@ -222,7 +225,7 @@
                     if (errorDetails) errorDetails.textContent = 'Failed to load the report. Please try again later.';
                 }
             }
-            
+
             // Initialize date input max value
             document.querySelector('input[type="date"]').max = maxDate;
 
@@ -233,22 +236,22 @@
                     // Remove any existing event listeners
                     const newSelector = companySelector.cloneNode(true);
                     companySelector.parentNode.replaceChild(newSelector, companySelector);
-                    
+
                     // Add our custom event listener
                     newSelector.addEventListener('change', function(e) {
                         e.preventDefault(); // Prevent default form submission
                         e.stopPropagation(); // Stop event bubbling
-                        
+
                         const newCompanyId = e.target.value;
                         if (newCompanyId !== currentCompanyId) {
                             const selectedOption = e.target.selectedOptions[0];
                             const companyName = selectedOption.text.toLowerCase().replace(/\s+/g, '-');
-                            
+
                             // Build new URL maintaining daily-report view
                             const currentParams = new URLSearchParams(window.location.search);
                             const newUrl = '/' + companyName + '/daily-report' + 
                                          (currentParams.toString() ? '?' + currentParams.toString() : '');
-                            
+
                             // Navigate to new URL
                             window.location.href = newUrl;
                             return false;
