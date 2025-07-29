@@ -1,15 +1,16 @@
 -------------------------Working on----------------
--speed up query for user table in manage users (queried)-indexing ???
+
 --------------------------Up Next-----------------
 -how to implement backend data update every 30 seconds, find update in nextjs app for the exact time to
 be replicated. Users need to basically see live data without refreshing
 page, app needs to update data to view from db.
--bell not showing in reg view
+
 -dark mode option in user dropdown for any user
 
+fix initials and bell in small view
 
 
--weekly report, use daily report conversation
+
 
 -is there data being handled by js in any scenario in this app that
 can be better handled by java? or vice versa. take comprehensive look

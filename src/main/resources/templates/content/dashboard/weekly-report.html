@@ -71,7 +71,7 @@
 
                 <!-- Page Heading -->
                 <div class="d-sm-flex align-items-center justify-content-between mb-4">
-                    <h1 class="h3 mb-0 text-gray-800">Weekly Report</h1>
+                    <h1 class="h3 mb-0 text-gray-800">Real-Weekly Report</h1>
                     <div class="d-flex align-items-center">
                         <div class="input-group mr-2">
                             <input type="date" id="reportDate" class="form-control" th:value="${reportDate}">
@@ -233,8 +233,6 @@
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
     </div>
 </div>
 
@@ -273,6 +271,9 @@
         }
 
         function initDailyProductionChart(data) {
+            // Check if data is null or undefined and provide a default empty object
+            data = data || {};
+            
             const chart = Highcharts.chart('dailyProductionChart', {
                 chart: {
                     type: 'line',
@@ -322,6 +323,9 @@
         }
 
         function initWeeklyProductionChart(data) {
+            // Check if data is null or undefined and provide a default empty object
+            data = data || {};
+            
             const chart = Highcharts.chart('weeklyProductionChart', {
                 chart: {
                     type: 'line',
@@ -371,6 +375,9 @@
         }
 
         function initMonthlyProductionChart(data) {
+            // Check if data is null or undefined and provide a default empty object
+            data = data || {};
+            
             const chart = Highcharts.chart('monthlyProductionChart', {
                 chart: {
                     type: 'line',
@@ -408,7 +415,7 @@
                 series: [{
                     name: 'Production',
                     data: data.values || [],
-                    color: 'rgba(255, 159, 64, 1)'
+                    color: 'rgba(255, 99, 132, 1)'
                 }],
                 exporting: {
                     enabled: false
@@ -420,6 +427,9 @@
         }
 
         function initYtdProductionPieChart(data) {
+            // Check if data is null or undefined and provide a default empty object
+            data = data || {};
+            
             const chart = Highcharts.chart('ytdProductionPieChart', {
                 chart: {
                     type: 'pie',
@@ -433,17 +443,24 @@
                     }
                 },
                 tooltip: {
-                    formatter: function() {
-                        return `<b>${this.point.name}</b><br/>
-                                ${Highcharts.numberFormat(this.y, 0)} (${Highcharts.numberFormat(this.percentage, 1)}%)`;
+                    pointFormat: '{series.name}: <b>{point.percentage:.1f}%</b>'
+                },
+                plotOptions: {
+                    pie: {
+                        allowPointSelect: true,
+                        cursor: 'pointer',
+                        dataLabels: {
+                            enabled: true,
+                            format: '<b>{point.name}</b>: {point.percentage:.1f} %'
+                        }
                     }
                 },
                 series: [{
                     name: 'Production',
-                    data: (data.labels || []).map((label, index) => ({
-                        name: label,
-                        y: data.values ? data.values[index] : 0,
-                        color: data.colors ? data.colors[index] : null
+                    colorByPoint: true,
+                    data: (data.farms || []).map(farm => ({
+                        name: farm.name,
+                        y: farm.value
                     }))
                 }],
                 exporting: {
@@ -456,6 +473,9 @@
         }
 
         function initLagoonInflationChart(data) {
+            // Check if data is null or undefined and provide a default empty object
+            data = data || {};
+            
             const chart = Highcharts.chart('lagoonInflationChart', {
                 chart: {
                     type: 'bar',
@@ -510,6 +530,9 @@
         }
 
         function initFtAboveBermChart(data) {
+            // Check if data is null or undefined and provide a default empty object
+            data = data || {};
+            
             const chart = Highcharts.chart('ftAboveBermChart', {
                 chart: {
                     type: 'bar',
