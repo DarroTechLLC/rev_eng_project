@@ -7,6 +7,10 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -100,6 +104,75 @@ public class UserApiController {
         }
     }
 
+    @GetMapping
+    public ResponseEntity<Map<String, Object>> getUsers(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "username") String sort) {
+
+        logger.info("🔍 Fetching paginated users. Page: " + page + ", Size: " + size + ", Sort: " + sort);
+
+        try {
+            // Create pageable object with sorting
+            Pageable pageable = PageRequest.of(page, size, Sort.by(sort));
+
+            // Get paginated users
+            Page<UserManagementDTO> userPage = userManagementService.getUsersWithRolesAndCompaniesPaginated(pageable);
+
+            // Transform data for frontend
+            List<Map<String, Object>> users = userPage.getContent().stream()
+                .map(user -> {
+                    Map<String, Object> userMap = new HashMap<>();
+                    userMap.put("id", user.getId());
+                    userMap.put("username", user.getUsername());
+                    userMap.put("firstName", user.getFirstName());
+                    userMap.put("lastName", user.getLastName());
+                    userMap.put("email", user.getEmail());
+
+                    // Transform roles to simple format
+                    List<Map<String, String>> roles = user.getRoles().stream()
+                        .map(role -> {
+                            Map<String, String> roleMap = new HashMap<>();
+                            roleMap.put("id", role.getId());
+                            roleMap.put("name", role.getName());
+                            return roleMap;
+                        })
+                        .collect(Collectors.toList());
+                    userMap.put("roles", roles);
+
+                    // Transform companies to simple format
+                    List<Map<String, String>> companies = user.getCompanies().stream()
+                        .map(company -> {
+                            Map<String, String> companyMap = new HashMap<>();
+                            companyMap.put("id", company.getId());
+                            companyMap.put("name", company.getName());
+                            return companyMap;
+                        })
+                        .collect(Collectors.toList());
+                    userMap.put("companies", companies);
+
+                    return userMap;
+                })
+                .collect(Collectors.toList());
+
+            // Create response with pagination metadata
+            Map<String, Object> response = new HashMap<>();
+            response.put("users", users);
+            response.put("currentPage", userPage.getNumber());
+            response.put("totalItems", userPage.getTotalElements());
+            response.put("totalPages", userPage.getTotalPages());
+
+            logger.info("✅ Successfully fetched " + users.size() + " users (page " + page + " of " + userPage.getTotalPages() + ")");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.severe("❌ Error fetching paginated users: " + e.getMessage());
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("error", e.getMessage());
+            return ResponseEntity.internalServerError().body(response);
+        }
+    }
+
     @GetMapping("/roles")
     public ResponseEntity<List<Map<String, String>>> getRoles() {
         logger.info("🔍 Fetching roles for dropdown select");
@@ -143,6 +216,161 @@ public class UserApiController {
         } catch (Exception e) {
             logger.severe("❌ Error fetching companies: " + e.getMessage());
             return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<Map<String, Object>> searchUsers(
+            @RequestParam String query,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "lastName") String sort) {
+
+        logger.info("🔍 Searching users with query: " + query + ", Page: " + page + ", Size: " + size);
+
+        try {
+            // Create pageable object with sorting
+            Pageable pageable = PageRequest.of(page, size, Sort.by(sort));
+
+            // Search users
+            Page<UserManagementDTO> userPage = userManagementService.searchUsers(query, pageable);
+
+            // Transform data for frontend
+            List<Map<String, Object>> users = userPage.getContent().stream()
+                .map(user -> {
+                    Map<String, Object> userMap = new HashMap<>();
+                    userMap.put("id", user.getId());
+                    userMap.put("username", user.getUsername());
+                    userMap.put("firstName", user.getFirstName());
+                    userMap.put("lastName", user.getLastName());
+                    userMap.put("email", user.getEmail());
+
+                    // Transform roles to simple format
+                    List<Map<String, String>> roles = user.getRoles().stream()
+                        .map(role -> {
+                            Map<String, String> roleMap = new HashMap<>();
+                            roleMap.put("id", role.getId());
+                            roleMap.put("name", role.getName());
+                            return roleMap;
+                        })
+                        .collect(Collectors.toList());
+                    userMap.put("roles", roles);
+
+                    // Transform companies to simple format
+                    List<Map<String, String>> companies = user.getCompanies().stream()
+                        .map(company -> {
+                            Map<String, String> companyMap = new HashMap<>();
+                            companyMap.put("id", company.getId());
+                            companyMap.put("name", company.getName());
+                            return companyMap;
+                        })
+                        .collect(Collectors.toList());
+                    userMap.put("companies", companies);
+
+                    return userMap;
+                })
+                .collect(Collectors.toList());
+
+            // Create response with pagination metadata
+            Map<String, Object> response = new HashMap<>();
+            response.put("users", users);
+            response.put("currentPage", userPage.getNumber());
+            response.put("totalItems", userPage.getTotalElements());
+            response.put("totalPages", userPage.getTotalPages());
+
+            logger.info("✅ Successfully found " + users.size() + " users matching query: " + query);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.severe("❌ Error searching users: " + e.getMessage());
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("error", e.getMessage());
+            return ResponseEntity.internalServerError().body(response);
+        }
+    }
+
+    @GetMapping("/alphabet")
+    public ResponseEntity<List<String>> getAlphabetLetters() {
+        logger.info("🔍 Fetching alphabet letters for pagination");
+
+        try {
+            List<String> letters = userManagementService.getDistinctUsernameFirstLetters();
+            logger.info("✅ Successfully fetched " + letters.size() + " alphabet letters");
+            return ResponseEntity.ok(letters);
+        } catch (Exception e) {
+            logger.severe("❌ Error fetching alphabet letters: " + e.getMessage());
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    @GetMapping("/by-letter")
+    public ResponseEntity<Map<String, Object>> getUsersByLetter(
+            @RequestParam String letter,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "username") String sort) {
+
+        logger.info("🔍 Fetching users with username starting with: " + letter + ", Page: " + page + ", Size: " + size);
+
+        try {
+            // Create pageable object with sorting
+            Pageable pageable = PageRequest.of(page, size, Sort.by(sort));
+
+            // Get users by letter
+            Page<UserManagementDTO> userPage = userManagementService.getUsersByUsernameStartingWith(letter, pageable);
+
+            // Transform data for frontend
+            List<Map<String, Object>> users = userPage.getContent().stream()
+                .map(user -> {
+                    Map<String, Object> userMap = new HashMap<>();
+                    userMap.put("id", user.getId());
+                    userMap.put("username", user.getUsername());
+                    userMap.put("firstName", user.getFirstName());
+                    userMap.put("lastName", user.getLastName());
+                    userMap.put("email", user.getEmail());
+
+                    // Transform roles to simple format
+                    List<Map<String, String>> roles = user.getRoles().stream()
+                        .map(role -> {
+                            Map<String, String> roleMap = new HashMap<>();
+                            roleMap.put("id", role.getId());
+                            roleMap.put("name", role.getName());
+                            return roleMap;
+                        })
+                        .collect(Collectors.toList());
+                    userMap.put("roles", roles);
+
+                    // Transform companies to simple format
+                    List<Map<String, String>> companies = user.getCompanies().stream()
+                        .map(company -> {
+                            Map<String, String> companyMap = new HashMap<>();
+                            companyMap.put("id", company.getId());
+                            companyMap.put("name", company.getName());
+                            return companyMap;
+                        })
+                        .collect(Collectors.toList());
+                    userMap.put("companies", companies);
+
+                    return userMap;
+                })
+                .collect(Collectors.toList());
+
+            // Create response with pagination metadata
+            Map<String, Object> response = new HashMap<>();
+            response.put("users", users);
+            response.put("currentPage", userPage.getNumber());
+            response.put("totalItems", userPage.getTotalElements());
+            response.put("totalPages", userPage.getTotalPages());
+            response.put("letter", letter);
+
+            logger.info("✅ Successfully fetched " + users.size() + " users with last name starting with: " + letter);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.severe("❌ Error fetching users by letter: " + e.getMessage());
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("error", e.getMessage());
+            return ResponseEntity.internalServerError().body(response);
         }
     }
 
