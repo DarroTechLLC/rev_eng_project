@@ -4,11 +4,11 @@
       layout:decorate="~{layouts/main-layout}">
 <head>
     <title>Weekly Report</title>
-    
+
     <!-- Enhanced Highcharts with Export Functionality -->
     <div th:replace="fragments/highcharts-scripts :: highcharts-with-utils"></div>
     <div th:replace="fragments/highcharts-scripts :: chart-export-menu"></div>
-    
+
     <!-- Custom styles for this template -->
     <style>
         .section-card {
@@ -253,27 +253,30 @@
         function initCharts() {
             // Initialize Daily Production Chart
             initDailyProductionChart(dailyProductionData);
-            
+
             // Initialize Weekly Production Chart
             initWeeklyProductionChart(weeklyProductionData);
-            
+
             // Initialize Monthly Production Chart
             initMonthlyProductionChart(monthlyProductionData);
-            
+
             // Initialize YTD Production Pie Chart
             initYtdProductionPieChart(ytdProductionData);
-            
+
             // Initialize Lagoon Inflation Chart
             initLagoonInflationChart(lagoonInflationData);
-            
+
             // Initialize FT Above Berm Chart
             initFtAboveBermChart(ftAboveBermData);
         }
 
+        // Make initCharts accessible globally for auto-refresh
+        window.initCharts = initCharts;
+
         function initDailyProductionChart(data) {
             // Check if data is null or undefined and provide a default empty object
             data = data || {};
-            
+
             const chart = Highcharts.chart('dailyProductionChart', {
                 chart: {
                     type: 'line',
@@ -325,7 +328,7 @@
         function initWeeklyProductionChart(data) {
             // Check if data is null or undefined and provide a default empty object
             data = data || {};
-            
+
             const chart = Highcharts.chart('weeklyProductionChart', {
                 chart: {
                     type: 'line',
@@ -377,7 +380,7 @@
         function initMonthlyProductionChart(data) {
             // Check if data is null or undefined and provide a default empty object
             data = data || {};
-            
+
             const chart = Highcharts.chart('monthlyProductionChart', {
                 chart: {
                     type: 'line',
@@ -429,7 +432,7 @@
         function initYtdProductionPieChart(data) {
             // Check if data is null or undefined and provide a default empty object
             data = data || {};
-            
+
             const chart = Highcharts.chart('ytdProductionPieChart', {
                 chart: {
                     type: 'pie',
@@ -475,7 +478,7 @@
         function initLagoonInflationChart(data) {
             // Check if data is null or undefined and provide a default empty object
             data = data || {};
-            
+
             const chart = Highcharts.chart('lagoonInflationChart', {
                 chart: {
                     type: 'bar',
@@ -532,7 +535,7 @@
         function initFtAboveBermChart(data) {
             // Check if data is null or undefined and provide a default empty object
             data = data || {};
-            
+
             const chart = Highcharts.chart('ftAboveBermChart', {
                 chart: {
                     type: 'bar',

@@ -5,9 +5,6 @@
 be replicated. Users need to basically see live data without refreshing
 page, app needs to update data to view from db.
 
--dark mode option in user dropdown for any user
-
--fix mobilke back bnutton
 
 
 -is there data being handled by js in any scenario in this app that
