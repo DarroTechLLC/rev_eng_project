@@ -7,7 +7,6 @@ class DailyVolumeController {
         this.chart = null;
         this.currentData = null;
         this.farmColors = {};
-        this.useFakeData = false;
         this.debugMode = true; // Enable detailed logging
         this.initializeControls();
         this.loadInitialData();
@@ -89,19 +88,6 @@ class DailyVolumeController {
         document.getElementById('showAllFarms')
             .addEventListener('change', (e) => this.toggleAllFarms(e.target.checked));
 
-        // Fake data toggle
-        const fakeDataToggle = document.getElementById('useFakeData');
-        if (fakeDataToggle) {
-            this.log("Fake data toggle found, initializing");
-            fakeDataToggle.checked = this.useFakeData;
-            fakeDataToggle.addEventListener('change', (e) => {
-                this.useFakeData = e.target.checked;
-                this.log(`Fake data toggle set to: ${this.useFakeData}`);
-                this.refreshData();
-            });
-        } else {
-            this.log("Fake data toggle not found in DOM", true);
-        }
 
         // Debug toggle
         const debugToggle = document.getElementById('showDebugLog');
@@ -134,87 +120,80 @@ class DailyVolumeController {
 
             let data;
 
-            if (this.useFakeData) {
-                this.log("Using fake data as requested by toggle");
-                data = this.getSampleData();
-            } else {
-                try {
-                    // Get the selected company ID from the page-top data attribute
-                    const pageTopElement = document.getElementById('page-top');
-                    const companyId = pageTopElement ? pageTopElement.getAttribute('data-company-id') : null;
-                    this.log("Retrieved company ID from page-top element", companyId);
+            try {
+                // Get the selected company ID from the page-top data attribute
+                const pageTopElement = document.getElementById('page-top');
+                const companyId = pageTopElement ? pageTopElement.getAttribute('data-company-id') : null;
+                this.log("Retrieved company ID from page-top element", companyId);
 
-                    if (!companyId || companyId === 'default' || companyId === 'null') {
-                        this.log("Invalid company ID detected", companyId, true);
-                        throw new Error("Invalid company ID: " + companyId);
-                    }
-
-                    const date = document.getElementById('startDate').value;
-                    this.log("Using date for data fetch", date);
-
-                    // Get CSRF token for POST request
-                    const csrfToken = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
-                    const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content');
-                    this.log("CSRF token retrieved", csrfToken ? "Token found" : "Token missing");
-
-                    // Make API request to get data
-                    const apiUrl = `/api/charts/multi-farm/farm-volumes-for-date?company_id=${companyId}&date=${date}`;
-                    this.log("Making API request", apiUrl);
-
-                    const response = await fetch(apiUrl, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            ...(csrfHeader && csrfToken ? { [csrfHeader]: csrfToken } : {})
-                        }
-                    });
-
-                    this.log("API response status", response.status);
-
-                    if (!response.ok) {
-                        this.log(`API request failed with status ${response.status}`, null, true);
-                        throw new Error(`API request failed with status ${response.status}`);
-                    }
-
-                    const responseData = await response.json();
-                    this.log("API response data received", {
-                        dataLength: responseData.data ? responseData.data.length : 0,
-                        hasError: responseData.error || false
-                    });
-
-                    // Check for error flag in response
-                    if (responseData.error) {
-                        this.log("API returned error", responseData.errorMessage, true);
-                        throw new Error(responseData.errorMessage || "Unknown API error");
-                    }
-
-                    // Check if we have any data
-                    if (!responseData.data || responseData.data.length === 0) {
-                        this.log("No data returned from API, falling back to sample data", null, true);
-                        data = this.getSampleData();
-                    } else {
-                        // Log the first data item for debugging
-                        this.log("First data item from API", responseData.data[0]);
-
-                        // Transform data to match the format expected by the chart
-                        data = {
-                            farms: responseData.data.map(item => ({
-                                id: item.farmId,
-                                name: item.farmName,
-                                volumes: [{
-                                    date: new Date(date),
-                                    value: item.volume
-                                }]
-                            }))
-                        };
-                        this.log(`Successfully processed data for ${data.farms.length} farms`);
-                    }
-                } catch (apiError) {
-                    this.log(`API error: ${apiError.message}`, apiError.stack, true);
-                    // Fall back to sample data on error
-                    this.log("Falling back to sample data due to API error");
-                    data = this.getSampleData();
+                if (!companyId || companyId === 'default' || companyId === 'null') {
+                    this.log("Invalid company ID detected", companyId, true);
+                    throw new Error("Invalid company ID: " + companyId);
                 }
+
+                const date = document.getElementById('startDate').value;
+                this.log("Using date for data fetch", date);
+
+                // Get CSRF token for POST request
+                const csrfToken = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
+                const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content');
+                this.log("CSRF token retrieved", csrfToken ? "Token found" : "Token missing");
+
+                // Make API request to get data
+                const apiUrl = `/api/charts/multi-farm/farm-volumes-for-date?company_id=${companyId}&date=${date}`;
+                this.log("Making API request", apiUrl);
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...(csrfHeader && csrfToken ? { [csrfHeader]: csrfToken } : {})
+                    }
+                });
+
+                this.log("API response status", response.status);
+
+                if (!response.ok) {
+                    this.log(`API request failed with status ${response.status}`, null, true);
+                    throw new Error(`API request failed with status ${response.status}`);
+                }
+
+                const responseData = await response.json();
+                this.log("API response data received", {
+                    dataLength: responseData.data ? responseData.data.length : 0,
+                    hasError: responseData.error || false
+                });
+
+                // Check for error flag in response
+                if (responseData.error) {
+                    this.log("API returned error", responseData.errorMessage, true);
+                    throw new Error(responseData.errorMessage || "Unknown API error");
+                }
+
+                // Check if we have any data
+                if (!responseData.data || responseData.data.length === 0) {
+                    this.log("No data returned from API", null, true);
+                    throw new Error("No data available for the selected date. Please try a different date.");
+                }
+
+                // Log the first data item for debugging
+                this.log("First data item from API", responseData.data[0]);
+
+                // Transform data to match the format expected by the chart
+                data = {
+                    farms: responseData.data.map(item => ({
+                        id: item.farmId,
+                        name: item.farmName,
+                        volumes: [{
+                            date: new Date(date),
+                            value: item.volume
+                        }]
+                    }))
+                };
+                this.log(`Successfully processed data for ${data.farms.length} farms`);
+            } catch (apiError) {
+                this.log(`API error: ${apiError.message}`, apiError.stack, true);
+                throw apiError; // Re-throw the error to be caught by the outer try-catch
             }
 
             this.currentData = data;
@@ -454,87 +433,80 @@ class DailyVolumeController {
 
             let data;
 
-            if (this.useFakeData) {
-                this.log("Using fake data as requested by toggle");
-                data = this.getSampleData();
-            } else {
-                try {
-                    // Get the selected company ID from the page-top data attribute
-                    const pageTopElement = document.getElementById('page-top');
-                    const companyId = pageTopElement ? pageTopElement.getAttribute('data-company-id') : null;
-                    this.log("Retrieved company ID from page-top element", companyId);
+            try {
+                // Get the selected company ID from the page-top data attribute
+                const pageTopElement = document.getElementById('page-top');
+                const companyId = pageTopElement ? pageTopElement.getAttribute('data-company-id') : null;
+                this.log("Retrieved company ID from page-top element", companyId);
 
-                    if (!companyId || companyId === 'default' || companyId === 'null') {
-                        this.log("Invalid company ID detected", companyId, true);
-                        throw new Error("Invalid company ID: " + companyId);
-                    }
-
-                    const date = document.getElementById('startDate').value;
-                    this.log("Using date for data fetch", date);
-
-                    // Get CSRF token for POST request
-                    const csrfToken = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
-                    const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content');
-                    this.log("CSRF token retrieved", csrfToken ? "Token found" : "Token missing");
-
-                    // Make API request to get data
-                    const apiUrl = `/api/charts/multi-farm/farm-volumes-for-date?company_id=${companyId}&date=${date}`;
-                    this.log("Making API request", apiUrl);
-
-                    const response = await fetch(apiUrl, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            ...(csrfHeader && csrfToken ? { [csrfHeader]: csrfToken } : {})
-                        }
-                    });
-
-                    this.log("API response status", response.status);
-
-                    if (!response.ok) {
-                        this.log(`API request failed with status ${response.status}`, null, true);
-                        throw new Error(`API request failed with status ${response.status}`);
-                    }
-
-                    const responseData = await response.json();
-                    this.log("API response data received", {
-                        dataLength: responseData.data ? responseData.data.length : 0,
-                        hasError: responseData.error || false
-                    });
-
-                    // Check for error flag in response
-                    if (responseData.error) {
-                        this.log("API returned error", responseData.errorMessage, true);
-                        throw new Error(responseData.errorMessage || "Unknown API error");
-                    }
-
-                    // Check if we have any data
-                    if (!responseData.data || responseData.data.length === 0) {
-                        this.log("No data returned from API, falling back to sample data", null, true);
-                        data = this.getSampleData();
-                    } else {
-                        // Log the first data item for debugging
-                        this.log("First data item from API", responseData.data[0]);
-
-                        // Transform data to match the format expected by the chart
-                        data = {
-                            farms: responseData.data.map(item => ({
-                                id: item.farmId,
-                                name: item.farmName,
-                                volumes: [{
-                                    date: new Date(date),
-                                    value: item.volume
-                                }]
-                            }))
-                        };
-                        this.log(`Successfully processed data for ${data.farms.length} farms`);
-                    }
-                } catch (apiError) {
-                    this.log(`API error: ${apiError.message}`, apiError.stack, true);
-                    // Fall back to sample data on error
-                    this.log("Falling back to sample data due to API error");
-                    data = this.getSampleData();
+                if (!companyId || companyId === 'default' || companyId === 'null') {
+                    this.log("Invalid company ID detected", companyId, true);
+                    throw new Error("Invalid company ID: " + companyId);
                 }
+
+                const date = document.getElementById('startDate').value;
+                this.log("Using date for data fetch", date);
+
+                // Get CSRF token for POST request
+                const csrfToken = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
+                const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content');
+                this.log("CSRF token retrieved", csrfToken ? "Token found" : "Token missing");
+
+                // Make API request to get data
+                const apiUrl = `/api/charts/multi-farm/farm-volumes-for-date?company_id=${companyId}&date=${date}`;
+                this.log("Making API request", apiUrl);
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...(csrfHeader && csrfToken ? { [csrfHeader]: csrfToken } : {})
+                    }
+                });
+
+                this.log("API response status", response.status);
+
+                if (!response.ok) {
+                    this.log(`API request failed with status ${response.status}`, null, true);
+                    throw new Error(`API request failed with status ${response.status}`);
+                }
+
+                const responseData = await response.json();
+                this.log("API response data received", {
+                    dataLength: responseData.data ? responseData.data.length : 0,
+                    hasError: responseData.error || false
+                });
+
+                // Check for error flag in response
+                if (responseData.error) {
+                    this.log("API returned error", responseData.errorMessage, true);
+                    throw new Error(responseData.errorMessage || "Unknown API error");
+                }
+
+                // Check if we have any data
+                if (!responseData.data || responseData.data.length === 0) {
+                    this.log("No data returned from API", null, true);
+                    throw new Error("No data available for the selected date. Please try a different date.");
+                }
+
+                // Log the first data item for debugging
+                this.log("First data item from API", responseData.data[0]);
+
+                // Transform data to match the format expected by the chart
+                data = {
+                    farms: responseData.data.map(item => ({
+                        id: item.farmId,
+                        name: item.farmName,
+                        volumes: [{
+                            date: new Date(date),
+                            value: item.volume
+                        }]
+                    }))
+                };
+                this.log(`Successfully processed data for ${data.farms.length} farms`);
+            } catch (apiError) {
+                this.log(`API error: ${apiError.message}`, apiError.stack, true);
+                throw apiError; // Re-throw the error to be caught by the outer try-catch
             }
 
             this.currentData = data;
@@ -564,7 +536,7 @@ class DailyVolumeController {
 
             // Check if we need to update chart type based on data
             const hasMultipleDates = this.hasMultipleDatesPerFarm(data);
-            const shouldBeLineChart = hasMultipleDates || this.useFakeData;
+            const shouldBeLineChart = hasMultipleDates;
 
             // Update chart type if needed
             if ((shouldBeLineChart && this.chart.config.type !== 'line') || 
@@ -636,21 +608,9 @@ class DailyVolumeController {
 
         // Update error message with more details
         const errorMessage = `Error loading chart data: ${error.message || 'Unknown error'}. 
-            ${this.useFakeData ? '' : 'Try enabling "Use Sample Data" to see a demo.'}`;
+            Please try a different date or check your connection.`;
 
         errorElement.querySelector('.alert').innerHTML = errorMessage;
-
-        // If we're not already using fake data, suggest it
-        if (!this.useFakeData) {
-            this.log("Suggesting to use sample data as a fallback", true);
-
-            // Make the fake data toggle more visible
-            const fakeDataToggle = document.getElementById('useFakeData');
-            if (fakeDataToggle) {
-                fakeDataToggle.parentElement.style.fontWeight = 'bold';
-                fakeDataToggle.parentElement.style.color = '#dc3545';
-            }
-        }
 
         // Make sure debug log is visible when there's an error
         const debugToggle = document.getElementById('showDebugLog');
@@ -660,95 +620,6 @@ class DailyVolumeController {
         }
     }
 
-    /**
-     * Generate sample data for demonstration when real data is unavailable
-     */
-    getSampleData() {
-        this.log("Generating sample data for demonstration");
-
-        // Generate sample farms with more realistic names
-        const farms = [
-            { id: 'sample-farm-1', name: 'North Ridge Farm' },
-            { id: 'sample-farm-2', name: 'Eastwood Facility' },
-            { id: 'sample-farm-3', name: 'South Valley Operations' },
-            { id: 'sample-farm-4', name: 'West Plains Production' },
-            { id: 'sample-farm-5', name: 'Central Processing Plant' },
-            { id: 'sample-farm-6', name: 'Mountain View Facility' }
-        ];
-
-        // Get date range from UI
-        const startDateStr = document.getElementById('startDate').value;
-        const endDateStr = document.getElementById('endDate').value;
-        const startDate = new Date(startDateStr);
-        const endDate = new Date(endDateStr);
-
-        // Get view type (daily, weekly, monthly)
-        const viewType = document.getElementById('viewType').value;
-
-        // Generate dates between start and end date based on view type
-        const dates = this.generateDateRange(startDate, endDate, viewType);
-
-        this.log(`Generated ${dates.length} dates for sample data in ${viewType} view`);
-
-        // Add random volume data to each farm with realistic patterns
-        farms.forEach(farm => {
-            // Base volume varies by farm size
-            const baseFarmVolume = Math.floor(Math.random() * 8000) + 2000; // 2000-10000 base
-
-            // Create volumes array with a data point for each date
-            farm.volumes = dates.map(date => {
-                // Add some randomness but maintain a pattern
-                // Weekends typically have lower volume
-                const dayOfWeek = date.getDay();
-                const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-
-                // Monthly pattern - higher in middle of month
-                const dayOfMonth = date.getDate();
-                const monthFactor = Math.sin((dayOfMonth / 31) * Math.PI) * 0.2 + 0.9; // 0.7-1.1 factor
-
-                // Random daily fluctuation
-                const dailyFactor = (Math.random() * 0.4) + 0.8; // 0.8-1.2 factor
-
-                // Weekend reduction
-                const weekendFactor = isWeekend ? 0.6 : 1.0;
-
-                // Calculate final value with all factors
-                const value = baseFarmVolume * monthFactor * dailyFactor * weekendFactor;
-
-                return {
-                    date: new Date(date),
-                    value: Math.round(value)
-                };
-            });
-        });
-
-        this.log(`Sample data generated with ${farms.length} farms and ${dates.length} data points each`);
-        return { farms };
-    }
-
-    /**
-     * Generate a range of dates between start and end date based on view type
-     */
-    generateDateRange(startDate, endDate, viewType) {
-        const dates = [];
-        const currentDate = new Date(startDate);
-
-        // Adjust interval based on view type
-        let interval = 1; // days
-        if (viewType === 'weekly') {
-            interval = 7;
-        } else if (viewType === 'monthly') {
-            interval = 30;
-        }
-
-        // Generate dates
-        while (currentDate <= endDate) {
-            dates.push(new Date(currentDate));
-            currentDate.setDate(currentDate.getDate() + interval);
-        }
-
-        return dates;
-    }
 
     /**
      * Check if the data contains multiple dates per farm

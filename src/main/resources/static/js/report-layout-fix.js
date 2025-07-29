@@ -136,7 +136,7 @@ function initializeHighcharts() {
 
     if (typeof createProductionTrendChart === 'undefined' ||
         typeof createFarmDistributionChart === 'undefined' ||
-        typeof generateSampleTimeSeriesData === 'undefined') {
+        typeof createComparisonChart === 'undefined') {
         console.error('Highcharts utility functions not available');
         return;
     }
@@ -227,29 +227,22 @@ function initializeEmptyChartContainers() {
 function initializeChart(chartElement) {
     const chartId = chartElement.id;
 
-    // Initialize Highcharts based on the chart type
-    if (chartId.includes('Trend') || chartId.includes('trend')) {
-        // For trend charts
-        const sampleData = generateSampleTimeSeriesData(7, 10, 40);
-        createProductionTrendChart(chartId, sampleData, 'Production Trend');
-    } else if (chartId.includes('Distribution') || chartId.includes('Pie')) {
-        // For distribution/pie charts
-        const farmNames = ['Farm A', 'Farm B', 'Farm C', 'Farm D'];
-        const farmData = generateSampleFarmDistribution(farmNames);
-        createFarmDistributionChart(chartId, farmData, 'Production by Farm');
-    } else {
-        // For other charts (comparison, etc.)
-        const categories = ['Jan', 'Feb', 'Mar', 'Apr', 'May'];
-        const series = [
-            {
-                name: 'Production',
-                data: [10, 15, 12, 18, 14]
-            },
-            {
-                name: 'Budget',
-                data: [12, 14, 13, 15, 16]
-            }
-        ];
-        createComparisonChart(chartId, categories, series, 'Production Comparison');
-    }
+    // Create a no-data message
+    const noDataMessage = document.createElement('div');
+    noDataMessage.className = 'alert alert-info';
+    noDataMessage.innerHTML = `
+        <h5>No Data Available</h5>
+        <p>This chart requires data from the API. Please ensure you have:</p>
+        <ul>
+            <li>Selected a valid date range</li>
+            <li>Selected a company and farm (if applicable)</li>
+            <li>Verified your connection to the server</li>
+        </ul>
+    `;
+
+    // Add the message to the chart container
+    chartElement.appendChild(noDataMessage);
+
+    // Log the error
+    console.warn(`Chart ${chartId} requires data from the API. Sample data has been removed.`);
 }

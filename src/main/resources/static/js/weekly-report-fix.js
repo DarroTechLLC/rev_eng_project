@@ -44,29 +44,29 @@ function loadHighchartsScripts() {
 function fixLayout() {
     // Fix section cards layout
     const sectionCards = document.querySelectorAll('.section-card');
-    
+
     sectionCards.forEach(function(card) {
         // Skip if already wrapped
         if (card.parentElement.classList.contains('col-12')) {
             return;
         }
-        
+
         // Create row and column elements
         const row = document.createElement('div');
         row.className = 'row mb-4';
-        
+
         const col = document.createElement('div');
         col.className = 'col-12';
-        
+
         // Get the parent element
         const parent = card.parentElement;
-        
+
         // Replace the card with the new structure
         parent.replaceChild(row, card);
         row.appendChild(col);
         col.appendChild(card);
     });
-    
+
     // Replace Chart.js charts with Highcharts
     replaceCharts();
 }
@@ -81,91 +81,48 @@ function replaceCharts() {
         console.error('Highcharts or utility functions not available');
         return;
     }
-    
+
     // Find all canvas elements used for Chart.js
     const canvasElements = document.querySelectorAll('canvas');
-    
+
     // Process each canvas element
     canvasElements.forEach(function(canvas) {
         // Get the parent container
         const container = canvas.parentElement;
-        
+
         // Skip if already processed
         if (container.querySelector('.highcharts-container')) {
             return;
         }
-        
+
         // Get the canvas ID
         const canvasId = canvas.id;
-        
+
         // Create a div for Highcharts
         const chartDiv = document.createElement('div');
         chartDiv.id = canvasId;
-        
+
         // Replace the canvas with the div
         container.replaceChild(chartDiv, canvas);
-        
-        // Initialize Highcharts based on the chart type
-        if (canvasId.includes('dailyProductionChart')) {
-            // For daily production chart
-            const sampleData = generateSampleTimeSeriesData(7, 10, 40);
-            createProductionTrendChart(canvasId, sampleData, 'Daily Production Volume');
-        } else if (canvasId.includes('weeklyProductionChart')) {
-            // For weekly production chart
-            const sampleData = generateSampleTimeSeriesData(5, 20, 60);
-            createProductionTrendChart(canvasId, sampleData, 'Weekly Production Trend');
-        } else if (canvasId.includes('monthlyProductionChart')) {
-            // For monthly production chart
-            const categories = ['Jan', 'Feb', 'Mar', 'Apr', 'May'];
-            const series = [
-                {
-                    name: 'Production',
-                    data: [30, 35, 32, 38, 34]
-                },
-                {
-                    name: 'Budget',
-                    data: [32, 34, 33, 35, 36]
-                }
-            ];
-            createComparisonChart(canvasId, categories, series, 'Monthly Production Comparison');
-        } else if (canvasId.includes('ytdProductionPieChart')) {
-            // For YTD production pie chart
-            const farmNames = ['Farm A', 'Farm B', 'Farm C', 'Farm D'];
-            const farmData = generateSampleFarmDistribution(farmNames);
-            createFarmDistributionChart(canvasId, farmData, 'YTD Production by Farm');
-        } else if (canvasId.includes('lagoonInflationChart')) {
-            // For lagoon inflation chart
-            const categories = ['Farm A', 'Farm B', 'Farm C', 'Farm D'];
-            const series = [
-                {
-                    name: 'Current Week',
-                    data: [75, 85, 65, 80]
-                },
-                {
-                    name: 'Previous Week',
-                    data: [70, 80, 60, 75]
-                }
-            ];
-            createComparisonChart(canvasId, categories, series, 'Lagoon Inflation Levels');
-        } else if (canvasId.includes('ftAboveBermChart')) {
-            // For FT above berm chart
-            const categories = ['Farm A', 'Farm B', 'Farm C', 'Farm D'];
-            const series = [
-                {
-                    name: 'Current Week',
-                    data: [5.2, 4.8, 5.5, 4.9]
-                },
-                {
-                    name: 'Previous Week',
-                    data: [5.0, 4.5, 5.3, 4.7]
-                }
-            ];
-            createComparisonChart(canvasId, categories, series, 'FT Above the Berm Measurements');
-        } else {
-            // For other charts
-            const sampleData = generateSampleTimeSeriesData(7, 10, 40);
-            createProductionTrendChart(canvasId, sampleData, 'Production Chart');
-        }
+
+        // Display a message indicating that real data should be fetched from the API
+        const noDataMessage = document.createElement('div');
+        noDataMessage.className = 'alert alert-info';
+        noDataMessage.innerHTML = `
+            <h5>No Data Available</h5>
+            <p>This chart requires data from the API. Please ensure you have:</p>
+            <ul>
+                <li>Selected a valid date range</li>
+                <li>Selected a company and farm (if applicable)</li>
+                <li>Verified your connection to the server</li>
+            </ul>
+        `;
+
+        // Add the message to the chart container
+        chartDiv.appendChild(noDataMessage);
+
+        // Log the error
+        console.warn(`Chart ${canvasId} requires data from the API. Sample data has been removed.`);
     });
 }
 

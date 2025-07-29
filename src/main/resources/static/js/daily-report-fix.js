@@ -98,35 +98,44 @@ function initializeHighcharts() {
     }
 
     if (typeof createProductionTrendChart === 'undefined' ||
-        typeof createFarmDistributionChart === 'undefined' ||
-        typeof generateSampleTimeSeriesData === 'undefined') {
+        typeof createFarmDistributionChart === 'undefined') {
         console.error('Highcharts utility functions not available');
         return;
     }
 
+    // Function to create a no-data message
+    function createNoDataMessage(containerId) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+
+        // Create a message element
+        const noDataMessage = document.createElement('div');
+        noDataMessage.className = 'alert alert-info';
+        noDataMessage.innerHTML = `
+            <h5>No Data Available</h5>
+            <p>This chart requires data from the API. Please ensure you have:</p>
+            <ul>
+                <li>Selected a valid date range</li>
+                <li>Selected a company and farm (if applicable)</li>
+                <li>Verified your connection to the server</li>
+            </ul>
+        `;
+
+        // Add the message to the chart container
+        container.appendChild(noDataMessage);
+
+        // Log the error
+        console.warn(`Chart ${containerId} requires data from the API. Sample data has been removed.`);
+    }
+
     // Initialize daily trend chart
     if (document.getElementById('dailyTrendChart')) {
-        // Generate sample data
-        const sampleData = generateSampleTimeSeriesData(7, 10, 40);
-        const chart = createProductionTrendChart('dailyTrendChart', sampleData, 'Daily Production Trend');
-        
-        // Add export functionality if chart was created successfully
-        if (chart && typeof initChartExportMenu === 'function') {
-            initChartExportMenu(chart, document.getElementById('dailyTrendChart'));
-        }
+        createNoDataMessage('dailyTrendChart');
     }
 
     // Initialize farm distribution chart
     if (document.getElementById('farmDistributionChart')) {
-        // Generate sample farm data
-        const farmNames = ['Farm A', 'Farm B', 'Farm C', 'Farm D'];
-        const farmData = generateSampleFarmDistribution(farmNames);
-        const chart = createFarmDistributionChart('farmDistributionChart', farmData, 'Production by Farm');
-        
-        // Add export functionality if chart was created successfully
-        if (chart && typeof initChartExportMenu === 'function') {
-            initChartExportMenu(chart, document.getElementById('farmDistributionChart'));
-        }
+        createNoDataMessage('farmDistributionChart');
     }
 }
 
