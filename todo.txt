@@ -1,8 +1,10 @@
 -------------------------Working on----------------
--still have to enter name after biometric (queried)
---------------------------Up Next-----------------
 -speed up query for user table in manage users (queried)-indexing ???
-
+--------------------------Up Next-----------------
+-how to implement backend data update every 30 seconds, find update in nextjs app for the exact time to
+be replicated. Users need to basically see live data without refreshing
+page, app needs to update data to view from db.
+-bell not showing in reg view
 -dark mode option in user dropdown for any user
 
 

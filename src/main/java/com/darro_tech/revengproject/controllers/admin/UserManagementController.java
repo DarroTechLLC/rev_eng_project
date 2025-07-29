@@ -72,18 +72,13 @@ public class UserManagementController extends BaseController {
             model.addAttribute("companies", companies);
             logger.info("🏢 Added " + companies.size() + " companies to model for registration form");
 
-            // Get all users with their roles and companies
-            logger.info("🔍 Fetching users with roles and companies");
-            List<UserManagementDTO> users = userManagementService.getAllUsersWithRolesAndCompanies();
-            logger.info("✅ Retrieved " + users.size() + " users for management page");
-            model.addAttribute("users", users);
-
-            logger.info("🎯 Successfully prepared user management page");
+            // No longer fetching all users here - they will be loaded via AJAX
+            logger.info("🎯 Successfully prepared user management page - users will be loaded via AJAX");
             return view("admin/users/user-management", model);
         } catch (Exception e) {
             logger.severe("❌ Error preparing user management page: " + e.getMessage());
             e.printStackTrace();
-            model.addAttribute("errorMessage", "An error occurred while loading users");
+            model.addAttribute("errorMessage", "An error occurred while loading the page");
             return view("admin/users/user-management", model);
         }
     }

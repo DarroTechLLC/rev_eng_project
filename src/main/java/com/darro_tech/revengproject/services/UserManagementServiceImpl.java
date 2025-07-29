@@ -4,6 +4,8 @@ import java.lang.reflect.Field;
 import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -11,6 +13,9 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -115,6 +120,213 @@ public class UserManagementServiceImpl implements UserManagementServiceInterface
             logger.severe("❌ Error getting users with roles and companies: " + e.getMessage());
             e.printStackTrace();
             return List.of(); // Return empty list on error
+        }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<UserManagementDTO> getUsersWithRolesAndCompaniesPaginated(Pageable pageable) {
+        logger.info("🔍 Starting to fetch paginated users with roles and companies. Page: " + 
+                    pageable.getPageNumber() + ", Size: " + pageable.getPageSize());
+        try {
+            // Get paginated users
+            Page<User> userPage = userRepository.findAll(pageable);
+            List<User> users = userPage.getContent();
+            logger.info("📋 Retrieved " + users.size() + " users from database for current page");
+
+            if (users.isEmpty()) {
+                logger.info("📋 No users found for this page");
+                return Page.empty(pageable);
+            }
+
+            // Extract all user IDs
+            List<String> userIds = users.stream()
+                .map(User::getId)
+                .collect(Collectors.toList());
+
+            // Batch fetch emails for all users in this page
+            Map<String, String> userEmails = batchGetUserEmails(userIds);
+            logger.info("📧 Batch fetched " + userEmails.size() + " emails");
+
+            // Batch fetch roles for all users in this page
+            Map<String, List<UserManagementDTO.RoleDTO>> userRoles = batchGetUserRoles(userIds);
+            logger.info("🔑 Batch fetched roles for " + userRoles.size() + " users");
+
+            // Batch fetch companies for all users in this page
+            Map<String, List<UserManagementDTO.CompanyDTO>> userCompanies = batchGetUserCompanies(userIds);
+            logger.info("🏢 Batch fetched companies for " + userCompanies.size() + " users");
+
+            // Create DTOs for all users
+            List<UserManagementDTO> result = new ArrayList<>();
+            for (User user : users) {
+                UserManagementDTO dto = new UserManagementDTO();
+                String userId = user.getId();
+
+                dto.setId(userId);
+                dto.setUsername(user.getUsername());
+                dto.setFirstName(user.getFirstName());
+                dto.setLastName(user.getLastName());
+
+                // Set email from batch results
+                dto.setEmail(userEmails.getOrDefault(userId, null));
+
+                // Set roles from batch results
+                dto.setRoles(userRoles.getOrDefault(userId, new ArrayList<>()));
+
+                // Set companies from batch results
+                dto.setCompanies(userCompanies.getOrDefault(userId, new ArrayList<>()));
+
+                result.add(dto);
+            }
+
+            logger.info("✅ Successfully processed " + result.size() + " users for current page");
+            return new PageImpl<>(result, pageable, userPage.getTotalElements());
+        } catch (Exception e) {
+            logger.severe("❌ Error getting paginated users: " + e.getMessage());
+            e.printStackTrace();
+            return Page.empty(pageable);
+        }
+    }
+
+    /**
+     * Batch fetch emails for multiple users
+     * 
+     * @param userIds list of user IDs
+     * @return map of user ID to email
+     */
+    private Map<String, String> batchGetUserEmails(List<String> userIds) {
+        if (userIds == null || userIds.isEmpty()) {
+            return new HashMap<>();
+        }
+
+        try {
+            String emailTypeId = getEmailTypeId();
+            Map<String, String> result = new HashMap<>();
+
+            // Create placeholders for SQL IN clause
+            String placeholders = String.join(",", Collections.nCopies(userIds.size(), "?"));
+
+            // Query with IN clause
+            String sql = "SELECT user_id, value as email FROM user_contact_info " +
+                         "WHERE user_id IN (" + placeholders + ") AND type_id = ?";
+
+            // Create parameters array with user IDs and email type ID
+            Object[] params = new Object[userIds.size() + 1];
+            for (int i = 0; i < userIds.size(); i++) {
+                params[i] = userIds.get(i);
+            }
+            params[userIds.size()] = emailTypeId;
+
+            // Execute query
+            List<Map<String, Object>> rows = jdbcTemplate.queryForList(sql, params);
+
+            // Process results
+            for (Map<String, Object> row : rows) {
+                String userId = row.get("user_id").toString();
+                String email = (String) row.get("email");
+                result.put(userId, email);
+            }
+
+            return result;
+        } catch (Exception e) {
+            logger.warning("⚠️ Error batch fetching emails: " + e.getMessage());
+            return new HashMap<>();
+        }
+    }
+
+    /**
+     * Batch fetch roles for multiple users
+     * 
+     * @param userIds list of user IDs
+     * @return map of user ID to list of role DTOs
+     */
+    private Map<String, List<UserManagementDTO.RoleDTO>> batchGetUserRoles(List<String> userIds) {
+        if (userIds == null || userIds.isEmpty()) {
+            return new HashMap<>();
+        }
+
+        try {
+            Map<String, List<UserManagementDTO.RoleDTO>> result = new HashMap<>();
+
+            // Initialize empty lists for all users
+            for (String userId : userIds) {
+                result.put(userId, new ArrayList<>());
+            }
+
+            // Create placeholders for SQL IN clause
+            String placeholders = String.join(",", Collections.nCopies(userIds.size(), "?"));
+
+            // Query with IN clause
+            String sql = "SELECT ur.user_id, r.id as role_id, r.name as role_name " +
+                         "FROM user_roles ur " +
+                         "JOIN roles r ON ur.role_id = r.id " +
+                         "WHERE ur.user_id IN (" + placeholders + ")";
+
+            // Execute query
+            List<Map<String, Object>> rows = jdbcTemplate.queryForList(sql, userIds.toArray());
+
+            // Process results
+            for (Map<String, Object> row : rows) {
+                String userId = row.get("user_id").toString();
+                String roleId = row.get("role_id").toString();
+                String roleName = (String) row.get("role_name");
+
+                UserManagementDTO.RoleDTO roleDTO = new UserManagementDTO.RoleDTO(roleId, roleName);
+                result.get(userId).add(roleDTO);
+            }
+
+            return result;
+        } catch (Exception e) {
+            logger.warning("⚠️ Error batch fetching roles: " + e.getMessage());
+            return new HashMap<>();
+        }
+    }
+
+    /**
+     * Batch fetch companies for multiple users
+     * 
+     * @param userIds list of user IDs
+     * @return map of user ID to list of company DTOs
+     */
+    private Map<String, List<UserManagementDTO.CompanyDTO>> batchGetUserCompanies(List<String> userIds) {
+        if (userIds == null || userIds.isEmpty()) {
+            return new HashMap<>();
+        }
+
+        try {
+            Map<String, List<UserManagementDTO.CompanyDTO>> result = new HashMap<>();
+
+            // Initialize empty lists for all users
+            for (String userId : userIds) {
+                result.put(userId, new ArrayList<>());
+            }
+
+            // Create placeholders for SQL IN clause
+            String placeholders = String.join(",", Collections.nCopies(userIds.size(), "?"));
+
+            // Query with IN clause
+            String sql = "SELECT cu.user_id, c.id as company_id, c.name as company_name " +
+                         "FROM company_users cu " +
+                         "JOIN companies c ON cu.company_id = c.id " +
+                         "WHERE cu.user_id IN (" + placeholders + ")";
+
+            // Execute query
+            List<Map<String, Object>> rows = jdbcTemplate.queryForList(sql, userIds.toArray());
+
+            // Process results
+            for (Map<String, Object> row : rows) {
+                String userId = row.get("user_id").toString();
+                String companyId = row.get("company_id").toString();
+                String companyName = (String) row.get("company_name");
+
+                UserManagementDTO.CompanyDTO companyDTO = new UserManagementDTO.CompanyDTO(companyId, companyName);
+                result.get(userId).add(companyDTO);
+            }
+
+            return result;
+        } catch (Exception e) {
+            logger.warning("⚠️ Error batch fetching companies: " + e.getMessage());
+            return new HashMap<>();
         }
     }
 
@@ -881,6 +1093,291 @@ public class UserManagementServiceImpl implements UserManagementServiceInterface
         // Implementation depends on your application context
         // For example, you might want to update the current user's phone
         // This method needs to be implemented based on your requirements
+    }
+
+    /**
+     * Search for users by username, first name, last name, or email
+     *
+     * @param searchTerm the search term
+     * @param pageable pagination information
+     * @return page of users matching the search term
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public Page<UserManagementDTO> searchUsers(String searchTerm, Pageable pageable) {
+        logger.info("🔍 Searching for users with term: " + searchTerm);
+        try {
+            // Search users with pagination
+            Page<User> userPage = userRepository.searchUsers(searchTerm, pageable);
+            List<User> users = userPage.getContent();
+            logger.info("📋 Found " + users.size() + " users matching search term: " + searchTerm);
+
+            if (users.isEmpty()) {
+                logger.info("📋 No users found matching search term: " + searchTerm);
+                return Page.empty(pageable);
+            }
+
+            // Extract all user IDs
+            List<String> userIds = users.stream()
+                .map(User::getId)
+                .collect(Collectors.toList());
+
+            // Batch fetch emails for all users in this page
+            Map<String, String> userEmails = batchGetUserEmails(userIds);
+            logger.info("📧 Batch fetched " + userEmails.size() + " emails");
+
+            // Batch fetch roles for all users in this page
+            Map<String, List<UserManagementDTO.RoleDTO>> userRoles = batchGetUserRoles(userIds);
+            logger.info("🔑 Batch fetched roles for " + userRoles.size() + " users");
+
+            // Batch fetch companies for all users in this page
+            Map<String, List<UserManagementDTO.CompanyDTO>> userCompanies = batchGetUserCompanies(userIds);
+            logger.info("🏢 Batch fetched companies for " + userCompanies.size() + " users");
+
+            // Create DTOs for all users
+            List<UserManagementDTO> result = new ArrayList<>();
+            for (User user : users) {
+                UserManagementDTO dto = new UserManagementDTO();
+                String userId = user.getId();
+
+                dto.setId(userId);
+                dto.setUsername(user.getUsername());
+                dto.setFirstName(user.getFirstName());
+                dto.setLastName(user.getLastName());
+
+                // Set email from batch results
+                dto.setEmail(userEmails.getOrDefault(userId, null));
+
+                // Set roles from batch results
+                dto.setRoles(userRoles.getOrDefault(userId, new ArrayList<>()));
+
+                // Set companies from batch results
+                dto.setCompanies(userCompanies.getOrDefault(userId, new ArrayList<>()));
+
+                result.add(dto);
+            }
+
+            logger.info("✅ Successfully processed " + result.size() + " users for search term: " + searchTerm);
+            return new PageImpl<>(result, pageable, userPage.getTotalElements());
+        } catch (Exception e) {
+            logger.severe("❌ Error searching users: " + e.getMessage());
+            e.printStackTrace();
+            return Page.empty(pageable);
+        }
+    }
+
+    /**
+     * Get users with last name starting with the given letter
+     *
+     * @param letter the first letter of the last name
+     * @param pageable pagination information
+     * @return page of users with last name starting with the given letter
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public Page<UserManagementDTO> getUsersByLastNameStartingWith(String letter, Pageable pageable) {
+        logger.info("🔍 Fetching users with last name starting with: " + letter);
+        try {
+            // Get users with last name starting with the given letter
+            Page<User> userPage = userRepository.findByLastNameStartingWithIgnoreCase(letter, pageable);
+            List<User> users = userPage.getContent();
+            logger.info("📋 Found " + users.size() + " users with last name starting with: " + letter);
+
+            if (users.isEmpty()) {
+                logger.info("📋 No users found with last name starting with: " + letter);
+                return Page.empty(pageable);
+            }
+
+            // Extract all user IDs
+            List<String> userIds = users.stream()
+                .map(User::getId)
+                .collect(Collectors.toList());
+
+            // Batch fetch emails for all users in this page
+            Map<String, String> userEmails = batchGetUserEmails(userIds);
+            logger.info("📧 Batch fetched " + userEmails.size() + " emails");
+
+            // Batch fetch roles for all users in this page
+            Map<String, List<UserManagementDTO.RoleDTO>> userRoles = batchGetUserRoles(userIds);
+            logger.info("🔑 Batch fetched roles for " + userRoles.size() + " users");
+
+            // Batch fetch companies for all users in this page
+            Map<String, List<UserManagementDTO.CompanyDTO>> userCompanies = batchGetUserCompanies(userIds);
+            logger.info("🏢 Batch fetched companies for " + userCompanies.size() + " users");
+
+            // Create DTOs for all users
+            List<UserManagementDTO> result = new ArrayList<>();
+            for (User user : users) {
+                UserManagementDTO dto = new UserManagementDTO();
+                String userId = user.getId();
+
+                dto.setId(userId);
+                dto.setUsername(user.getUsername());
+                dto.setFirstName(user.getFirstName());
+                dto.setLastName(user.getLastName());
+
+                // Set email from batch results
+                dto.setEmail(userEmails.getOrDefault(userId, null));
+
+                // Set roles from batch results
+                dto.setRoles(userRoles.getOrDefault(userId, new ArrayList<>()));
+
+                // Set companies from batch results
+                dto.setCompanies(userCompanies.getOrDefault(userId, new ArrayList<>()));
+
+                result.add(dto);
+            }
+
+            logger.info("✅ Successfully processed " + result.size() + " users with last name starting with: " + letter);
+            return new PageImpl<>(result, pageable, userPage.getTotalElements());
+        } catch (Exception e) {
+            logger.severe("❌ Error fetching users by last name letter: " + e.getMessage());
+            e.printStackTrace();
+            return Page.empty(pageable);
+        }
+    }
+
+    /**
+     * Get users with username starting with the given letter
+     *
+     * @param letter the first letter of the username
+     * @param pageable pagination information
+     * @return page of users with username starting with the given letter
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public Page<UserManagementDTO> getUsersByUsernameStartingWith(String letter, Pageable pageable) {
+        logger.info("🔍 Fetching users with username starting with: " + letter);
+        try {
+            // Get users with username starting with the given letter
+            Page<User> userPage = userRepository.findByUsernameStartingWithIgnoreCase(letter, pageable);
+            List<User> users = userPage.getContent();
+            logger.info("📋 Found " + users.size() + " users with username starting with: " + letter);
+
+            if (users.isEmpty()) {
+                logger.info("📋 No users found with username starting with: " + letter);
+                return Page.empty(pageable);
+            }
+
+            // Extract all user IDs
+            List<String> userIds = users.stream()
+                .map(User::getId)
+                .collect(Collectors.toList());
+
+            // Batch fetch emails for all users in this page
+            Map<String, String> userEmails = batchGetUserEmails(userIds);
+            logger.info("📧 Batch fetched " + userEmails.size() + " emails");
+
+            // Batch fetch roles for all users in this page
+            Map<String, List<UserManagementDTO.RoleDTO>> userRoles = batchGetUserRoles(userIds);
+            logger.info("🔑 Batch fetched roles for " + userRoles.size() + " users");
+
+            // Batch fetch companies for all users in this page
+            Map<String, List<UserManagementDTO.CompanyDTO>> userCompanies = batchGetUserCompanies(userIds);
+            logger.info("🏢 Batch fetched companies for " + userCompanies.size() + " users");
+
+            // Create DTOs for all users
+            List<UserManagementDTO> result = new ArrayList<>();
+            for (User user : users) {
+                UserManagementDTO dto = new UserManagementDTO();
+                String userId = user.getId();
+
+                dto.setId(userId);
+                dto.setUsername(user.getUsername());
+                dto.setFirstName(user.getFirstName());
+                dto.setLastName(user.getLastName());
+
+                // Set email from batch results
+                dto.setEmail(userEmails.getOrDefault(userId, null));
+
+                // Set roles from batch results
+                dto.setRoles(userRoles.getOrDefault(userId, new ArrayList<>()));
+
+                // Set companies from batch results
+                dto.setCompanies(userCompanies.getOrDefault(userId, new ArrayList<>()));
+
+                result.add(dto);
+            }
+
+            logger.info("✅ Successfully processed " + result.size() + " users with username starting with: " + letter);
+            return new PageImpl<>(result, pageable, userPage.getTotalElements());
+        } catch (Exception e) {
+            logger.severe("❌ Error fetching users by username letter: " + e.getMessage());
+            e.printStackTrace();
+            return Page.empty(pageable);
+        }
+    }
+
+    /**
+     * Get all distinct first letters of user last names
+     *
+     * @return list of distinct first letters of user last names
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public List<String> getDistinctLastNameFirstLetters() {
+        logger.info("🔍 Fetching distinct first letters of user last names");
+        try {
+            // Use JDBC to get distinct first letters of last names
+            String sql = "SELECT DISTINCT UPPER(SUBSTRING(lastName, 1, 1)) as letter " +
+                         "FROM users " +
+                         "WHERE lastName IS NOT NULL AND LENGTH(lastName) > 0 " +
+                         "ORDER BY letter";
+
+            List<String> letters = jdbcTemplate.queryForList(sql, String.class);
+
+            // If no letters found, return default alphabet
+            if (letters.isEmpty()) {
+                logger.info("📋 No distinct letters found, returning default alphabet");
+                return List.of("A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", 
+                               "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z");
+            }
+
+            logger.info("✅ Found " + letters.size() + " distinct first letters of last names");
+            return letters;
+        } catch (Exception e) {
+            logger.severe("❌ Error fetching distinct first letters: " + e.getMessage());
+            e.printStackTrace();
+            // Return default alphabet on error
+            return List.of("A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", 
+                           "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z");
+        }
+    }
+
+    /**
+     * Get all distinct first letters of usernames
+     *
+     * @return list of distinct first letters of usernames
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public List<String> getDistinctUsernameFirstLetters() {
+        logger.info("🔍 Fetching distinct first letters of usernames");
+        try {
+            // Use JDBC to get distinct first letters of usernames
+            String sql = "SELECT DISTINCT UPPER(SUBSTRING(username, 1, 1)) as letter " +
+                         "FROM users " +
+                         "WHERE username IS NOT NULL AND LENGTH(username) > 0 " +
+                         "ORDER BY letter";
+
+            List<String> letters = jdbcTemplate.queryForList(sql, String.class);
+
+            // If no letters found, return default alphabet
+            if (letters.isEmpty()) {
+                logger.info("📋 No distinct letters found, returning default alphabet");
+                return List.of("A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", 
+                               "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z");
+            }
+
+            logger.info("✅ Found " + letters.size() + " distinct first letters of usernames");
+            return letters;
+        } catch (Exception e) {
+            logger.severe("❌ Error fetching distinct first letters: " + e.getMessage());
+            e.printStackTrace();
+            // Return default alphabet on error
+            return List.of("A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", 
+                           "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z");
+        }
     }
 
     /**

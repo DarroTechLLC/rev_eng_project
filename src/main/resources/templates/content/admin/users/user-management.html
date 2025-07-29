@@ -38,6 +38,19 @@
                 </div>
             </div>
             <div class="card-body">
+                <!-- Loading indicator -->
+                <div id="loadingIndicator" class="text-center py-5" style="display: none;">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="sr-only">Loading...</span>
+                    </div>
+                    <p class="mt-2">Loading users...</p>
+                </div>
+
+                <!-- Error message -->
+                <div id="errorMessage" class="alert alert-danger" style="display: none;">
+                    An error occurred while loading users. Please try again.
+                </div>
+
                 <div class="table-responsive">
                     <table class="table table-bordered" id="usersTable" width="100%" cellspacing="0">
                         <thead>
@@ -51,45 +64,63 @@
                                 <th>Actions</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            <tr th:each="user : ${users}">
-                                <td>
-                                    <a th:href="@{'/admin/users/' + ${user.id}}" th:text="${user.username ?: '[PENDING]'}" class="username-link" style="color: #4e73df; text-decoration: none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'"></a>
-                                </td>
-                                <td th:text="${user.firstName}"></td>
-                                <td th:text="${user.lastName}"></td>
-                                <td th:text="${user.email}"></td>
-                                <td>
-                                    <span th:each="role : ${user.roles}" 
-                                          class="badge badge-light text-dark mr-1 mb-1 p-2"
-                                          style="border-radius: 15px; border: 1px solid #ccc; font-size: 0.75rem;"
-                                          th:text="${role.name}">
-                                    </span>
-                                </td>
-                                <td>
-                                    <span th:each="company : ${user.companies}" 
-                                          class="badge badge-light text-dark mr-1 mb-1 p-2"
-                                          style="border-radius: 15px; border: 1px solid #ccc; font-size: 0.75rem;"
-                                          th:text="${company.name}">
-                                    </span>
-                                </td>
-                                <td class="text-center">
-                                    <button class="btn btn-sm btn-danger" 
-                                            data-toggle="modal" 
-                                            data-target="#deleteModal"
-                                            th:data-id="${user.id}"
-                                            th:data-name="${user.username}">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                            <!-- Show message when no users found -->
-                            <tr th:if="${users == null || users.isEmpty()}">
-                                <td colspan="7" class="text-center">No users found</td>
+                        <tbody id="usersTableBody">
+                            <!-- User data will be loaded here via AJAX -->
+                            <tr id="noUsersRow">
+                                <td colspan="7" class="text-center">Loading users...</td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
+
+                <!-- Alphabet pagination -->
+                <div class="mb-3">
+                    <nav aria-label="Alphabet pagination">
+                        <ul class="pagination pagination-sm" id="alphabetPagination">
+                            <!-- Alphabet pagination will be generated here -->
+                            <li class="page-item active"><a class="page-link" href="#" data-letter="all">All</a></li>
+                        </ul>
+                    </nav>
+                </div>
+
+                <!-- Pagination controls -->
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                    <div>
+                        <span id="paginationInfo">Showing 0 of 0 users</span>
+                    </div>
+                    <div>
+                        <nav aria-label="User pagination">
+                            <ul class="pagination" id="pagination">
+                                <!-- Pagination will be generated here -->
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete User Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">Confirm Delete</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete user <span id="deleteUserName" class="font-weight-bold"></span>?</p>
+                <p class="text-danger">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <form id="deleteUserForm" method="post" action="/admin/users/delete">
+                    <input type="hidden" id="deleteUserId" name="id" value="">
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
             </div>
         </div>
     </div>
@@ -269,29 +300,464 @@
     }
 </style>
 
-<!-- Add JavaScript for search functionality and form validation -->
+<!-- Add JavaScript for user management functionality -->
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        console.log("🔍 User management page loaded - Initializing search functionality");
+        console.log("🔍 User management page loaded - Initializing functionality");
+
+        // Elements
         const searchInput = document.getElementById('searchInput');
+        const usersTableBody = document.getElementById('usersTableBody');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const errorMessage = document.getElementById('errorMessage');
+        const paginationInfo = document.getElementById('paginationInfo');
+        const paginationContainer = document.getElementById('pagination');
+        const alphabetPagination = document.getElementById('alphabetPagination');
+        const noUsersRow = document.getElementById('noUsersRow');
 
-        // Search functionality
-        searchInput.addEventListener('keyup', function() {
-            const searchText = this.value.toLowerCase();
-            console.log("🔎 Searching for: " + searchText);
+        // State
+        let currentPage = 0;
+        let pageSize = 10;
+        let totalPages = 0;
+        let totalItems = 0;
+        let allUsers = [];
+        let filteredUsers = [];
+        let isLoading = false;
+        let currentLetter = 'A';  // Default to 'A' instead of 'all'
+        let searchMode = false;
+        let searchQuery = '';
+        let alphabetLetters = [];
 
-            const rows = document.querySelectorAll('#usersTable tbody tr');
-            let matchCount = 0;
+        // Initialize
+        loadAlphabetLetters();
+        // Load users with usernames starting with 'A' by default
+        loadUsersByLetter('A');
 
-            rows.forEach(row => {
-                const text = row.textContent.toLowerCase();
-                const isMatch = text.includes(searchText);
-                row.style.display = isMatch ? '' : 'none';
-                if (isMatch) matchCount++;
+        // Load alphabet letters for pagination
+        function loadAlphabetLetters() {
+            fetch('/api/users/alphabet')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to load alphabet letters');
+                    }
+                    return response.json();
+                })
+                .then(letters => {
+                    alphabetLetters = letters;
+                    renderAlphabetPagination(letters);
+                })
+                .catch(error => {
+                    console.error('Error loading alphabet letters:', error);
+                });
+        }
+
+        // Render alphabet pagination
+        function renderAlphabetPagination(letters) {
+            // Start with "All" option (not active by default since we're defaulting to 'A')
+            alphabetPagination.innerHTML = `
+                <li class="page-item">
+                    <a class="page-link" href="#" data-letter="all">All</a>
+                </li>
+            `;
+
+            // Add letter options
+            letters.forEach(letter => {
+                const letterLi = document.createElement('li');
+                letterLi.className = `page-item ${currentLetter === letter ? 'active' : ''}`;
+
+                const letterLink = document.createElement('a');
+                letterLink.className = 'page-link';
+                letterLink.href = '#';
+                letterLink.setAttribute('data-letter', letter);
+                letterLink.textContent = letter;
+
+                letterLink.addEventListener('click', function(e) {
+                    e.preventDefault();
+
+                    // Update active state
+                    document.querySelectorAll('#alphabetPagination .page-item').forEach(item => {
+                        item.classList.remove('active');
+                    });
+                    this.parentNode.classList.add('active');
+
+                    // Load users by letter
+                    currentLetter = letter;
+                    searchMode = false;
+                    searchInput.value = '';
+                    loadUsersByLetter(letter);
+                });
+
+                letterLi.appendChild(letterLink);
+                alphabetPagination.appendChild(letterLi);
             });
 
-            console.log("✅ Found " + matchCount + " matching users");
+            // Add event listener to "All" option
+            const allLink = alphabetPagination.querySelector('[data-letter="all"]');
+            allLink.addEventListener('click', function(e) {
+                e.preventDefault();
+
+                // Update active state
+                document.querySelectorAll('#alphabetPagination .page-item').forEach(item => {
+                    item.classList.remove('active');
+                });
+                this.parentNode.classList.add('active');
+
+                // Load all users
+                currentLetter = 'all';
+                searchMode = false;
+                searchInput.value = '';
+                loadUsers();
+            });
+        }
+
+        // Load users from API
+        function loadUsers(page = 0) {
+            isLoading = true;
+            showLoading(true);
+
+            // Fetch users from API
+            fetch(`/api/users?page=${page}&size=${pageSize}&sort=username`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to load users');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Update state
+                    allUsers = data.users;
+                    filteredUsers = [...allUsers];
+                    currentPage = data.currentPage;
+                    totalPages = data.totalPages;
+                    totalItems = data.totalItems;
+
+                    // Update UI
+                    renderUsers(allUsers);
+                    renderPagination();
+                    updatePaginationInfo();
+                    showLoading(false);
+                    isLoading = false;
+                })
+                .catch(error => {
+                    console.error('Error loading users:', error);
+                    showError(true);
+                    showLoading(false);
+                    isLoading = false;
+                });
+        }
+
+        // Load users by letter
+        function loadUsersByLetter(letter, page = 0) {
+            isLoading = true;
+            showLoading(true);
+
+            // Fetch users by letter from API
+            fetch(`/api/users/by-letter?letter=${letter}&page=${page}&size=${pageSize}&sort=username`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to load users by letter');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Update state
+                    allUsers = data.users;
+                    filteredUsers = [...allUsers];
+                    currentPage = data.currentPage;
+                    totalPages = data.totalPages;
+                    totalItems = data.totalItems;
+
+                    // Update UI
+                    renderUsers(allUsers);
+                    renderPagination(true); // Render pagination for letter mode
+                    updatePaginationInfo();
+                    showLoading(false);
+                    isLoading = false;
+                })
+                .catch(error => {
+                    console.error('Error loading users by letter:', error);
+                    showError(true);
+                    showLoading(false);
+                    isLoading = false;
+                });
+        }
+
+        // Search users
+        function searchUsers(query, page = 0) {
+            isLoading = true;
+            showLoading(true);
+
+            // Fetch search results from API
+            fetch(`/api/users/search?query=${encodeURIComponent(query)}&page=${page}&size=${pageSize}&sort=username`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to search users');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Update state
+                    allUsers = data.users;
+                    filteredUsers = [...allUsers];
+                    currentPage = data.currentPage;
+                    totalPages = data.totalPages;
+                    totalItems = data.totalItems;
+
+                    // Update UI
+                    renderUsers(allUsers);
+                    renderPagination(true); // Render pagination for search mode
+                    updatePaginationInfo();
+                    showLoading(false);
+                    isLoading = false;
+                })
+                .catch(error => {
+                    console.error('Error searching users:', error);
+                    showError(true);
+                    showLoading(false);
+                    isLoading = false;
+                });
+        }
+
+        // Render users in table
+        function renderUsers(users) {
+            if (users.length === 0) {
+                usersTableBody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="text-center">No users found</td>
+                    </tr>
+                `;
+                return;
+            }
+
+            usersTableBody.innerHTML = '';
+
+            users.forEach(user => {
+                const row = document.createElement('tr');
+
+                // Username cell with link
+                const usernameCell = document.createElement('td');
+                const usernameLink = document.createElement('a');
+                usernameLink.href = `/admin/users/${user.id}`;
+                usernameLink.textContent = user.username || '[PENDING]';
+                usernameLink.className = 'username-link';
+                usernameLink.style.color = '#4e73df';
+                usernameLink.style.textDecoration = 'none';
+                usernameLink.onmouseover = function() { this.style.textDecoration = 'underline'; };
+                usernameLink.onmouseout = function() { this.style.textDecoration = 'none'; };
+                usernameCell.appendChild(usernameLink);
+
+                // First name cell
+                const firstNameCell = document.createElement('td');
+                firstNameCell.textContent = user.firstName || '';
+
+                // Last name cell
+                const lastNameCell = document.createElement('td');
+                lastNameCell.textContent = user.lastName || '';
+
+                // Email cell
+                const emailCell = document.createElement('td');
+                emailCell.textContent = user.email || '';
+
+                // Roles cell
+                const rolesCell = document.createElement('td');
+                if (user.roles && user.roles.length > 0) {
+                    user.roles.forEach(role => {
+                        const roleSpan = document.createElement('span');
+                        roleSpan.className = 'badge badge-light text-dark mr-1 mb-1 p-2';
+                        roleSpan.style.borderRadius = '15px';
+                        roleSpan.style.border = '1px solid #ccc';
+                        roleSpan.style.fontSize = '0.75rem';
+                        roleSpan.textContent = role.name;
+                        rolesCell.appendChild(roleSpan);
+                    });
+                }
+
+                // Companies cell
+                const companiesCell = document.createElement('td');
+                if (user.companies && user.companies.length > 0) {
+                    user.companies.forEach(company => {
+                        const companySpan = document.createElement('span');
+                        companySpan.className = 'badge badge-light text-dark mr-1 mb-1 p-2';
+                        companySpan.style.borderRadius = '15px';
+                        companySpan.style.border = '1px solid #ccc';
+                        companySpan.style.fontSize = '0.75rem';
+                        companySpan.textContent = company.name;
+                        companiesCell.appendChild(companySpan);
+                    });
+                }
+
+                // Actions cell
+                const actionsCell = document.createElement('td');
+                actionsCell.className = 'text-center';
+                const deleteButton = document.createElement('button');
+                deleteButton.className = 'btn btn-sm btn-danger';
+                deleteButton.setAttribute('data-toggle', 'modal');
+                deleteButton.setAttribute('data-target', '#deleteModal');
+                deleteButton.setAttribute('data-id', user.id);
+                deleteButton.setAttribute('data-name', user.username);
+                const trashIcon = document.createElement('i');
+                trashIcon.className = 'fas fa-trash';
+                deleteButton.appendChild(trashIcon);
+                actionsCell.appendChild(deleteButton);
+
+                // Add all cells to row
+                row.appendChild(usernameCell);
+                row.appendChild(firstNameCell);
+                row.appendChild(lastNameCell);
+                row.appendChild(emailCell);
+                row.appendChild(rolesCell);
+                row.appendChild(companiesCell);
+                row.appendChild(actionsCell);
+
+                // Add row to table
+                usersTableBody.appendChild(row);
+            });
+        }
+
+        // Render pagination controls
+        function renderPagination(isFilterMode = false) {
+            paginationContainer.innerHTML = '';
+
+            // Previous button
+            const prevLi = document.createElement('li');
+            prevLi.className = `page-item ${currentPage === 0 ? 'disabled' : ''}`;
+            const prevLink = document.createElement('a');
+            prevLink.className = 'page-link';
+            prevLink.href = '#';
+            prevLink.textContent = 'Previous';
+            prevLink.addEventListener('click', function(e) {
+                e.preventDefault();
+                if (currentPage > 0) {
+                    if (searchMode) {
+                        searchUsers(searchQuery, currentPage - 1);
+                    } else if (currentLetter !== 'all') {
+                        loadUsersByLetter(currentLetter, currentPage - 1);
+                    } else {
+                        loadUsers(currentPage - 1);
+                    }
+                }
+            });
+            prevLi.appendChild(prevLink);
+            paginationContainer.appendChild(prevLi);
+
+            // Page numbers
+            const startPage = Math.max(0, currentPage - 2);
+            const endPage = Math.min(totalPages - 1, currentPage + 2);
+
+            for (let i = startPage; i <= endPage; i++) {
+                const pageLi = document.createElement('li');
+                pageLi.className = `page-item ${i === currentPage ? 'active' : ''}`;
+                const pageLink = document.createElement('a');
+                pageLink.className = 'page-link';
+                pageLink.href = '#';
+                pageLink.textContent = i + 1;
+                pageLink.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    if (searchMode) {
+                        searchUsers(searchQuery, i);
+                    } else if (currentLetter !== 'all') {
+                        loadUsersByLetter(currentLetter, i);
+                    } else {
+                        loadUsers(i);
+                    }
+                });
+                pageLi.appendChild(pageLink);
+                paginationContainer.appendChild(pageLi);
+            }
+
+            // Next button
+            const nextLi = document.createElement('li');
+            nextLi.className = `page-item ${currentPage === totalPages - 1 ? 'disabled' : ''}`;
+            const nextLink = document.createElement('a');
+            nextLink.className = 'page-link';
+            nextLink.href = '#';
+            nextLink.textContent = 'Next';
+            nextLink.addEventListener('click', function(e) {
+                e.preventDefault();
+                if (currentPage < totalPages - 1) {
+                    if (searchMode) {
+                        searchUsers(searchQuery, currentPage + 1);
+                    } else if (currentLetter !== 'all') {
+                        loadUsersByLetter(currentLetter, currentPage + 1);
+                    } else {
+                        loadUsers(currentPage + 1);
+                    }
+                }
+            });
+            nextLi.appendChild(nextLink);
+            paginationContainer.appendChild(nextLi);
+        }
+
+        // Update pagination info text
+        function updatePaginationInfo() {
+            const start = totalItems === 0 ? 0 : currentPage * pageSize + 1;
+            const end = Math.min((currentPage + 1) * pageSize, totalItems);
+            paginationInfo.textContent = `Showing ${start} to ${end} of ${totalItems} users`;
+        }
+
+        // Show/hide loading indicator
+        function showLoading(show) {
+            loadingIndicator.style.display = show ? 'block' : 'none';
+            if (show) {
+                errorMessage.style.display = 'none';
+            }
+        }
+
+        // Show/hide error message
+        function showError(show) {
+            errorMessage.style.display = show ? 'block' : 'none';
+        }
+
+        // Search functionality
+        searchInput.addEventListener('keyup', function(e) {
+            const searchText = this.value.trim();
+
+            // If Enter key is pressed or search is empty, perform server-side search
+            if (e.key === 'Enter' || searchText === '') {
+                if (searchText === '') {
+                    // Reset to all users view
+                    searchMode = false;
+                    currentLetter = 'all';
+
+                    // Update alphabet pagination active state
+                    document.querySelectorAll('#alphabetPagination .page-item').forEach(item => {
+                        item.classList.remove('active');
+                    });
+                    document.querySelector('#alphabetPagination [data-letter="all"]').parentNode.classList.add('active');
+
+                    loadUsers();
+                } else {
+                    // Perform server-side search
+                    searchMode = true;
+                    searchQuery = searchText;
+                    searchUsers(searchText);
+
+                    // Update alphabet pagination active state (deactivate all)
+                    document.querySelectorAll('#alphabetPagination .page-item').forEach(item => {
+                        item.classList.remove('active');
+                    });
+                }
+            }
         });
+
+        // Add search button click handler
+        const searchButton = document.querySelector('.input-group-append button');
+        if (searchButton) {
+            searchButton.addEventListener('click', function() {
+                const searchText = searchInput.value.trim();
+                if (searchText !== '') {
+                    // Perform server-side search
+                    searchMode = true;
+                    searchQuery = searchText;
+                    searchUsers(searchText);
+
+                    // Update alphabet pagination active state (deactivate all)
+                    document.querySelectorAll('#alphabetPagination .page-item').forEach(item => {
+                        item.classList.remove('active');
+                    });
+                }
+            });
+        }
 
         // Form validation for the register modal
         const registerForm = document.querySelector('#registerModal form');
@@ -328,5 +794,43 @@
                 return true;
             });
         }
+
+        // Initialize delete modal functionality
+        const deleteModal = document.getElementById('deleteModal');
+        if (deleteModal) {
+            deleteModal.addEventListener('show.bs.modal', function(event) {
+                // Button that triggered the modal
+                const button = event.relatedTarget;
+
+                // Extract info from data-* attributes
+                const userId = button.getAttribute('data-id');
+                const username = button.getAttribute('data-name');
+
+                // Update the modal's content
+                const deleteUserName = document.getElementById('deleteUserName');
+                const deleteUserId = document.getElementById('deleteUserId');
+
+                if (deleteUserName) deleteUserName.textContent = username;
+                if (deleteUserId) deleteUserId.value = userId;
+            });
+        }
+
+        // Add event listener for dynamically created delete buttons
+        document.addEventListener('click', function(event) {
+            // Check if the clicked element is a delete button or its child
+            const deleteButton = event.target.closest('.btn-danger[data-target="#deleteModal"]');
+            if (deleteButton) {
+                // Get user data from button attributes
+                const userId = deleteButton.getAttribute('data-id');
+                const username = deleteButton.getAttribute('data-name');
+
+                // Update modal content
+                const deleteUserName = document.getElementById('deleteUserName');
+                const deleteUserId = document.getElementById('deleteUserId');
+
+                if (deleteUserName) deleteUserName.textContent = username;
+                if (deleteUserId) deleteUserId.value = userId;
+            }
+        });
     });
-</script> 
+</script>
