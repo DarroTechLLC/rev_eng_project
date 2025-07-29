@@ -7,9 +7,7 @@ page, app needs to update data to view from db.
 
 -dark mode option in user dropdown for any user
 
-fix initials and bell in small view
-
-
+-fix mobilke back bnutton
 
 
 -is there data being handled by js in any scenario in this app that
