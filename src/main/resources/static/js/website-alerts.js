@@ -239,7 +239,7 @@ function processAlerts(alerts, isAdminView) {
 }
 
 /**
- * Display alerts in the dropdown
+ * Display alerts in the dropdown and mobile menu
  * @param {Array} activeAlerts - The active alerts to display
  * @param {boolean} isAdminView - Whether this is an admin view (all alerts)
  * @param {boolean} isAdminUser - Whether the current user is an admin or super admin
@@ -253,13 +253,30 @@ function displayAlerts(activeAlerts, isAdminView, isAdminUser) {
     console.log('👤 Is admin user:', isAdminUser);
 
     // Update alert count - show the actual number of active alerts
-    alertCount.textContent = activeAlerts.length > 0 ? activeAlerts.length : '';
+    if (alertCount) {
+        alertCount.textContent = activeAlerts.length > 0 ? activeAlerts.length : '';
+        console.log('[DEBUG_LOG] Bell count has been updated to show:', alertCount.textContent);
+    }
 
-    // Log the final state
-    console.log('[DEBUG_LOG] Bell count has been updated to show:', alertCount.textContent);
+    // Update desktop dropdown panel
+    updateDesktopAlerts(activeAlerts, isAdminView, isAdminUser, companyName);
 
+    // Update mobile alerts in hamburger menu
+    updateMobileAlerts(activeAlerts, isAdminView, isAdminUser, companyName);
+}
+
+/**
+ * Update alerts in the desktop dropdown
+ * @param {Array} activeAlerts - The active alerts to display
+ * @param {boolean} isAdminView - Whether this is an admin view (all alerts)
+ * @param {boolean} isAdminUser - Whether the current user is an admin or super admin
+ * @param {string} companyName - The company name
+ */
+function updateDesktopAlerts(activeAlerts, isAdminView, isAdminUser, companyName) {
     // Update messages panel
     const messagesPanel = document.getElementById('alertMessagesPanel');
+    if (!messagesPanel) return;
+
     messagesPanel.innerHTML = `
         <h6 class="dropdown-header">Website Alerts</h6>
     `;
@@ -277,7 +294,7 @@ function displayAlerts(activeAlerts, isAdminView, isAdminUser) {
         }
 
         messagesPanel.appendChild(noAlertsMessage);
-        console.log(`[DEBUG_LOG] No alerts message added: "${noAlertsMessage.textContent}"`);
+        console.log(`[DEBUG_LOG] No alerts message added to desktop: "${noAlertsMessage.textContent}"`);
         return;
     }
 
@@ -314,7 +331,7 @@ function displayAlerts(activeAlerts, isAdminView, isAdminUser) {
         messagesPanel.appendChild(messageRow);
     });
 
-    console.log('[DEBUG_LOG] Added ' + activeAlerts.length + ' active alerts to dropdown');
+    console.log('[DEBUG_LOG] Added ' + activeAlerts.length + ' active alerts to desktop dropdown');
 
     // Add "View All Alerts" link if there are active alerts and user has permission
     if (isAdminUser) {
@@ -323,9 +340,76 @@ function displayAlerts(activeAlerts, isAdminView, isAdminUser) {
         viewAllLink.href = '/admin/alerts';
         viewAllLink.textContent = 'View All Alerts';
         messagesPanel.appendChild(viewAllLink);
-        console.log('[DEBUG_LOG] Added "View All Alerts" link to dropdown (admin user)');
+        console.log('[DEBUG_LOG] Added "View All Alerts" link to desktop dropdown (admin user)');
     } else {
         console.log('[DEBUG_LOG] Skipped "View All Alerts" link for non-admin user');
+    }
+}
+
+/**
+ * Update alerts in the mobile hamburger menu
+ * @param {Array} activeAlerts - The active alerts to display
+ * @param {boolean} isAdminView - Whether this is an admin view (all alerts)
+ * @param {boolean} isAdminUser - Whether the current user is an admin or super admin
+ * @param {string} companyName - The company name
+ */
+function updateMobileAlerts(activeAlerts, isAdminView, isAdminUser, companyName) {
+    // Get the mobile alerts container
+    const mobileAlertMessages = document.getElementById('mobileAlertMessages');
+    if (!mobileAlertMessages) {
+        console.log('[DEBUG_LOG] Mobile alerts container not found, skipping mobile update');
+        return;
+    }
+
+    console.log('[DEBUG_LOG] Updating mobile alerts in hamburger menu');
+
+    // Clear existing content
+    mobileAlertMessages.innerHTML = '';
+
+    // Check if there are any alerts to display
+    if (activeAlerts.length === 0) {
+        // No alerts - show a message
+        const noAlertsMessage = document.createElement('div');
+        noAlertsMessage.className = 'mobile-link no-alerts-message';
+
+        if (isAdminView) {
+            noAlertsMessage.innerHTML = '<i class="fas fa-fw fa-info-circle"></i> No active alerts in the system';
+        } else {
+            noAlertsMessage.innerHTML = `<i class="fas fa-fw fa-info-circle"></i> No alerts for ${companyName || 'this company'}`;
+        }
+
+        mobileAlertMessages.appendChild(noAlertsMessage);
+        console.log(`[DEBUG_LOG] No alerts message added to mobile: "${noAlertsMessage.textContent}"`);
+        return;
+    }
+
+    // Add each active alert message to the mobile menu
+    activeAlerts.forEach(alert => {
+        const alertLink = document.createElement(isAdminUser ? 'a' : 'div');
+        alertLink.className = 'mobile-link';
+
+        // Only set href for admin users
+        if (isAdminUser) {
+            alertLink.href = '/admin/alerts';
+        }
+
+        alertLink.innerHTML = `
+            <i class="fas fa-fw fa-exclamation-triangle"></i> ${alert.message}
+        `;
+
+        mobileAlertMessages.appendChild(alertLink);
+    });
+
+    console.log('[DEBUG_LOG] Added ' + activeAlerts.length + ' active alerts to mobile menu');
+
+    // Add "View All Alerts" link if user has permission
+    if (isAdminUser) {
+        const viewAllLink = document.createElement('a');
+        viewAllLink.className = 'mobile-link view-all-link';
+        viewAllLink.href = '/admin/alerts';
+        viewAllLink.innerHTML = '<i class="fas fa-fw fa-list"></i> View All Alerts';
+        mobileAlertMessages.appendChild(viewAllLink);
+        console.log('[DEBUG_LOG] Added "View All Alerts" link to mobile menu (admin user)');
     }
 }
 
