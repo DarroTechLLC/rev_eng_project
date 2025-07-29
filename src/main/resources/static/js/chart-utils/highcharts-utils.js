@@ -168,20 +168,20 @@ if (typeof Highcharts !== 'undefined') {
     const originalError = Highcharts.error;
     Highcharts.error = function(code, stop) {
         console.warn('Highcharts error:', code);
-        
+
         // Handle specific exporting errors
         if (code === 16) { // Export server error
             console.warn('Highcharts export server error - falling back to client-side export');
             return false; // Don't stop execution
         }
-        
+
         // For other errors, log but don't stop
         if (stop) {
             console.error('Highcharts error (stopping):', code);
         }
         return false;
     };
-    
+
     // Override the getFilename function to prevent .replace errors
     if (Highcharts.exporting && Highcharts.exporting.Exporter) {
         const originalGetFilename = Highcharts.exporting.Exporter.prototype.getFilename;
@@ -197,7 +197,7 @@ if (typeof Highcharts !== 'undefined') {
             };
         }
     }
-    
+
     console.log('✅ Highcharts error handling initialized');
 }
 
@@ -210,20 +210,20 @@ function initializeHighchartsWithErrorHandling() {
         // Add error handling for exporting
         Highcharts.error = function(code, stop) {
             console.warn('Highcharts error:', code);
-            
+
             // Handle specific exporting errors
             if (code === 16) { // Export server error
                 console.warn('Highcharts export server error - falling back to client-side export');
                 return false; // Don't stop execution
             }
-            
+
             // For other errors, log but don't stop
             if (stop) {
                 console.error('Highcharts error (stopping):', code);
             }
             return false;
         };
-        
+
         // Override the getFilename function to prevent .replace errors
         if (Highcharts.exporting && Highcharts.exporting.Exporter) {
             const originalGetFilename = Highcharts.exporting.Exporter.prototype.getFilename;
@@ -239,7 +239,7 @@ function initializeHighchartsWithErrorHandling() {
                 };
             }
         }
-        
+
         console.log('✅ Highcharts error handling initialized');
     }
 }
@@ -254,21 +254,21 @@ function createChartWithErrorHandling(containerId, options) {
     try {
         // Initialize error handling
         initializeHighchartsWithErrorHandling();
-        
+
         // Verify container exists
         const container = document.getElementById(containerId);
         if (!container) {
             throw new Error(`Chart container with ID '${containerId}' not found`);
         }
-        
+
         // Create the chart
         const chart = Highcharts.chart(containerId, options);
-        
+
         // Verify chart was created successfully
         if (!chart || typeof chart !== 'object') {
             throw new Error('Chart creation failed - invalid chart object returned');
         }
-        
+
         // Add error event listener only if the chart has the 'on' method
         if (chart && typeof chart.on === 'function') {
             chart.on('error', function(e) {
@@ -277,7 +277,7 @@ function createChartWithErrorHandling(containerId, options) {
         } else {
             console.warn('⚠️ Chart object does not have "on" method, skipping error listener');
         }
-        
+
         console.log('✅ Chart created successfully with error handling');
         return chart;
     } catch (error) {
@@ -434,42 +434,6 @@ function createComparisonChart(containerId, categories, series, title = 'Product
 }
 
 /**
- * Generate sample data for charts when real data is not available
- * @param {number} days - Number of days to generate data for
- * @param {number} min - Minimum value
- * @param {number} max - Maximum value
- * @returns {Array} Array of [timestamp, value] pairs
- */
-function generateSampleTimeSeriesData(days = 7, min = 10, max = 40) {
-    const data = [];
-    const now = new Date();
-
-    for (let i = days - 1; i >= 0; i--) {
-        const date = new Date();
-        date.setDate(date.getDate() - i);
-        data.push([
-            date.getTime(),
-            Math.floor(Math.random() * (max - min + 1)) + min
-        ]);
-    }
-
-    return data;
-}
-
-/**
- * Generate sample farm distribution data
- * @param {Array} farmNames - Array of farm names
- * @returns {Array} Array of {name, y} objects
- */
-function generateSampleFarmDistribution(farmNames = ['Farm A', 'Farm B', 'Farm C', 'Farm D']) {
-    return farmNames.map(name => {
-        return {
-            name: name,
-            y: Math.floor(Math.random() * 30) + 10
-        };
-    });
-}
-/**
  * Convert hex color to rgba
  * @param {string} hex - Hex color code
  * @param {number} alpha - Alpha value (0-1)
@@ -514,12 +478,12 @@ function getRandomColor() {
  */
 function createTooltipFormatter(unit) {
     const safeUnit = String(unit || '');
-    
+
     return function() {
         const seriesName = this.series && this.series.name ? this.series.name : 'Series';
         const key = this.key || 'Unknown';
         const value = typeof this.y === 'number' && !isNaN(this.y) ? this.y : 0;
-        
+
         return `<b>${seriesName}</b><br/>
                 ${key}: ${Highcharts.numberFormat(value, 0)} ${safeUnit}`;
     };
@@ -537,10 +501,10 @@ function createTitleWithTotal(title, total, unit) {
     const safeTitle = String(title || 'Chart');
     const safeTotal = typeof total === 'number' && !isNaN(total) ? total : 0;
     const safeUnit = String(unit || '');
-    
+
     // Format the total with proper number formatting
     const formattedTotal = Math.round(safeTotal).toLocaleString();
-    
+
     return {
         text: `${safeTitle}: (${formattedTotal} ${safeUnit})`,
         style: {
@@ -563,13 +527,13 @@ function safelyFormatChartData(data, nameKey = 'name', valueKey = 'value') {
         console.warn('⚠️ Data is not an array:', data);
         return [];
     }
-    
+
     return data
         .filter(item => item && typeof item === 'object')
         .map(item => {
             const name = item[nameKey] || item.farm_name || item.farm_id || 'Unknown';
             const value = parseFloat(item[valueKey] || item.volume || 0);
-            
+
             return [
                 String(name),
                 isNaN(value) ? 0 : value
@@ -620,7 +584,7 @@ function createSafeChartConfig(containerId, options = {}) {
                 const seriesName = this.series && this.series.name ? this.series.name : 'Series';
                 const key = this.key || 'Unknown';
                 const value = typeof this.y === 'number' && !isNaN(this.y) ? this.y : 0;
-                
+
                 return `<b>${seriesName}</b><br/>
                         ${key}: ${Highcharts.numberFormat(value, 0)}`;
             }
@@ -639,7 +603,7 @@ function createSafeChartConfig(containerId, options = {}) {
             }
         }
     };
-    
+
     // Merge options with defaults
     return Object.assign({}, defaultConfig, options);
 }

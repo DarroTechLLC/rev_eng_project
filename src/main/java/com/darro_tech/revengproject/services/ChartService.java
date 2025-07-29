@@ -196,41 +196,13 @@ public class ChartService {
                     .collect(Collectors.toList());
             logger.debug("Found {} farms for company ID: {}", companyFarmsList.size(), companyId);
 
-            // Create a map of farm IDs to their names
-            Map<String, String> farmNames = companyFarmsList.stream()
-                    .collect(Collectors.toMap(Farm::getId, Farm::getName));
-
             // In a real implementation, we would query the database for production population data
-
-            // Generate sample data for rposes
+            // For now, return an empty list as sample data has been removed
             List<Map<String, Object>> populationDataList = new ArrayList<>();
 
-            logger.info("Using {} farms for sample data generation", companyFarmsList.size());
-
-            // Generate sample data points fo each farm
-            for (Farm farm : companyFarmsList) {
-                // Generate data points from fromDate to toDate
-                LocalDate currentDate = fromDate;
-                while (!currentDate.isAfter(toDate)) {
-                    Map<String, Object> dataPoint = new HashMap<>();
-                    dataPoint.put("farm_id", farm.getId());
-                    dataPoint.put("farm_name", farmNames.getOrDefault(farm.getId(), farm.getId()));
-                    dataPoint.put("timestamp", currentDate.toString());
-
-                    // Generate a random value between 0.5 and 5.0 for population
-                    double population = 0.5 + Math.random() * 4.5;
-                    dataPoint.put("population", population);
-
-                    populationDataList.add(dataPoint);
-
-                    // Move to next month
-                    currentDate = currentDate.plusMonths(1);
-                }
-            }
-
-            // Log data presence verification
-            logger.info("📊 Data verification:");
-            logger.info("✓ Total records: {}", populationDataList.size());
+            logger.info("No production population data available for company: {} from {} to {}", 
+                    companyId, fromDate, toDate);
+            logger.info("Sample data generation has been removed. Returning empty list.");
 
             return populationDataList;
         } catch (Exception e) {
@@ -247,28 +219,12 @@ public class ChartService {
 
         try {
             // In a real implementation, we would query the database for company population data
-            // For now, we'll generate sample data for demonstration purposes
+            // For now, return an empty list as sample data has been removed
             List<Map<String, Object>> populationDataList = new ArrayList<>();
 
-            // Generate monthly data points from fromDate to toDate
-            LocalDate currentDate = fromDate;
-            while (!currentDate.isAfter(toDate)) {
-                Map<String, Object> dataPoint = new HashMap<>();
-                dataPoint.put("timestamp", currentDate.toString());
-
-                // Generate a random value between 1000 and 5000 for population
-                double value = 1000 + Math.random() * 4000;
-                dataPoint.put("value", value);
-
-                populationDataList.add(dataPoint);
-
-                // Move to next month
-                currentDate = currentDate.plusMonths(1);
-            }
-
-            // Log data presence verification
-            logger.info("📊 Data verification:");
-            logger.info("✓ Total records: {}", populationDataList.size());
+            logger.info("No company population data available for company: {} from {} to {}", 
+                    companyId, fromDate, toDate);
+            logger.info("Sample data generation has been removed. Returning empty list.");
 
             return populationDataList;
         } catch (Exception e) {
@@ -285,29 +241,12 @@ public class ChartService {
 
         try {
             // In a real implementation, we would query the database for company population forecast data
-            // For now, we'll generate sample data for demonstration purposes
+            // For now, return an empty list as sample data has been removed
             List<Map<String, Object>> forecastDataList = new ArrayList<>();
 
-            // Generate monthly data points from fromDate to toDate
-            LocalDate currentDate = fromDate;
-            while (!currentDate.isAfter(toDate)) {
-                Map<String, Object> dataPoint = new HashMap<>();
-                dataPoint.put("timestamp", currentDate.toString());
-
-                // Generate a random value between 1000 and 5000 for forecast
-                // Make it slightly higher than historical data to show growth
-                double value = 1200 + Math.random() * 4000;
-                dataPoint.put("value", value);
-
-                forecastDataList.add(dataPoint);
-
-                // Move to next month
-                currentDate = currentDate.plusMonths(1);
-            }
-
-            // Log data presence verification
-            logger.info("📊 Data verification:");
-            logger.info("✓ Total records: {}", forecastDataList.size());
+            logger.info("No company population forecast data available for company: {} from {} to {}", 
+                    companyId, fromDate, toDate);
+            logger.info("Sample data generation has been removed. Returning empty list.");
 
             return forecastDataList;
         } catch (Exception e) {
@@ -324,29 +263,12 @@ public class ChartService {
 
         try {
             // In a real implementation, we would query the database for company population budget data
-            // For now, we'll generate sample data for demonstration purposes
+            // For now, return an empty list as sample data has been removed
             List<Map<String, Object>> budgetDataList = new ArrayList<>();
 
-            // Generate monthly data points from fromDate to toDate
-            LocalDate currentDate = fromDate;
-            while (!currentDate.isAfter(toDate)) {
-                Map<String, Object> dataPoint = new HashMap<>();
-                dataPoint.put("timestamp", currentDate.toString());
-
-                // Generate a random value between 1000 and 5000 for budget
-                // Make it slightly different from historical data
-                double value = 1100 + Math.random() * 4200;
-                dataPoint.put("value", value);
-
-                budgetDataList.add(dataPoint);
-
-                // Move to next month
-                currentDate = currentDate.plusMonths(1);
-            }
-
-            // Log data presence verification
-            logger.info("📊 Data verification:");
-            logger.info("✓ Total records: {}", budgetDataList.size());
+            logger.info("No company population budget data available for company: {} from {} to {}", 
+                    companyId, fromDate, toDate);
+            logger.info("Sample data generation has been removed. Returning empty list.");
 
             return budgetDataList;
         } catch (Exception e) {
@@ -578,45 +500,24 @@ public class ChartService {
     }
 
     /**
-     * Get monthly meter data for a specific farm within a
+     * Get monthly meter data for a specific farm within a date range
      */
     public List<Map<String, Object>> getSingleFarmMeterMonthlyTimeline(String farmId, LocalDate fromDate, LocalDate toDate) {
         logger.info("🔍 Fetching monthly meter data for farm: {} from {} to {}", farmId, fromDate, toDate);
 
         try {
-            // In a real implementation, we would query the database for monthly meter data
-            // For now, we'll generate sample data for demonstration purposes
-            List<Map<String, Object>> monthlyData = new ArrayList<>();
-
             // Get farm name
             Farm farm = farmRepository.findById(farmId).orElse(null);
             String farmName = farm != null ? farm.getName() : farmId;
             logger.info("Farm name: {}", farmName);
 
-            // Generate monthly data points from fromDate to toDate
-            // We'll generate data for each month in the range
-            int year = fromDate.getYear();
-            for (int month = 1; month <= 12; month++) {
-                Map<String, Object> dataPoint = new HashMap<>();
+            // In a real implementation, we would query the database for monthly meter data
+            // For now, return an empty list as sample data has been removed
+            List<Map<String, Object>> monthlyData = new ArrayList<>();
 
-                // Set timestamp to the first day of the month
-                LocalDate monthDate = LocalDate.of(year, month, 1);
-                dataPoint.put("timestamp", monthDate.toString());
-
-                // Generate a random value between 100 and 500 for the month's production
-                double value = 100 + Math.random() * 400;
-                dataPoint.put("value", value);
-
-                monthlyData.add(dataPoint);
-            }
-
-            // Log data presence verification
-            logger.info("📊 Data verification:");
-            logger.info("✓ Total records: {}", monthlyData.size());
-            logger.info("✓ Total production: {}",
-                    monthlyData.stream()
-                            .mapToDouble(data -> ((Number) data.get("value")).doubleValue())
-                            .sum());
+            logger.info("No monthly meter data available for farm: {} from {} to {}", 
+                    farmName, fromDate, toDate);
+            logger.info("Sample data generation has been removed. Returning empty list.");
 
             return monthlyData;
         } catch (Exception e) {
@@ -632,40 +533,18 @@ public class ChartService {
         logger.info("🔍 Fetching animal headcount for farm: {} from {} to {}", farmId, fromDate, toDate);
 
         try {
-            // In a real implementation, we would query the database for animal headcount data
-            // For now, we'll generate sample data for demonstration purposes
-            List<Map<String, Object>> headcountData = new ArrayList<>();
-
             // Get farm name
             Farm farm = farmRepository.findById(farmId).orElse(null);
             String farmName = farm != null ? farm.getName() : farmId;
             logger.info("Farm name: {}", farmName);
 
-            // Generate data points for each month
-            int year = fromDate.getYear();
-            for (int month = 1; month <= 12; month++) {
-                Map<String, Object> dataPoint = new HashMap<>();
+            // In a real implementation, we would query the database for animal headcount data
+            // For now, return an empty list as sample data has been removed
+            List<Map<String, Object>> headcountData = new ArrayList<>();
 
-                // Format date as "Jan 2023", "Feb 2023", etc.
-                LocalDate monthDate = LocalDate.of(year, month, 1);
-                String monthName = monthDate.getMonth().toString().substring(0, 3);
-                String date = monthName + " " + year;
-                dataPoint.put("date", date);
-
-                // Generate a random value between 1000 and 5000 for the headcount
-                int headcount = 1000 + (int) (Math.random() * 4000);
-                dataPoint.put("headcount", headcount);
-
-                headcountData.add(dataPoint);
-            }
-
-            // Log data presence verification
-            logger.info("📊 Data verification:");
-            logger.info("✓ Total records: {}", headcountData.size());
-            logger.info("✓ Total headcount: {}",
-                    headcountData.stream()
-                            .mapToDouble(data -> ((Number) data.get("headcount")).doubleValue())
-                            .sum());
+            logger.info("No animal headcount data available for farm: {} from {} to {}", 
+                    farmName, fromDate, toDate);
+            logger.info("Sample data generation has been removed. Returning empty list.");
 
             return headcountData;
         } catch (Exception e) {
@@ -681,39 +560,18 @@ public class ChartService {
         logger.info("🔍 Fetching production forecast data for farm: {} from {} to {}", farmId, fromDate, toDate);
 
         try {
-            // In a real implementation, we would query the database for production forecast data
-            // For now, we'll generate sample data for demonstration purposes
-            List<Map<String, Object>> forecastData = new ArrayList<>();
-
             // Get farm name
             Farm farm = farmRepository.findById(farmId).orElse(null);
             String farmName = farm != null ? farm.getName() : farmId;
             logger.info("Farm name: {}", farmName);
 
-            // Generate monthly data points from fromDate to toDate
-            // We'll generate data for each month in the range
-            int year = fromDate.getYear();
-            for (int month = 1; month <= 12; month++) {
-                Map<String, Object> dataPoint = new HashMap<>();
+            // In a real implementation, we would query the database for production forecast data
+            // For now, return an empty list as sample data has been removed
+            List<Map<String, Object>> forecastData = new ArrayList<>();
 
-                // Set timestamp to the first day of the month
-                LocalDate monthDate = LocalDate.of(year, month, 1);
-                dataPoint.put("timestamp", monthDate.toString());
-
-                // Generate a random value between 100 and 500 for the month's forecast production
-                double value = 100 + Math.random() * 400;
-                dataPoint.put("value", value);
-
-                forecastData.add(dataPoint);
-            }
-
-            // Log data presence verification
-            logger.info("📊 Data verification:");
-            logger.info("✓ Total records: {}", forecastData.size());
-            logger.info("✓ Total forecast production: {}",
-                    forecastData.stream()
-                            .mapToDouble(data -> ((Number) data.get("value")).doubleValue())
-                            .sum());
+            logger.info("No production forecast data available for farm: {} from {} to {}", 
+                    farmName, fromDate, toDate);
+            logger.info("Sample data generation has been removed. Returning empty list.");
 
             return forecastData;
         } catch (Exception e) {
@@ -729,39 +587,18 @@ public class ChartService {
         logger.info("🔍 Fetching production budget data for farm: {} from {} to {}", farmId, fromDate, toDate);
 
         try {
-            // In a real implementation, we would query the database for production budget data
-            // For now, we'll generate sample data for demonstration purposes
-            List<Map<String, Object>> budgetData = new ArrayList<>();
-
             // Get farm name
             Farm farm = farmRepository.findById(farmId).orElse(null);
             String farmName = farm != null ? farm.getName() : farmId;
             logger.info("Farm name: {}", farmName);
 
-            // Generate monthly data points from fromDate to toDate
-            // We'll generate data for each month in the range
-            int year = fromDate.getYear();
-            for (int month = 1; month <= 12; month++) {
-                Map<String, Object> dataPoint = new HashMap<>();
+            // In a real implementation, we would query the database for production budget data
+            // For now, return an empty list as sample data has been removed
+            List<Map<String, Object>> budgetData = new ArrayList<>();
 
-                // Set timestamp to the first day of the month
-                LocalDate monthDate = LocalDate.of(year, month, 1);
-                dataPoint.put("timestamp", monthDate.toString());
-
-                // Generate a random value between 100 and 500 for the month's budget production
-                double value = 100 + Math.random() * 400;
-                dataPoint.put("value", value);
-
-                budgetData.add(dataPoint);
-            }
-
-            // Log data presence verification
-            logger.info("📊 Data verification:");
-            logger.info("✓ Total records: {}", budgetData.size());
-            logger.info("✓ Total budget production: {}",
-                    budgetData.stream()
-                            .mapToDouble(data -> ((Number) data.get("value")).doubleValue())
-                            .sum());
+            logger.info("No production budget data available for farm: {} from {} to {}", 
+                    farmName, fromDate, toDate);
+            logger.info("Sample data generation has been removed. Returning empty list.");
 
             return budgetData;
         } catch (Exception e) {
@@ -777,44 +614,18 @@ public class ChartService {
         logger.info("🔍 Fetching head vs weight data for farm: {} from {} to {}", farmId, fromDate, toDate);
 
         try {
-            // In a real implementation, we would query the database for head vs weight data
-            // For now, we'll generate sample data for demonstration purposes
-            List<Map<String, Object>> headWeightData = new ArrayList<>();
-
             // Get farm name
             Farm farm = farmRepository.findById(farmId).orElse(null);
             String farmName = farm != null ? farm.getName() : farmId;
             logger.info("Farm name: {}", farmName);
 
-            // Generate data points for 52 weeks
-            for (int week = 1; week <= 52; week++) {
-                Map<String, Object> dataPoint = new HashMap<>();
+            // In a real implementation, we would query the database for head vs weight data
+            // For now, return an empty list as sample data has been removed
+            List<Map<String, Object>> headWeightData = new ArrayList<>();
 
-                // Format week as "Week 1", "Week 2", etc.
-                dataPoint.put("week", "Week " + week);
-
-                // Generate a random value between 1000 and 5000 for the headcount
-                int headcount = 1000 + (int) (Math.random() * 4000);
-                dataPoint.put("headcount", headcount);
-
-                // Generate a random value between 200 and 300 for the weight
-                double weight = 200 + Math.random() * 100;
-                dataPoint.put("weight", weight);
-
-                headWeightData.add(dataPoint);
-            }
-
-            // Log data presence verification
-            logger.info("📊 Data verification:");
-            logger.info("✓ Total records: {}", headWeightData.size());
-            logger.info("✓ Total headcount: {}",
-                    headWeightData.stream()
-                            .mapToDouble(data -> ((Number) data.get("headcount")).doubleValue())
-                            .sum());
-            logger.info("✓ Average weight: {}",
-                    headWeightData.stream()
-                            .mapToDouble(data -> ((Number) data.get("weight")).doubleValue())
-                            .average().orElse(0));
+            logger.info("No head vs weight data available for farm: {} from {} to {}", 
+                    farmName, fromDate, toDate);
+            logger.info("Sample data generation has been removed. Returning empty list.");
 
             return headWeightData;
         } catch (Exception e) {
@@ -830,41 +641,18 @@ public class ChartService {
         logger.info("🔍 Fetching population timeline for farm: {} from {} to {}", farmId, fromDate, toDate);
 
         try {
-            // In a real implementation, we would query the database for population data
-            // For now, we'll generate sample data for demonstration purposes
-            List<Map<String, Object>> populationData = new ArrayList<>();
-
             // Get farm name
             Farm farm = farmRepository.findById(farmId).orElse(null);
             String farmName = farm != null ? farm.getName() : farmId;
             logger.info("Farm name: {}", farmName);
 
-            // Generate monthly data points from fromDate to toDate
-            LocalDate currentDate = fromDate;
-            while (!currentDate.isAfter(toDate)) {
-                Map<String, Object> dataPoint = new HashMap<>();
+            // In a real implementation, we would query the database for population data
+            // For now, return an empty list as sample data has been removed
+            List<Map<String, Object>> populationData = new ArrayList<>();
 
-                // Set timestamp to the first day of the month
-                LocalDate monthDate = LocalDate.of(currentDate.getYear(), currentDate.getMonth(), 1);
-                dataPoint.put("timestamp", monthDate.toString());
-
-                // Generate a random value between 1000 and 5000 for the population
-                double value = 1000 + Math.random() * 4000;
-                dataPoint.put("value", value);
-
-                populationData.add(dataPoint);
-
-                // Move to next month
-                currentDate = currentDate.plusMonths(1);
-            }
-
-            // Log data presence verification
-            logger.info("📊 Data verification:");
-            logger.info("✓ Total records: {}", populationData.size());
-            logger.info("✓ Total population: {}",
-                    populationData.stream()
-                            .mapToDouble(data -> ((Number) data.get("value")).doubleValue())
-                            .sum());
+            logger.info("No population timeline data available for farm: {} from {} to {}", 
+                    farmName, fromDate, toDate);
+            logger.info("Sample data generation has been removed. Returning empty list.");
 
             return populationData;
         } catch (Exception e) {
@@ -880,42 +668,18 @@ public class ChartService {
         logger.info("🔍 Fetching population forecast timeline for farm: {} from {} to {}", farmId, fromDate, toDate);
 
         try {
-            // In a real implementation, we would query the database for population forecast data
-            // For now, we'll generate sample data for demonstration purposes
-            List<Map<String, Object>> forecastData = new ArrayList<>();
-
             // Get farm name
             Farm farm = farmRepository.findById(farmId).orElse(null);
             String farmName = farm != null ? farm.getName() : farmId;
             logger.info("Farm name: {}", farmName);
 
-            // Generate monthly data points from fromDate to toDate
-            LocalDate currentDate = fromDate;
-            while (!currentDate.isAfter(toDate)) {
-                Map<String, Object> dataPoint = new HashMap<>();
+            // In a real implementation, we would query the database for population forecast data
+            // For now, return an empty list as sample data has been removed
+            List<Map<String, Object>> forecastData = new ArrayList<>();
 
-                // Set timestamp to the first day of the month
-                LocalDate monthDate = LocalDate.of(currentDate.getYear(), currentDate.getMonth(), 1);
-                dataPoint.put("timestamp", monthDate.toString());
-
-                // Generate a random value between 1000 and 5000 for the forecast
-                // Make it slightly higher than historical data to show growth
-                double value = 1200 + Math.random() * 4000;
-                dataPoint.put("value", value);
-
-                forecastData.add(dataPoint);
-
-                // Move to next month
-                currentDate = currentDate.plusMonths(1);
-            }
-
-            // Log data presence verification
-            logger.info("📊 Data verification:");
-            logger.info("✓ Total records: {}", forecastData.size());
-            logger.info("✓ Total forecast: {}",
-                    forecastData.stream()
-                            .mapToDouble(data -> ((Number) data.get("value")).doubleValue())
-                            .sum());
+            logger.info("No population forecast data available for farm: {} from {} to {}", 
+                    farmName, fromDate, toDate);
+            logger.info("Sample data generation has been removed. Returning empty list.");
 
             return forecastData;
         } catch (Exception e) {
@@ -931,42 +695,18 @@ public class ChartService {
         logger.info("🔍 Fetching population budget timeline for farm: {} from {} to {}", farmId, fromDate, toDate);
 
         try {
-            // In a real implementation, we would query the database for population budget data
-            // For now, we'll generate sample data for demonstration purposes
-            List<Map<String, Object>> budgetData = new ArrayList<>();
-
             // Get farm name
             Farm farm = farmRepository.findById(farmId).orElse(null);
             String farmName = farm != null ? farm.getName() : farmId;
             logger.info("Farm name: {}", farmName);
 
-            // Generate monthly data points from fromDate to toDate
-            LocalDate currentDate = fromDate;
-            while (!currentDate.isAfter(toDate)) {
-                Map<String, Object> dataPoint = new HashMap<>();
+            // In a real implementation, we would query the database for population budget data
+            // For now, return an empty list as sample data has been removed
+            List<Map<String, Object>> budgetData = new ArrayList<>();
 
-                // Set timestamp to the first day of the month
-                LocalDate monthDate = LocalDate.of(currentDate.getYear(), currentDate.getMonth(), 1);
-                dataPoint.put("timestamp", monthDate.toString());
-
-                // Generate a random value between 1000 and 5000 for the budget
-                // Make it slightly different from historical data
-                double value = 1100 + Math.random() * 4200;
-                dataPoint.put("value", value);
-
-                budgetData.add(dataPoint);
-
-                // Move to next month
-                currentDate = currentDate.plusMonths(1);
-            }
-
-            // Log data presence verification
-            logger.info("📊 Data verification:");
-            logger.info("✓ Total records: {}", budgetData.size());
-            logger.info("✓ Total budget: {}",
-                    budgetData.stream()
-                            .mapToDouble(data -> ((Number) data.get("value")).doubleValue())
-                            .sum());
+            logger.info("No population budget data available for farm: {} from {} to {}", 
+                    farmName, fromDate, toDate);
+            logger.info("Sample data generation has been removed. Returning empty list.");
 
             return budgetData;
         } catch (Exception e) {
@@ -982,47 +722,18 @@ public class ChartService {
         logger.info("🔍 Fetching population 52-week timeline for farm: {} from {} to {}", farmId, fromDate, toDate);
 
         try {
-            // In a real implementation, we would query the database for population 52-week data
-            // For now, we'll generate sample data for demonstration purposes
-            List<Map<String, Object>> populationData = new ArrayList<>();
-
             // Get farm name
             Farm farm = farmRepository.findById(farmId).orElse(null);
             String farmName = farm != null ? farm.getName() : farmId;
             logger.info("Farm name: {}", farmName);
 
-            // Generate weekly data points from fromDate to toDate
-            LocalDate currentDate = fromDate;
-            while (!currentDate.isAfter(toDate)) {
-                Map<String, Object> dataPoint = new HashMap<>();
+            // In a real implementation, we would query the database for population 52-week data
+            // For now, return an empty list as sample data has been removed
+            List<Map<String, Object>> populationData = new ArrayList<>();
 
-                // Set timestamp
-                dataPoint.put("timestamp", currentDate.toString());
-
-                // Generate random values for animal headcount and weight unit
-                double animalHeadcount = 3.5 + Math.random() * 1.5; // 3.5-5.0
-                double animalWeightUnit = 2.0 + Math.random() * 1.0; // 2.0-3.0
-
-                dataPoint.put("animal_headcount", animalHeadcount);
-                dataPoint.put("animal_weight_unit", animalWeightUnit);
-
-                populationData.add(dataPoint);
-
-                // Move to next week
-                currentDate = currentDate.plusWeeks(1);
-            }
-
-            // Log data presence verification
-            logger.info("📊 Data verification:");
-            logger.info("✓ Total records: {}", populationData.size());
-            logger.info("✓ Average animal headcount: {}",
-                    populationData.stream()
-                            .mapToDouble(data -> ((Number) data.get("animal_headcount")).doubleValue())
-                            .average().orElse(0));
-            logger.info("✓ Average animal weight unit: {}",
-                    populationData.stream()
-                            .mapToDouble(data -> ((Number) data.get("animal_weight_unit")).doubleValue())
-                            .average().orElse(0));
+            logger.info("No population 52-week timeline data available for farm: {} from {} to {}", 
+                    farmName, fromDate, toDate);
+            logger.info("Sample data generation has been removed. Returning empty list.");
 
             return populationData;
         } catch (Exception e) {
