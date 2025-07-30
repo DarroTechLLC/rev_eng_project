@@ -126,7 +126,23 @@ function fixSectionCardsLayout() {
  * Initialize Highcharts for all chart containers
  */
 function initializeHighcharts() {
-    console.log('Initializing Highcharts');
+    console.group('🔄 Chart Initialization');
+    console.log('Current Time:', new Date().toISOString());
+    
+    // Log available chart containers
+    const chartContainers = document.querySelectorAll('[id$="Chart"]');
+    console.log('Found Chart Containers:', Array.from(chartContainers).map(el => el.id));
+    
+    // Check for date range inputs
+    const dateInputs = document.querySelectorAll('input[type="date"], input[type="datetime-local"]');
+    if (dateInputs.length > 0) {
+        console.log('Date Inputs Found:', Array.from(dateInputs).map(input => ({
+            id: input.id,
+            value: input.value
+        })));
+    } else {
+        console.log('No date input elements found on page');
+    }
 
     // Check if Highcharts utility functions are available
     if (typeof Highcharts === 'undefined') {

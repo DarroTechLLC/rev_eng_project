@@ -59,7 +59,7 @@
 <body>
     <div layout:fragment="content">
         <div class="container-fluid">
-            <h1 class="h3 mb-4 text-gray-800">Livestock Dashboard</h1>
+            <h1 class="h3 mb-4 text-gray-800">Livestock Dashboard - <span id="farmNameDisplay"></span></h1>
 
             <!-- Debug Panel (Collapsible) -->
             <div class="card shadow mb-4">
@@ -213,7 +213,7 @@
                     }
                     return response.json();
                 }),
-                
+
                 // Forecast data for current year
                 fetch('/api/charts/single-farm/population-forecast-timeline', {
                     method: 'POST',
@@ -232,7 +232,7 @@
                     }
                     return response.json();
                 }),
-                
+
                 // Budget data for current year
                 fetch('/api/charts/single-farm/population-budget-timeline', {
                     method: 'POST',
@@ -272,14 +272,14 @@
                 populationData.forEach(item => {
                     const date = new Date(item.timestamp);
                     const year = date.getFullYear();
-                    
+
                     if (!yearData[year]) {
                         yearData[year] = {
                             name: year.toString(),
                             data: new Array(12).fill(null)
                         };
                     }
-                    
+
                     // Add data point to the appropriate month (0-11)
                     const month = date.getMonth();
                     yearData[year].data[month] = item.value;
@@ -290,7 +290,7 @@
                     name: `${curYear} Forecast`,
                     data: new Array(12).fill(null)
                 };
-                
+
                 forecastData.forEach(item => {
                     const date = new Date(item.timestamp);
                     const month = date.getMonth();
@@ -302,7 +302,7 @@
                     name: `${curYear} Budget`,
                     data: new Array(12).fill(null)
                 };
-                
+
                 budgetData.forEach(item => {
                     const date = new Date(item.timestamp);
                     const month = date.getMonth();
@@ -311,12 +311,12 @@
 
                 // Convert to series array
                 const series = Object.values(yearData);
-                
+
                 // Add forecast and budget series if they have data
                 if (forecastData.length > 0) {
                     series.push(forecastSeries);
                 }
-                
+
                 if (budgetData.length > 0) {
                     series.push(budgetSeries);
                 }
@@ -328,15 +328,15 @@
                         const nonNullCount = yearData[year].data.filter(val => val !== null).length;
                         return `${year}: ${nonNullCount} data points`;
                     });
-                    
+
                     if (forecastData.length > 0) {
                         yearInfo.push(`${curYear} Forecast: ${forecastData.length} data points`);
                     }
-                    
+
                     if (budgetData.length > 0) {
                         yearInfo.push(`${curYear} Budget: ${budgetData.length} data points`);
                     }
-                    
+
                     yearsElement.innerHTML = '<ul>' + yearInfo.map(info => `<li>${info}</li>`).join('') + '</ul>';
                 } else {
                     yearsElement.innerHTML = '<p>No data available for any year</p>';
@@ -468,7 +468,7 @@
                 if (data.length > 0) {
                     const headcountAvg = data.reduce((sum, item) => sum + item.animal_headcount, 0) / data.length;
                     const weightAvg = data.reduce((sum, item) => sum + item.animal_weight_unit, 0) / data.length;
-                    
+
                     detailsElement.innerHTML = `
                         <p>Date range: ${fromDate} to ${toDate}</p>
                         <p>Average headcount: ${headcountAvg.toFixed(2)}</p>
@@ -612,6 +612,13 @@
 
             // Initialize chart type selectors
             initChartTypeSelectors();
+
+            // Initialize farm name in header
+            const farmNameDisplay = document.getElementById('farmNameDisplay');
+            if (farmNameDisplay && selectedFarmName) {
+                farmNameDisplay.textContent = selectedFarmName;
+                console.log('✅ Initialized farm name in header to:', selectedFarmName);
+            }
 
             // Load all charts
             loadAnimalHeadcountChart();
