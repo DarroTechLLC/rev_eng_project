@@ -1,43 +1,68 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/main}">
 <head>
     <title>Projects Overview</title>
 </head>
 <body>
-    <div class="container-fluid">
-        <h1 class="h3 mb-4 text-gray-800">Projects Overview</h1>
-        <div class="row">
-            <div class="col-12">
-                <div class="card shadow mb-4">
-                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                        <h6 class="m-0 font-weight-bold text-primary">Projects</h6>
-                    </div>
-                    <div class="card-body">
-                        <p>Projects overview content will be implemented here.</p>
-                        
-                        <!-- Project Links -->
-                        <div class="list-group mt-4">
-                            <a th:href="@{/projects/{companyKey}/{farmKey}/production(companyKey=${selectedCompany?.id},farmKey=${selectedFarmKey})}" 
-                               class="list-group-item list-group-item-action">
-                                <i class="fas fa-fw fa-industry"></i> Production
-                            </a>
-                            <a th:href="@{/projects/{companyKey}/{farmKey}/livestock(companyKey=${selectedCompany?.id},farmKey=${selectedFarmKey})}" 
-                               class="list-group-item list-group-item-action">
-                                <i class="fas fa-fw fa-cow"></i> Livestock
-                            </a>
-                            <a th:href="@{/projects/{companyKey}/{farmKey}/digesters(companyKey=${selectedCompany?.id},farmKey=${selectedFarmKey})}" 
-                               class="list-group-item list-group-item-action">
-                                <i class="fas fa-fw fa-flask"></i> Digesters
-                            </a>
-                            <a th:href="@{/projects/{companyKey}/{farmKey}/metrics(companyKey=${selectedCompany?.id},farmKey=${selectedFarmKey})}" 
-                               class="list-group-item list-group-item-action">
-                                <i class="fas fa-fw fa-chart-pie"></i> Metrics
-                            </a>
+    <div layout:fragment="content">
+        <div class="container-fluid">
+            <h1 class="h3 mb-4 text-gray-800">Projects Overview - <span id="farmNameDisplay"></span></h1>
+            <div class="row">
+                <div class="col-12">
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                            <h6 class="m-0 font-weight-bold text-primary">Projects</h6>
+                        </div>
+                        <div class="card-body">
+                            <p>Projects overview content will be implemented here.</p>
+
+                            <!-- Project Links -->
+                            <div class="list-group mt-4">
+                                <a th:href="@{/projects/{companyKey}/{farmKey}/production(companyKey=${selectedCompany?.id},farmKey=${selectedFarmKey})}" 
+                                   class="list-group-item list-group-item-action">
+                                    <i class="fas fa-fw fa-industry"></i> Production
+                                </a>
+                                <a th:href="@{/projects/{companyKey}/{farmKey}/livestock(companyKey=${selectedCompany?.id},farmKey=${selectedFarmKey})}" 
+                                   class="list-group-item list-group-item-action">
+                                    <i class="fas fa-fw fa-cow"></i> Livestock
+                                </a>
+                                <a th:href="@{/projects/{companyKey}/{farmKey}/digesters(companyKey=${selectedCompany?.id},farmKey=${selectedFarmKey})}" 
+                                   class="list-group-item list-group-item-action">
+                                    <i class="fas fa-fw fa-flask"></i> Digesters
+                                </a>
+                                <a th:href="@{/projects/{companyKey}/{farmKey}/metrics(companyKey=${selectedCompany?.id},farmKey=${selectedFarmKey})}" 
+                                   class="list-group-item list-group-item-action">
+                                    <i class="fas fa-fw fa-chart-pie"></i> Metrics
+                                </a>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- Scripts -->
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        const selectedFarmName = /*[[${selectedFarmName}]]*/ '';
+
+        // Initialize farm name in header when the page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Initializing Projects Overview...');
+
+            // Initialize farm name in header
+            const farmNameDisplay = document.getElementById('farmNameDisplay');
+            if (farmNameDisplay && selectedFarmName) {
+                farmNameDisplay.textContent = selectedFarmName;
+                console.log('✅ Initialized farm name in header to:', selectedFarmName);
+            }
+
+            console.log('✅ Projects Overview initialized');
+        });
+        /*]]>*/
+    </script>
 </body>
-</html> 
+</html>
