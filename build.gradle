@@ -23,6 +23,9 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-validation'  // Spring Boot validation starter
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'    // Spring Boot actuator for health checks
+    implementation 'org.springframework.retry:spring-retry'                  // Spring Retry for retrying operations
+    implementation 'org.springframework:spring-aspects'                      // Required for @Retryable annotation
 
     // Mail dependencies
     implementation 'org.springframework.boot:spring-boot-starter-mail'
