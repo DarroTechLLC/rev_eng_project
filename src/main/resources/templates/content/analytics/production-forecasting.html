@@ -117,7 +117,7 @@
             // Set default dates
             const today = new Date();
             const sixtyDaysAgo = new Date(today.getTime() - (60 * 24 * 60 * 60 * 1000));
-            
+
             document.getElementById('startDate').value = sixtyDaysAgo.toISOString().split('T')[0];
             document.getElementById('endDate').value = today.toISOString().split('T')[0];
 
@@ -161,7 +161,7 @@
                 .then(response => response.json())
                 .then(data => {
                     loadingIndicator.hide();
-                    
+
                     if (data.success && data.forecast) {
                         displayForecastResults(data.forecast);
                     } else {
@@ -213,8 +213,8 @@
 
                 // Create chart using direct Highcharts implementation
                 console.log('🚀 Creating Production Forecast Chart with direct Highcharts');
-                
-                const chart = Highcharts.chart('productionForecastChart', {
+
+                const chart = Highcharts.chart('forecastChart', {
                     chart: {
                         type: 'line',
                         height: 400
@@ -267,7 +267,7 @@
                 });
 
                 // Initialize enhanced export menu
-                initChartExportMenu(chart, document.getElementById('productionForecastChart'));
+                initChartExportMenu(chart, document.getElementById('forecastChart'));
                 console.log('✅ Production Forecast Chart with enhanced export created');
             }
         });

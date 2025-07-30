@@ -112,7 +112,7 @@
             // Set default dates
             const today = new Date();
             const thirtyDaysAgo = new Date(today.getTime() - (30 * 24 * 60 * 60 * 1000));
-            
+
             document.getElementById('startDate').value = thirtyDaysAgo.toISOString().split('T')[0];
             document.getElementById('endDate').value = today.toISOString().split('T')[0];
 
@@ -154,7 +154,7 @@
                 .then(responses => Promise.all(responses.map(r => r.json())))
                 .then(data => {
                     loadingIndicator.hide();
-                    
+
                     const allAnomalies = [];
                     data.forEach(response => {
                         if (response.success && response.anomalies) {
@@ -202,21 +202,44 @@
                     deviationPercent: anomaly.deviationPercent
                 }));
 
-                // Create chart using ChartBuilder pattern (matches Next.js implementation)
-                const chartBuilder = new ChartBuilder('scatter')
-                    .title('Statistical Anomaly Detection Results')
-                    .xAxis(new DateAxis({ title: { text: 'Date' } }))
-                    .yAxis(new NumericAxis().title('Value'))
-                    .tooltip(new CustomSeriesTooltip(''));
-
-                chartBuilder.addSeries({
-                    id: 'anomalies',
-                    name: 'Anomalies',
-                    data: chartData
+                // Create chart using direct Highcharts implementation
+                Highcharts.chart('anomalyChart', {
+                    chart: {
+                        type: 'scatter',
+                        height: 400
+                    },
+                    title: {
+                        text: 'Statistical Anomaly Detection Results',
+                        style: {
+                            fontSize: '16px',
+                            fontWeight: 'bold'
+                        }
+                    },
+                    xAxis: {
+                        type: 'datetime',
+                        title: {
+                            text: 'Date'
+                        }
+                    },
+                    yAxis: {
+                        title: {
+                            text: 'Value'
+                        }
+                    },
+                    tooltip: {
+                        formatter: function() {
+                            return `<b>${this.point.name}</b><br/>
+                                    Value: ${this.y}<br/>
+                                    Expected: ${this.point.expectedValue}<br/>
+                                    Deviation: ${this.point.deviationPercent}%`;
+                        }
+                    },
+                    series: [{
+                        name: 'Anomalies',
+                        data: chartData,
+                        color: '#f6c23e'
+                    }]
                 });
-
-                const chartOptions = chartBuilder.getOptions();
-                Highcharts.chart('anomalyChart', chartOptions);
             }
         });
     </script>
