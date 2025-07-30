@@ -204,23 +204,43 @@
                     trendLine.push(trendValue);
                 }
 
-                // Create chart using ChartBuilder pattern (matches Next.js implementation)
-                const chartBuilder = new ChartBuilder('line')
-                    .title('CH4 Recovery Production Trend Analysis')
-                    .xAxis(new DateAxis())
-                    .yAxis(new NumericAxis().title('CH4 Recovery (MMBTUs)'))
-                    .tooltip(new CustomSeriesTooltip('MMBTUs'));
-
-                chartBuilder.addSeries({
-                    id: 'trend-line',
-                    name: 'Trend Line',
-                    data: dates.map((date, i) => [date, trendLine[i]]),
-                    color: '#e74a3b',
-                    dashStyle: 'dash'
+                // Create chart using direct Highcharts implementation
+                Highcharts.chart('trendChart', {
+                    chart: {
+                        type: 'line',
+                        height: 400
+                    },
+                    title: {
+                        text: 'CH4 Recovery Production Trend Analysis',
+                        style: {
+                            fontSize: '16px',
+                            fontWeight: 'bold'
+                        }
+                    },
+                    xAxis: {
+                        type: 'datetime',
+                        title: {
+                            text: 'Date'
+                        }
+                    },
+                    yAxis: {
+                        title: {
+                            text: 'CH4 Recovery (MMBTUs)'
+                        }
+                    },
+                    tooltip: {
+                        formatter: function() {
+                            return `<b>Trend Line</b><br/>
+                                    ${Highcharts.dateFormat('%b %d, %Y', this.x)}: ${Highcharts.numberFormat(this.y, 2)} MMBTUs`;
+                        }
+                    },
+                    series: [{
+                        name: 'Trend Line',
+                        data: dates.map((date, i) => [date, trendLine[i]]),
+                        color: '#e74a3b',
+                        dashStyle: 'dash'
+                    }]
                 });
-
-                const chartOptions = chartBuilder.getOptions();
-                Highcharts.chart('trendChart', chartOptions);
             }
         });
     </script>
