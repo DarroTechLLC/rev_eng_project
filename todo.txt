@@ -1,5 +1,6 @@
 -------------------------Working on----------------
-
+-re check all chart views, follow data back from template: expected data list then check
+other implementation to verify match. check chart, then check mine, and so on
 --------------------------Up Next-----------------
 -how to implement backend data update every 30 seconds, find update in nextjs app for the exact time to
 be replicated. Users need to basically see live data without refreshing
