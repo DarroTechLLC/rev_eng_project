@@ -131,7 +131,7 @@
                 }
                 return response.json();
             }),
-            
+
             // Forecast data for current year
             fetch('/api/charts/company/population-forecast-timeline', {
                 method: 'POST',
@@ -149,7 +149,7 @@
                 }
                 return response.json();
             }),
-            
+
             // Budget data for current year
             fetch('/api/charts/company/population-budget-timeline', {
                 method: 'POST',
@@ -173,6 +173,22 @@
             console.log('📊 Received forecast data:', forecastResponse);
             console.log('📊 Received budget data:', budgetResponse);
 
+            // Detailed logging for debugging
+            console.log('📊 Population data points:', populationResponse.data ? populationResponse.data.length : 0);
+            console.log('📊 Forecast data points:', forecastResponse.data ? forecastResponse.data.length : 0);
+            console.log('📊 Budget data points:', budgetResponse.data ? budgetResponse.data.length : 0);
+
+            // Log first data point from each dataset if available
+            if (populationResponse.data && populationResponse.data.length > 0) {
+                console.log('📊 Sample population data point:', populationResponse.data[0]);
+            }
+            if (forecastResponse.data && forecastResponse.data.length > 0) {
+                console.log('📊 Sample forecast data point:', forecastResponse.data[0]);
+            }
+            if (budgetResponse.data && budgetResponse.data.length > 0) {
+                console.log('📊 Sample budget data point:', budgetResponse.data[0]);
+            }
+
             if (chart) {
                 chart.destroy();
             }
@@ -183,9 +199,18 @@
             const budgetData = budgetResponse.data || [];
 
             if (populationData.length === 0 && forecastData.length === 0 && budgetData.length === 0) {
+                console.log('❌ No data available: All three datasets are empty');
+                console.log('❌ Population data length:', populationData.length);
+                console.log('❌ Forecast data length:', forecastData.length);
+                console.log('❌ Budget data length:', budgetData.length);
                 showError('No data available for the selected date range.');
                 hideLoading();
                 return;
+            } else {
+                console.log('✅ Data available: At least one dataset has data');
+                console.log('✅ Population data length:', populationData.length);
+                console.log('✅ Forecast data length:', forecastData.length);
+                console.log('✅ Budget data length:', budgetData.length);
             }
 
             // Group population data by year
@@ -193,14 +218,14 @@
             populationData.forEach(item => {
                 const date = new Date(item.timestamp);
                 const year = date.getFullYear();
-                
+
                 if (!yearData[year]) {
                     yearData[year] = {
                         name: year.toString(),
                         data: new Array(12).fill(null)
                     };
                 }
-                
+
                 // Add data point to the appropriate month (0-11)
                 const month = date.getMonth();
                 yearData[year].data[month] = item.value;
@@ -211,7 +236,7 @@
                 name: `${currentYear} Forecast`,
                 data: new Array(12).fill(null)
             };
-            
+
             forecastData.forEach(item => {
                 const date = new Date(item.timestamp);
                 const month = date.getMonth();
@@ -223,7 +248,7 @@
                 name: `${currentYear} Budget`,
                 data: new Array(12).fill(null)
             };
-            
+
             budgetData.forEach(item => {
                 const date = new Date(item.timestamp);
                 const month = date.getMonth();
@@ -232,12 +257,12 @@
 
             // Convert to series array
             const series = Object.values(yearData);
-            
+
             // Add forecast and budget series if they have data
             if (forecastData.length > 0) {
                 series.push(forecastSeries);
             }
-            
+
             if (budgetData.length > 0) {
                 series.push(budgetSeries);
             }
