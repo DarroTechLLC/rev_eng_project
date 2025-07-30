@@ -24769,3 +24769,64 @@ java.time.format.DateTimeParseException: Text '' could not be parsed at index 0
 2025-07-29 21:02:00,852 DEBUG o.h.e.j.s.SqlStatementLogger [http-nio-8080-exec-3] select f1_0.id,f1_0.display_name,f1_0.farm_type,f1_0.is_temp_source,f1_0.name,f1_0.temp_source_id,f1_0.timestamp from farms f1_0 where f1_0.id=?
 2025-07-29 21:02:00,856 DEBUG o.h.e.j.s.SqlStatementLogger [http-nio-8080-exec-3] select f1_0.id,f1_0.display_name,f1_0.farm_type,f1_0.is_temp_source,f1_0.name,f1_0.temp_source_id,f1_0.timestamp from farms f1_0 where f1_0.id=?
 2025-07-29 21:02:00,862 INFO c.d.r.c.a.FarmApiController [http-nio-8080-exec-3] ✅ Found selected farm: Snowflake
+2025-07-30 16:01:11,976 INFO o.h.v.i.u.Version [background-preinit] HV000001: Hibernate Validator 8.0.2.Final
+2025-07-30 16:01:12,025 INFO o.s.b.StartupInfoLogger [main] Starting RevEngProjectApplication using Java 17.0.13 with PID 5448 (C:\Workspaces\JAVA\ReverseEngineer\doubleFolder\rev-eng-project\build\classes\java\main started by antho in C:\Workspaces\JAVA\ReverseEngineer\doubleFolder\rev-eng-project)
+2025-07-30 16:01:12,026 DEBUG o.s.b.StartupInfoLogger [main] Running with Spring Boot v3.4.4, Spring v6.2.5
+2025-07-30 16:01:12,027 INFO o.s.b.SpringApplication [main] No active profile set, falling back to 1 default profile: "default"
+2025-07-30 16:01:12,065 INFO o.s.b.l.DeferredLog [main] For additional web related logging consider setting the 'logging.level.web' property to 'DEBUG'
+2025-07-30 16:01:12,841 INFO o.s.d.r.c.RepositoryConfigurationDelegate [main] Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2025-07-30 16:01:12,947 INFO o.s.d.r.c.RepositoryConfigurationDelegate [main] Finished Spring Data repository scanning in 98 ms. Found 23 JPA repository interfaces.
+2025-07-30 16:01:13,490 INFO o.s.b.w.e.t.TomcatWebServer [main] Tomcat initialized with port 8080 (http)
+2025-07-30 16:01:13,500 INFO o.a.j.l.DirectJDKLog [main] Initializing ProtocolHandler ["http-nio-8080"]
+2025-07-30 16:01:13,501 INFO o.a.j.l.DirectJDKLog [main] Starting service [Tomcat]
+2025-07-30 16:01:13,502 INFO o.a.j.l.DirectJDKLog [main] Starting Servlet engine: [Apache Tomcat/10.1.39]
+2025-07-30 16:01:13,556 INFO o.a.j.l.DirectJDKLog [main] Initializing Spring embedded WebApplicationContext
+2025-07-30 16:01:13,556 INFO o.s.b.w.s.c.ServletWebServerApplicationContext [main] Root WebApplicationContext: initialization completed in 1490 ms
+2025-07-30 16:01:13,561 INFO c.d.r.c.ThymeleafConfig [main] 🔧 Registering RequestContextFilter to enable session access in templates
+2025-07-30 16:01:13,675 INFO o.h.j.i.u.LogHelper [main] HHH000204: Processing PersistenceUnitInfo [name: default]
+2025-07-30 16:01:13,720 INFO o.h.Version [main] HHH000412: Hibernate ORM core version 6.6.11.Final
+2025-07-30 16:01:13,751 INFO o.h.c.i.RegionFactoryInitiator [main] HHH000026: Second-level cache disabled
+2025-07-30 16:01:13,995 INFO o.s.o.j.p.SpringPersistenceUnitInfo [main] No LoadTimeWeaver setup: ignoring JPA class transformer
+2025-07-30 16:01:14,023 INFO c.z.h.HikariDataSource [main] HikariPool-1 - Starting...
+2025-07-30 16:01:14,162 INFO c.z.h.p.HikariPool [main] HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@6b7c4734
+2025-07-30 16:01:14,164 INFO c.z.h.HikariDataSource [main] HikariPool-1 - Start completed.
+2025-07-30 16:01:14,206 WARN o.h.e.j.d.i.DialectFactoryImpl [main] HHH90000025: MySQL8Dialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2025-07-30 16:01:14,206 WARN o.h.e.j.d.i.DialectFactoryImpl [main] HHH90000026: MySQL8Dialect has been deprecated; use org.hibernate.dialect.MySQLDialect instead
+2025-07-30 16:01:14,223 INFO o.h.e.j.e.i.JdbcEnvironmentInitiator [main] HHH10001005: Database info:
+	Database JDBC URL [Connecting through datasource 'HikariDataSource (HikariPool-1)']
+	Database driver: undefined/unknown
+	Database version: 8.0
+	Autocommit mode: undefined/unknown
+	Isolation level: undefined/unknown
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2025-07-30 16:01:15,695 INFO o.h.e.t.j.p.i.JtaPlatformInitiator [main] HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2025-07-30 16:01:15,698 INFO o.s.o.j.AbstractEntityManagerFactoryBean [main] Initialized JPA EntityManagerFactory for persistence unit 'default'
+2025-07-30 16:01:15,950 INFO o.s.d.j.r.q.QueryEnhancerFactory [main] Hibernate is in classpath; If applicable, HQL parser will be used.
+2025-07-30 16:01:16,638 DEBUG o.s.w.f.GenericFilterBean [main] Filter 'customAuthenticationFilter' configured for use
+2025-07-30 16:01:17,023 INFO c.d.r.c.ThymeleafConfig [main] 🔧 Configuring primary template resolver for templates
+2025-07-30 16:01:17,026 INFO c.d.r.c.ThymeleafConfig [main] 🔧 Initializing Thymeleaf template engine with session support
+2025-07-30 16:01:17,089 INFO c.d.r.s.PdfGenerationService [main] 📑 Initializing PDF Generation Service
+2025-07-30 16:01:17,122 INFO c.d.r.c.ThymeleafConfig [main] 🔧 Configuring Thymeleaf view resolver
+2025-07-30 16:01:17,187 INFO c.d.r.c.WebConfig [main] 🔧 Configuring content negotiation to prefer JSON for API endpoints
+2025-07-30 16:01:17,201 WARN o.s.b.a.s.s.UserDetailsServiceAutoConfiguration [main] 
+
+Using generated security password: e0788f57-e0fe-4806-98a6-8980698ea0a5
+
+This generated password is for development use only. Your security configuration must be updated before running your application in production.
+
+2025-07-30 16:01:17,211 INFO o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer [main] Global AuthenticationManager configured with UserDetailsService bean with name inMemoryUserDetailsManager
+2025-07-30 16:01:17,298 INFO o.s.b.a.w.s.WelcomePageHandlerMapping [main] Adding welcome page template: index
+2025-07-30 16:01:17,299 INFO c.d.r.c.WebMvcConfig [main] 🌐 Registered CompanyUrlInterceptor for all requests
+2025-07-30 16:01:17,424 INFO c.d.r.c.WebConfig [main] 🔧 Configuring message converters for JSON support
+2025-07-30 16:01:17,686 INFO o.a.j.l.DirectJDKLog [main] Starting ProtocolHandler ["http-nio-8080"]
+2025-07-30 16:01:17,702 INFO o.s.b.w.e.t.TomcatWebServer [main] Tomcat started on port 8080 (http) with context path '/'
+2025-07-30 16:01:17,709 INFO o.s.b.StartupInfoLogger [main] Started RevEngProjectApplication in 6.218 seconds (process running for 6.565)
+2025-07-30 16:01:17,758 DEBUG o.h.e.j.s.SqlStatementLogger [main] select count(*) from companies c1_0
+2025-07-30 16:01:17,783 DEBUG o.h.e.j.s.SqlStatementLogger [main] select count(*) from farms f1_0
+2025-07-30 16:01:17,790 INFO c.d.r.RevEngProjectApplication [main] ✅ Application started successfully
+2025-07-30 16:01:17,790 INFO c.d.r.RevEngProjectApplication [main] 📊 Application running with profiles: default
+2025-07-30 16:01:17,790 INFO c.d.r.RevEngProjectApplication [main] 🌐 Application available at:
+2025-07-30 16:01:17,790 INFO c.d.r.RevEngProjectApplication [main]    Local:      http://localhost:8080/
+2025-07-30 16:01:17,790 INFO c.d.r.RevEngProjectApplication [main]    External:   http://192.168.1.64:8080/
+2025-07-30 16:01:17,790 INFO c.d.r.u.LoggerUtils [main] ⏱️ Application startup completed in 6417 ms
