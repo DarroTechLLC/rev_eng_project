@@ -10,13 +10,11 @@ RUN chmod +x ./gradlew && \
 FROM openjdk:17-jdk-slim
 WORKDIR /app
 COPY --from=build /app/build/libs/rev-eng-project-0.0.1-SNAPSHOT.jar app.jar
-COPY .env .env
+COPY .env.docker .env
 EXPOSE 8080
 
-# Environment variables will be loaded from .env file
-# But we need to override the database URL to use host.docker.internal
-# This allows the container to connect to MySQL running on the host machine
-ENV SPRING_DATASOURCE_URL="jdbc:mysql://host.docker.internal:3306/rae_latest?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC"
+# Using Docker-specific .env file with appropriate settings
+# No hardcoded environment variables for better security and flexibility
 
 # Add health check to ensure database is available before starting the application
 # Give the application time to start up (30s) and check every 10s with a 5s timeout
