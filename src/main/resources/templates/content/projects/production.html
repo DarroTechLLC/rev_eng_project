@@ -59,7 +59,7 @@
 <body>
     <div layout:fragment="content">
         <div class="container-fluid">
-            <h1 class="h3 mb-4 text-gray-800">Production Dashboard</h1>
+            <h1 class="h3 mb-4 text-gray-800">Production Dashboard - <span id="farmNameDisplay"></span></h1>
 
             <!-- Debug Panel (Collapsible) -->
             <div class="card shadow mb-4">
@@ -315,8 +315,10 @@
         }
 
         // Helper function to fetch and process monthly production data for a specific year
-        function fetchMonthlyProductionData(year, chartType, colorIndex) {
+        function fetchMonthlyProductionData(year, chartType, colorIndex, retryCount = 0) {
             const { from, to } = getDateRange(year);
+            const maxRetries = 3;
+            const retryDelay = 1000; // 1 second delay between retries
 
             console.log(`📡 Fetching monthly production data for year ${year} - API: /api/charts/single-farm/meter-monthly-timeline`);
             console.log(`📡 Request payload: { farm_id: "${farmId}", from: "${from}", to: "${to}" }`);
@@ -378,6 +380,19 @@
             })
             .catch(error => {
                 console.error(`❌ Error fetching data for year ${year}:`, error);
+
+                // Implement retry logic
+                if (retryCount < maxRetries) {
+                    console.log(`🔄 Retrying fetch for year ${year} (Attempt ${retryCount + 1}/${maxRetries})...`);
+                    return new Promise(resolve => {
+                        setTimeout(() => {
+                            resolve(fetchMonthlyProductionData(year, chartType, colorIndex, retryCount + 1));
+                        }, retryDelay * (retryCount + 1)); // Exponential backoff
+                    });
+                }
+
+                // If all retries fail, return null
+                console.error(`❌ All retry attempts failed for year ${year}`);
                 return null;
             });
         }
@@ -553,8 +568,10 @@
         }
 
         // Helper function to fetch and process cumulative production data for a specific year
-        function fetchCumulativeProductionData(year, chartType, colorIndex) {
+        function fetchCumulativeProductionData(year, chartType, colorIndex, retryCount = 0) {
             const { from, to } = getDateRange(year);
+            const maxRetries = 3;
+            const retryDelay = 1000; // 1 second delay between retries
 
             console.log(`📡 Fetching cumulative production data for year ${year} - API: /api/charts/single-farm/meter-monthly-timeline`);
             console.log(`📡 Request payload: { farm_id: "${farmId}", from: "${from}", to: "${to}" }`);
@@ -623,14 +640,29 @@
             })
             .catch(error => {
                 console.error(`❌ Error fetching cumulative data for year ${year}:`, error);
+
+                // Implement retry logic
+                if (retryCount < maxRetries) {
+                    console.log(`🔄 Retrying fetch for year ${year} (cumulative) (Attempt ${retryCount + 1}/${maxRetries})...`);
+                    return new Promise(resolve => {
+                        setTimeout(() => {
+                            resolve(fetchCumulativeProductionData(year, chartType, colorIndex, retryCount + 1));
+                        }, retryDelay * (retryCount + 1)); // Exponential backoff
+                    });
+                }
+
+                // If all retries fail, return null
+                console.error(`❌ All retry attempts failed for year ${year} (cumulative)`);
                 return null;
             });
         }
 
         // Helper function to fetch and process forecast data for the current year
-        function fetchForecastData(year, chartType, colorIndex) {
+        function fetchForecastData(year, chartType, colorIndex, retryCount = 0) {
             const { from, to } = getDateRange(year);
             const currentMonth = new Date().getMonth();
+            const maxRetries = 3;
+            const retryDelay = 1000; // 1 second delay between retries
 
             console.log(`📡 Fetching forecast data for year ${year} - API: /api/charts/single-farm/production-forecast-timeline`);
             console.log(`📡 Request payload: { farm_id: "${farmId}", from: "${from}", to: "${to}" }`);
@@ -698,13 +730,28 @@
             })
             .catch(error => {
                 console.error(`❌ Error fetching forecast data for year ${year}:`, error);
+
+                // Implement retry logic
+                if (retryCount < maxRetries) {
+                    console.log(`🔄 Retrying fetch for year ${year} forecast (Attempt ${retryCount + 1}/${maxRetries})...`);
+                    return new Promise(resolve => {
+                        setTimeout(() => {
+                            resolve(fetchForecastData(year, chartType, colorIndex, retryCount + 1));
+                        }, retryDelay * (retryCount + 1)); // Exponential backoff
+                    });
+                }
+
+                // If all retries fail, return null
+                console.error(`❌ All retry attempts failed for year ${year} forecast`);
                 return null;
             });
         }
 
         // Helper function to fetch and process budget data for the current year
-        function fetchBudgetData(year, chartType, colorIndex) {
+        function fetchBudgetData(year, chartType, colorIndex, retryCount = 0) {
             const { from, to } = getDateRange(year);
+            const maxRetries = 3;
+            const retryDelay = 1000; // 1 second delay between retries
 
             console.log(`📡 Fetching budget data for year ${year} - API: /api/charts/single-farm/production-budget-timeline`);
             console.log(`📡 Request payload: { farm_id: "${farmId}", from: "${from}", to: "${to}" }`);
@@ -773,6 +820,19 @@
             })
             .catch(error => {
                 console.error(`❌ Error fetching budget data for year ${year}:`, error);
+
+                // Implement retry logic
+                if (retryCount < maxRetries) {
+                    console.log(`🔄 Retrying fetch for year ${year} budget (Attempt ${retryCount + 1}/${maxRetries})...`);
+                    return new Promise(resolve => {
+                        setTimeout(() => {
+                            resolve(fetchBudgetData(year, chartType, colorIndex, retryCount + 1));
+                        }, retryDelay * (retryCount + 1)); // Exponential backoff
+                    });
+                }
+
+                // If all retries fail, return null
+                console.error(`❌ All retry attempts failed for year ${year} budget`);
                 return null;
             });
         }
@@ -792,6 +852,27 @@
             ];
             return colors[index % colors.length];
         }
+        async function loadChartData() {
+            console.log('🔄 Loading all chart data...');
+
+            // Get chart types from selectors if available
+            const monthlyChartType = window.chartSelectors &&
+            window.chartSelectors['monthly-chart-selector'] ?
+                window.chartSelectors['monthly-chart-selector'].getSelectedType() : 'line';
+
+            const cumulativeChartType = window.chartSelectors &&
+            window.chartSelectors['cumulative-chart-selector'] ?
+                window.chartSelectors['cumulative-chart-selector'].getSelectedType() : 'line';
+
+            // Load both charts with their current chart types
+            loadMonthlyProductionChart(monthlyChartType);
+            loadCumulativeProductionChart(cumulativeChartType);
+
+            console.log('✅ All chart data loaded');
+        }
+
+        // Make loadChartData globally available
+        window.loadChartData = loadChartData;
 
         // Initialize all charts when the page loads
         document.addEventListener('DOMContentLoaded', function() {
@@ -799,6 +880,13 @@
 
             // Initialize chart type selectors
             initChartTypeSelectors();
+
+            // Initialize farm name in header
+            const farmNameDisplay = document.getElementById('farmNameDisplay');
+            if (farmNameDisplay && selectedFarmName) {
+                farmNameDisplay.textContent = selectedFarmName;
+                console.log('✅ Initialized farm name in header to:', selectedFarmName);
+            }
 
             // Load all charts
             loadMonthlyProductionChart();

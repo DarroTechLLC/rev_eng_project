@@ -62,7 +62,7 @@
 <body>
     <div layout:fragment="content">
         <div class="container-fluid">
-            <h1 class="h3 mb-4 text-gray-800">Digesters Dashboard</h1>
+            <h1 class="h3 mb-4 text-gray-800">Digesters Dashboard - <span id="farmNameDisplay"></span></h1>
 
             <div class="grid-layout">
                 <div class="grid-row">
@@ -152,23 +152,23 @@
 
                 // Process data for chart
                 const yearData = {};
-                
+
                 data.forEach(item => {
                     const date = new Date(item.timestamp);
                     const itemYear = date.getFullYear();
-                    
+
                     if (itemYear >= twoYearsAgo && itemYear <= curYear) {
                         if (!yearData[itemYear]) {
                             yearData[itemYear] = [];
                         }
-                        
+
                         yearData[itemYear].push([date.getTime(), item.value]);
                     }
                 });
 
                 // Convert to series array
                 const series = [];
-                
+
                 for (const [year, values] of Object.entries(yearData)) {
                     series.push({
                         name: year,
@@ -234,6 +234,13 @@
         // Initialize chart when the page loads
         document.addEventListener('DOMContentLoaded', function() {
             console.log('Initializing Digesters Dashboard...');
+
+            // Initialize farm name in header
+            const farmNameDisplay = document.getElementById('farmNameDisplay');
+            if (farmNameDisplay && selectedFarmName) {
+                farmNameDisplay.textContent = selectedFarmName;
+                console.log('✅ Initialized farm name in header to:', selectedFarmName);
+            }
 
             // Load chart
             loadLagoonLevelsChart();

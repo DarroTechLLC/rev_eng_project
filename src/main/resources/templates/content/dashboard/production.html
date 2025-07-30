@@ -1,0 +1,201 @@
+<!-- Production View -->
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Production Data</h6>
+                </div>
+                <div class="card-body">
+                    <!-- Chart Type Selector -->
+                    <div class="mb-3">
+                        <label for="chartType">Chart Type:</label>
+                        <select id="chartType" class="form-control form-control-sm">
+                            <option value="line">Line</option>
+                            <option value="column">Column</option>
+                            <option value="bar">Bar</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Charts Container -->
+                    <div class="chart-container">
+                        <div id="monthlyProductionChart" style="height: 400px;"></div>
+                        <div id="cumulativeProductionChart" style="height: 400px;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart Initialization Script -->
+<script th:inline="javascript">
+    // Function to get the current farm ID
+    function getCurrentFarmId() {
+        // Try getting from farm selector
+        const farmSelector = document.getElementById('farmSelector');
+        if (farmSelector) {
+            const selectedFarmId = farmSelector.value;
+            console.log('🏢 Farm ID from selector:', selectedFarmId);
+            return selectedFarmId;
+        }
+
+        // Try getting from localStorage with company-specific key
+        const companySlug = window.location.pathname.split('/')[1];
+        const storageKey = `selectedFarmKey_${companySlug}`;
+        const storedFarmId = localStorage.getItem(storageKey);
+        console.log('🏢 Farm ID from localStorage:', storedFarmId);
+        return storedFarmId;
+    }
+
+    // Function to fetch data for a specific year
+    async function fetchYearData(year, endpoint) {
+        const startDate = `${year}-01-01`;
+        const endDate = `${year}-12-31`;
+        
+        // Get current farm ID (in case it changed)
+        const farmId = getCurrentFarmId();
+        console.log(`📡 Fetching data for year ${year} with farm ID:`, farmId);
+        
+        try {
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    farm_id: farmId,
+                    from: startDate,
+                    to: endDate
+                })
+            });
+
+            console.log(`📡 API response status for year ${year}:`, response.status);
+            const data = await response.json();
+            console.log(`📡 API response for year ${year}:`, data);
+
+            if (data.data && data.data.length > 0) {
+                console.log(`📊 Received ${data.data.length} data points for year ${year}`);
+                return data.data;
+            } else {
+                console.warn(`⚠️ No data received for year ${year}`);
+                return [];
+            }
+        } catch (error) {
+            console.error(`❌ Error fetching data for year ${year}:`, error);
+            return [];
+        }
+    }
+
+    // Function to load all chart data
+    async function loadChartData() {
+        console.group('📊 Loading Chart Data');
+        try {
+            const currentYear = new Date().getFullYear();
+            const years = [currentYear - 2, currentYear - 1, currentYear];
+            
+            console.log('🔍 Fetching monthly production data for years:', years.join(', '));
+            
+            // Fetch data for each year
+            const monthlyDataPromises = years.map(year => 
+                fetchYearData(year, '/api/charts/single-farm/meter-monthly-timeline')
+            );
+
+            const monthlyData = await Promise.all(monthlyDataPromises);
+            
+            // Initialize charts with the data
+            initializeCharts(monthlyData, years);
+        } catch (error) {
+            console.error('❌ Error loading chart data:', error);
+        } finally {
+            console.groupEnd();
+        }
+    }
+
+    // Function to initialize charts
+    function initializeCharts(monthlyData, years) {
+        const chartType = document.getElementById('chartType').value;
+        
+        // Initialize Monthly Production Chart
+        Highcharts.chart('monthlyProductionChart', {
+            chart: {
+                type: chartType
+            },
+            title: {
+                text: 'Monthly Production'
+            },
+            xAxis: {
+                categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                title: {
+                    text: 'Month'
+                }
+            },
+            yAxis: {
+                title: {
+                    text: 'Production'
+                }
+            },
+            series: years.map((year, index) => ({
+                name: year.toString(),
+                data: monthlyData[index].map(point => point.value)
+            }))
+        });
+
+        // Initialize Cumulative Production Chart
+        Highcharts.chart('cumulativeProductionChart', {
+            chart: {
+                type: chartType
+            },
+            title: {
+                text: 'Cumulative Production'
+            },
+            xAxis: {
+                categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                title: {
+                    text: 'Month'
+                }
+            },
+            yAxis: {
+                title: {
+                    text: 'Cumulative Production'
+                }
+            },
+            series: years.map((year, index) => {
+                let cumulative = 0;
+                return {
+                    name: year.toString(),
+                    data: monthlyData[index].map(point => {
+                        cumulative += point.value;
+                        return cumulative;
+                    })
+                };
+            })
+        });
+    }
+
+    // Make loadChartData globally available
+    window.loadChartData = loadChartData;
+
+    // Initialize when DOM is ready
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('🔍 Chart Configuration Verification:');
+        console.log('✓ Chart container present:', !!document.getElementById('monthlyProductionChart'));
+        console.log('✓ Date selector present:', !!document.getElementById('chartType'));
+        console.log('✓ Company ID present:', !!document.getElementById('page-top'));
+
+        // Listen for farm selection changes
+        window.addEventListener('farmSelectionChanged', async function(event) {
+            console.log('🏢 Farm selection changed:', event.detail);
+            // Reload the charts with new farm ID
+            await loadChartData();
+        });
+
+        // Handle chart type changes
+        document.getElementById('chartType').addEventListener('change', function() {
+            loadChartData();
+        });
+
+        // Initialize everything
+        loadChartData();
+    });
+</script> 

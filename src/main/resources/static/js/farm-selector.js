@@ -63,8 +63,48 @@
         }
     }
 
+    // Function to update project links
+    function updateProjectLinks(farmId) {
+        console.group('🔗 Updating Project Links');
+        try {
+            const $farmSelector = $('#farmSelector');
+            const farmName = $farmSelector.find('option:selected').text().toLowerCase().replace(/\s+/g, '-');
+            const companySlug = $('#currentCompanyDisplay').data('company-slug') || 
+                              window.location.pathname.split('/')[1];
+
+            if (!companySlug) {
+                throw new Error('Company slug not found');
+            }
+
+            console.log('Update parameters:', {
+                farmId: farmId,
+                farmName: farmName,
+                companySlug: companySlug
+            });
+
+            $('#projectsSubmenu .nav-link-item').each(function() {
+                const $link = $(this);
+                const currentPath = $link.attr('href');
+                const pathParts = currentPath.split('/');
+                const lastPart = pathParts[pathParts.length - 1];
+
+                const newPath = `/${companySlug}/projects/${farmName}/${lastPart}`;
+                $link.attr('href', newPath);
+
+                console.log(`Updated link: ${currentPath} → ${newPath}`);
+            });
+
+            console.log('✅ Project links updated');
+        } catch (error) {
+            console.error('❌ Error updating project links:', error);
+        } finally {
+            console.groupEnd();
+        }
+    }
+
     // Function to handle farm selection changes
-    async function handleFarmSelection(event) {
+    async function handleFarmSelection(e) {
+        const event = e;
         console.group('👆 Farm Selection Change');
         console.log('Event triggered:', {
             type: event.type,
@@ -118,22 +158,61 @@
             console.log(`💾 Stored new farm ID for company ${companySlug}:`, newFarmId);
 
             // Update all other selectors
-            $('#farmSelector').not($select).val(newFarmId);
+            $('#farmSelector, #mobileFarmSelector').not($select).val(newFarmId);
 
             // Update project links if in projects submenu
             if ($select.closest('#projectsSubmenu').length) {
                 updateProjectLinks(newFarmId);
             }
 
-            // Handle forecast if needed
-            if ($select.closest('#forecastControls').length && typeof generateForecast === 'function') {
-                generateForecast();
-            }
-
             lastSelectedFarmId = newFarmId;
             console.log('✅ Farm selection completed');
 
-            // Reload the page to ensure everything is in sync
+            // Update the farm name in the header if it exists
+            const farmNameDisplay = document.getElementById('farmNameDisplay');
+            if (farmNameDisplay) {
+                farmNameDisplay.textContent = farmName;
+                console.log('✅ Updated farm name in header to:', farmName);
+            }
+
+            // Check if we're on a production page
+            if (window.location.pathname.includes('/production')) {
+                console.log('📊 On production page, refreshing data...');
+
+                // Try multiple ways to refresh the data
+                try {
+                    // 1. Try direct function call
+                    if (typeof window.loadChartData === 'function') {
+                        console.log('📊 Calling loadChartData directly...');
+                        await window.loadChartData();
+                    }
+
+                    // 2. Try custom event
+                    const customEvent = new CustomEvent('farmSelectionChanged', { 
+                        detail: { 
+                            farmId: newFarmId,
+                            farmName: farmName,
+                            previousId: lastSelectedFarmId
+                        },
+                        bubbles: true,
+                        cancelable: true
+                    });
+                    window.dispatchEvent(customEvent);
+
+                    // 3. Try auto-refresh
+                    if (typeof window.refreshData === 'function') {
+                        console.log('📊 Triggering auto-refresh...');
+                        window.refreshData();
+                    }
+                } catch (error) {
+                    console.error('❌ Error refreshing data:', error);
+                }
+
+                // Don't reload the page, let the event handler update the charts
+                return true;
+            }
+
+            // For other pages, reload to ensure everything is in sync
             window.location.reload();
 
             return true;
@@ -146,52 +225,13 @@
         }
     }
 
-    // Function to update project links
-    function updateProjectLinks(farmId) {
-        console.group('🔗 Updating Project Links');
-        try {
-            const $farmSelector = $('#farmSelector');
-            const farmName = $farmSelector.find('option:selected').text().toLowerCase().replace(/\s+/g, '-');
-            const companySlug = $('#currentCompanyDisplay').data('company-slug') || 
-                              window.location.pathname.split('/')[1];
-
-            if (!companySlug) {
-                throw new Error('Company slug not found');
-            }
-
-            console.log('Update parameters:', {
-                farmId: farmId,
-                farmName: farmName,
-                companySlug: companySlug
-            });
-
-            $('#projectsSubmenu .collapse-item').each(function() {
-                const $link = $(this);
-                const currentPath = $link.attr('href');
-                const pathParts = currentPath.split('/');
-                const lastPart = pathParts[pathParts.length - 1];
-
-                const newPath = `/${companySlug}/projects/${farmName}/${lastPart}`;
-                $link.attr('href', newPath);
-
-                console.log(`Updated link: ${currentPath} → ${newPath}`);
-            });
-
-            console.log('✅ Project links updated');
-        } catch (error) {
-            console.error('❌ Error updating project links:', error);
-        } finally {
-            console.groupEnd();
-        }
-    }
-
     // Initialize farm selectors
     async function initializeFarmSelectors() {
         console.group('🚜 Farm Selector Initialization');
 
         try {
             // Find all farm selectors
-            const $selectors = $('#farmSelector');
+            const $selectors = $('#farmSelector, #mobileFarmSelector');
             console.log(`Found ${$selectors.length} farm selector(s)`);
 
             if ($selectors.length === 0) {

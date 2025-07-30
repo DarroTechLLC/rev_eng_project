@@ -293,6 +293,28 @@ function createChartWithErrorHandling(containerId, options) {
  * @param {string} title - Chart title
  */
 function createProductionTrendChart(containerId, data, title = 'Daily Production Trend') {
+    // Add comprehensive data validation logging
+    console.group('📊 Production Chart Debug Info');
+    console.log('Chart Container:', containerId);
+    console.log('Data Points Available:', data ? data.length : 0);
+
+    if (data && data.length > 0) {
+        const startDate = new Date(data[0][0]);
+        const endDate = new Date(data[data.length - 1][0]);
+        console.log('Date Range:', {
+            start: startDate.toISOString().split('T')[0],
+            end: endDate.toISOString().split('T')[0],
+            totalDays: Math.round((endDate - startDate) / (1000 * 60 * 60 * 24))
+        });
+        console.log('Sample Data Point:', {
+            date: new Date(data[0][0]).toISOString(),
+            value: data[0][1]
+        });
+    } else {
+        console.warn('⚠️ No data available for chart');
+    }
+    console.groupEnd();
+
     return Highcharts.chart(containerId, {
         chart: {
             type: 'line',
@@ -606,4 +628,22 @@ function createSafeChartConfig(containerId, options = {}) {
 
     // Merge options with defaults
     return Object.assign({}, defaultConfig, options);
+}
+
+function updateChartData(chart, newData) {
+    console.group('📈 Chart Update');
+    console.log('Chart ID:', chart.renderTo.id);
+    console.log('New Data Points:', newData ? newData.length : 0);
+    
+    try {
+        if (chart && chart.series && chart.series[0]) {
+            chart.series[0].setData(newData, true);
+            console.log('✅ Chart data updated successfully');
+        } else {
+            console.warn('⚠️ Chart or series not found');
+        }
+    } catch (error) {
+        console.error('❌ Error updating chart:', error);
+    }
+    console.groupEnd();
 }

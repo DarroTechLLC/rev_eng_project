@@ -489,6 +489,7 @@ public class RoutingController extends BaseController {
         model.addAttribute("selectedCompany", company);
         model.addAttribute("selectedFarm", farm);
         model.addAttribute("projectType", projectType);
+        model.addAttribute("selectedFarmId", farm.getId());
         model.addAttribute("currentUser", user);
 
         // Add all farms from this company to model for the farm selector

@@ -29,25 +29,41 @@
      * Detect the current page type
      */
     function detectPageType() {
+        // Check for production page
+        if (window.location.pathname.includes('/production')) {
+            currentPageType = 'production';
+            console.log('🔍 Detected page type: production');
+            return;
+        }
+
         // Check for chart containers
         if (document.getElementById('ytdVolumeChart') || 
             document.getElementById('dailyProductionChart') ||
             document.getElementById('weeklyProductionChart') ||
             document.getElementById('monthlyProductionChart')) {
             currentPageType = 'chart';
+            console.log('🔍 Detected page type: chart');
+            return;
         }
+
         // Check for report containers
-        else if (document.querySelector('.pdf-viewer') || 
-                document.querySelector('.pdf-container')) {
+        if (document.querySelector('.pdf-viewer') || 
+            document.querySelector('.pdf-container')) {
             currentPageType = 'report';
+            console.log('🔍 Detected page type: report');
+            return;
         }
+
         // Check for dashboard elements
-        else if (document.querySelector('.dashboard-card') ||
-                document.querySelector('.dashboard-widget')) {
+        if (document.querySelector('.dashboard-card') ||
+            document.querySelector('.dashboard-widget')) {
             currentPageType = 'dashboard';
+            console.log('🔍 Detected page type: dashboard');
+            return;
         }
-        
-        console.log(`🔍 Detected page type: ${currentPageType}`);
+
+        currentPageType = 'unknown';
+        console.log('🔍 Detected page type: unknown');
     }
     
     /**
@@ -75,19 +91,45 @@
      * Refresh data based on page type
      */
     function refreshData() {
-        switch(currentPageType) {
-            case 'chart':
-                refreshChartData();
-                break;
-            case 'report':
-                refreshReportData();
-                break;
-            case 'dashboard':
-                refreshDashboardData();
-                break;
-            default:
-                console.log('ℹ️ No specific refresh handler for this page type');
-                break;
+        console.group('🔄 Data Refresh');
+        try {
+            const now = new Date();
+            console.log(`🔄 Data refreshed at ${now.toLocaleTimeString()}`);
+
+            switch (currentPageType) {
+                case 'production':
+                    console.log('📊 Refreshing production data...');
+                    if (typeof window.loadChartData === 'function') {
+                        window.loadChartData();
+                    } else {
+                        console.warn('⚠️ loadChartData function not found');
+                    }
+                    break;
+
+                case 'chart':
+                    console.log('📈 Refreshing chart data...');
+                    if (typeof window.refreshChartData === 'function') {
+                        window.refreshChartData();
+                    }
+                    break;
+
+                case 'report':
+                    console.log('📄 Refreshing report data...');
+                    refreshReportData();
+                    break;
+
+                case 'dashboard':
+                    console.log('🎯 Refreshing dashboard data...');
+                    refreshDashboardData();
+                    break;
+
+                default:
+                    console.log('ℹ️ No specific refresh handler for this page type');
+            }
+        } catch (error) {
+            console.error('❌ Error refreshing data:', error);
+        } finally {
+            console.groupEnd();
         }
     }
     
@@ -122,6 +164,38 @@
                 console.log(`📊 Calling chart update function: ${funcName}`);
                 window[funcName]();
             }
+        });
+    }
+
+    function fetchChartData(endpoint, params) {
+        console.group('📡 API Request Debug');
+        console.log('Endpoint:', endpoint);
+        console.log('Request Parameters:', params);
+        console.time('API Response Time');
+
+        return fetch(endpoint, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(params)
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('API Response:', {
+                dataPoints: data.data ? data.data.length : 0,
+                hasError: !!data.error,
+                errorMessage: data.error ? data.errorMessage : null
+            });
+            console.timeEnd('API Response Time');
+            console.groupEnd();
+            return data;
+        })
+        .catch(error => {
+            console.error('API Error:', error);
+            console.timeEnd('API Response Time');
+            console.groupEnd();
+            throw error;
         });
     }
     
