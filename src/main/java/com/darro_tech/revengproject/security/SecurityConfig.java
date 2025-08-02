@@ -46,6 +46,13 @@ public class SecurityConfig {
     public SecurityFilterChain adminFilterChain(HttpSecurity http, MvcRequestMatcher.Builder mvc) throws Exception {
         http
                 .securityMatcher(new AdminRequestMatcher())
+                // Add CSRF configuration
+                .csrf(csrf -> csrf
+                    .ignoringRequestMatchers(
+                        mvc.pattern("/api/**"),
+                        mvc.pattern("/webauthn/**")
+                    )
+                )
                 .authorizeHttpRequests(authorize -> authorize
                 .anyRequest().access((authentication, object) -> {
                     HttpServletRequest request = object.getRequest();
@@ -76,6 +83,13 @@ public class SecurityConfig {
     public SecurityFilterChain superAdminFilterChain(HttpSecurity http, MvcRequestMatcher.Builder mvc) throws Exception {
         http
                 .securityMatcher(new SuperAdminRequestMatcher())
+                // Add CSRF configuration
+                .csrf(csrf -> csrf
+                    .ignoringRequestMatchers(
+                        mvc.pattern("/api/**"),
+                        mvc.pattern("/webauthn/**")
+                    )
+                )
                 .authorizeHttpRequests(authorize -> authorize
                 .anyRequest().access((authentication, object) -> {
                     HttpServletRequest request = object.getRequest();
@@ -114,7 +128,12 @@ public class SecurityConfig {
     @Order(3)
     public SecurityFilterChain defaultFilterChain(HttpSecurity http, MvcRequestMatcher.Builder mvc) throws Exception {
         http
-                .csrf(csrf -> csrf.disable()) // Disable CSRF for now to simplify login
+                .csrf(csrf -> csrf
+                    .ignoringRequestMatchers(
+                        mvc.pattern("/api/**"),
+                        mvc.pattern("/webauthn/**")
+                    )
+                ) // Enable CSRF with exclusions for API endpoints
                 .headers(headers -> headers
                     .frameOptions(frameOptions -> frameOptions.sameOrigin())
                 )
