@@ -1,7 +1,11 @@
 -------------------------Working on----------------
-
+-language difference translator dropdown option? research, where is this work being done and can be understood,
+based on research implement specific language selector
 --------------------------Up Next-----------------
--language difference translator dropdown option ?
+-deploy to render/aws w-rae staff, try db connection (with Andrew)
+-ai implementation research for data Analysis
+-how much analysis can i do with just math, what kind of questions are being asked and not answered, what 
+questions have answers and how were they obtained from data
 -----------------------
 
 # Dashboard Views Comparison Analysis: Java vs NextJS Implementation
