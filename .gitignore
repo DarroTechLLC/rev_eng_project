@@ -1,4 +1,13 @@
-HELP.md
+docs/HELP.md
+.idea
+application.dev.properties
+application.properties
+config.yml
+docker-compose.yml
+Dockerfile
+LICENSE
+README.md
+settings
 .gradle
 build/
 !gradle/wrapper/gradle-wrapper.jar
@@ -38,3 +47,7 @@ out/
 frontend/node_modules/
 frontend/package-lock.json
 logs/application.log
+
+Database Consoles
+
+Scratches
