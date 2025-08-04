@@ -89,6 +89,9 @@ public class RevEngProjectApplication {
 
         // Email configuration
         setPropertyIfExists(dotenv, "spring.mail.password", "EMAIL_PASSWORD");
+        setPropertyIfExists(dotenv, "app.url", "APP_URL");
+        setPropertyIfExists(dotenv, "spring.mail.from", "MY_EMAIL_ADDRESS");
+        setPropertyIfExists(dotenv, "server.port", "SERVER_PORT");
 
         // Servlet configuration
         setPropertyIfExists(dotenv, "spring.servlet.multipart.max-file-size", "SPRING_SERVLET_MULTIPART_MAX_FILE_SIZE");
