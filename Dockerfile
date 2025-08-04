@@ -10,10 +10,10 @@ RUN chmod +x ./gradlew && \
 FROM openjdk:17-jdk-slim
 WORKDIR /app
 COPY --from=build /app/build/libs/rev-eng-project-0.0.1-SNAPSHOT.jar app.jar
-COPY .env.docker .env
+COPY .env .env
 EXPOSE 8080
 
-# Using Docker-specific .env file with appropriate settings
+# Using standard .env file for all environments
 # No hardcoded environment variables for better security and flexibility
 
 # Add health check to ensure database is available before starting the application
