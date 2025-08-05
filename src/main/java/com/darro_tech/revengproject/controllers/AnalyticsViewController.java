@@ -27,7 +27,7 @@ public class AnalyticsViewController extends BaseController {
         model.addAttribute("farms", farms);
         model.addAttribute("selectedDate", new Date());
 
-        return view("analytics/anomaly-detection", model);
+        return view("content/analytics/anomaly-detection", model);
     }
 
     @GetMapping("/trend-analysis")
@@ -37,7 +37,7 @@ public class AnalyticsViewController extends BaseController {
         model.addAttribute("farms", farms);
         model.addAttribute("selectedDate", new Date());
 
-        return view("analytics/trend-analysis", model);
+        return view("content/analytics/trend-analysis", model);
     }
 
     @GetMapping("/production-forecasting")
@@ -47,6 +47,6 @@ public class AnalyticsViewController extends BaseController {
         model.addAttribute("farms", farms);
         model.addAttribute("selectedDate", new Date());
 
-        return view("analytics/production-forecasting", model);
+        return view("content/analytics/production-forecasting", model);
     }
 }

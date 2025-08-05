@@ -8,6 +8,38 @@
     <script src="https://code.highcharts.com/highcharts.js"></script>
     <!-- Chart Utils -->
     <script src="/js/chart-utils/highcharts-utils.js"></script>
+    <!-- MathJax for mathematical formulas -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <!-- D3.js for visualizations -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        .math-formula {
+            font-size: 1.1em;
+            margin: 10px 0;
+        }
+        .formula-component {
+            margin-left: 20px;
+            font-size: 0.9em;
+        }
+        .toggle-details {
+            cursor: pointer;
+            color: #4e73df;
+            text-decoration: underline;
+        }
+        .technical-details {
+            display: none;
+            background-color: #f8f9fc;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        #zScoreVisualizer {
+            width: 100%;
+            height: 200px;
+            background-color: #f8f9fc;
+        }
+    </style>
 </head>
 <body>
     <div class="container-fluid">
@@ -30,6 +62,37 @@
                     </li>
                     <li class="list-group-item">
                         <strong>How it works:</strong> Compares current production values against historical averages using standard deviation analysis to identify deviations beyond normal thresholds.
+                        <div>
+                            <p class="mt-2 mb-1"><span class="toggle-details" onclick="toggleDetails('zScoreDetails')">Show mathematical details</span></p>
+                            <div id="zScoreDetails" class="technical-details">
+                                <p><strong>Z-Score Formula:</strong></p>
+                                <div class="math-formula">
+                                    \[ Z = \frac{x - \mu}{\sigma} \]
+                                </div>
+                                <div class="formula-component">
+                                    <p>Where:</p>
+                                    <ul>
+                                        <li>\(Z\) = Z-score (number of standard deviations from the mean)</li>
+                                        <li>\(x\) = The data point being evaluated</li>
+                                        <li>\(\mu\) = Mean (average) of the historical data</li>
+                                        <li>\(\sigma\) = Standard deviation of the historical data</li>
+                                    </ul>
+                                </div>
+                                <p><strong>Threshold Selection:</strong></p>
+                                <p>In a normal distribution:</p>
+                                <ul>
+                                    <li>|Z| > 2.0: Approximately 5% of data points (potential anomalies)</li>
+                                    <li>|Z| > 3.0: Approximately 0.3% of data points (severe anomalies)</li>
+                                </ul>
+                                <p>We use these thresholds because:</p>
+                                <ul>
+                                    <li>Z = 2.0 provides a good balance between sensitivity and false positives</li>
+                                    <li>Z = 3.0 identifies only the most extreme outliers</li>
+                                </ul>
+                                <div id="normalDistributionVisualizer" style="width: 100%; height: 150px;"></div>
+                                <p class="text-center"><small>Normal distribution with anomaly zones highlighted</small></p>
+                            </div>
+                        </div>
                     </li>
                     <li class="list-group-item">
                         <strong>Why it's useful:</strong> Helps prevent equipment failures, optimize operations, and maintain consistent production quality through early warning detection.
@@ -42,6 +105,14 @@
                     </li>
                     <li class="list-group-item">
                         <strong>Data Requirements:</strong> Minimum 2 historical data points needed for baseline calculation. More data points provide more accurate statistical analysis.
+                    </li>
+                    <li class="list-group-item">
+                        <strong>How to interpret results:</strong> 
+                        <ul>
+                            <li><strong>No anomalies:</strong> All data points fall within expected statistical ranges</li>
+                            <li><strong>Potential anomalies (yellow):</strong> Data points with |Z-score| between 2.0 and 3.0</li>
+                            <li><strong>Severe anomalies (red):</strong> Data points with |Z-score| greater than 3.0</li>
+                        </ul>
                     </li>
                 </ul>
             </div>
@@ -79,6 +150,58 @@
                 <div class="row">
                     <div class="col-12 text-center">
                         <button id="detectButton" class="btn btn-warning">Detect Anomalies</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Algorithm Breakdown Card -->
+        <div class="card bg-light mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="m-0"><i class="fas fa-calculator mr-2"></i>Z-Score Algorithm Breakdown</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Step-by-Step Process:</h6>
+                        <ol>
+                            <li>Calculate the mean (μ) of all data points</li>
+                            <li>Calculate the standard deviation (σ)</li>
+                            <li>For each data point, calculate Z = (x - μ) / σ</li>
+                            <li>Flag points where |Z| > 2.0 as potential anomalies</li>
+                            <li>Flag points where |Z| > 3.0 as severe anomalies</li>
+                        </ol>
+                    </div>
+                    <div class="col-md-6">
+                        <div id="zScoreVisualizer" style="height: 200px;"></div>
+                        <p class="text-center"><small>Visual representation of Z-score distribution</small></p>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <h6>Before/After Comparison:</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header bg-light">
+                                        <h6 class="m-0">Raw Data</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <p>Raw data points may contain anomalies that are difficult to identify visually, especially in large datasets or when the scale of variation is significant.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header bg-light">
+                                        <h6 class="m-0">Z-Score Processed Data</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <p>After Z-score processing, anomalies are clearly identified based on their statistical deviation from the mean, making patterns and outliers immediately visible.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -241,6 +364,336 @@
                     }]
                 });
             }
+        });
+    </script>
+
+    <!-- Additional JavaScript for enhanced visualizations and interactivity -->
+    <script>
+        // Toggle function for showing/hiding technical details
+        function toggleDetails(detailsId) {
+            const detailsElement = document.getElementById(detailsId);
+            const isVisible = detailsElement.style.display !== 'none';
+
+            detailsElement.style.display = isVisible ? 'none' : 'block';
+
+            // Update toggle text
+            const toggleElement = document.querySelector(`[onclick="toggleDetails('${detailsId}')"]`);
+            toggleElement.textContent = isVisible ? 'Show mathematical details' : 'Hide mathematical details';
+
+            // If showing details, render the normal distribution visualization
+            if (!isVisible && detailsId === 'zScoreDetails') {
+                renderNormalDistribution();
+            }
+        }
+
+        // Function to render normal distribution visualization
+        function renderNormalDistribution() {
+            const width = document.getElementById('normalDistributionVisualizer').clientWidth;
+            const height = 150;
+            const margin = {top: 20, right: 30, bottom: 30, left: 40};
+
+            // Clear previous visualization
+            d3.select('#normalDistributionVisualizer').html('');
+
+            // Create SVG
+            const svg = d3.select('#normalDistributionVisualizer')
+                .append('svg')
+                .attr('width', width)
+                .attr('height', height)
+                .append('g')
+                .attr('transform', `translate(${margin.left},${margin.top})`);
+
+            // X scale for the normal distribution
+            const x = d3.scaleLinear()
+                .domain([-4, 4])
+                .range([0, width - margin.left - margin.right]);
+
+            // Y scale
+            const y = d3.scaleLinear()
+                .domain([0, 0.45])
+                .range([height - margin.top - margin.bottom, 0]);
+
+            // Normal distribution function
+            function normalDensity(x, mean = 0, sd = 1) {
+                return Math.exp(-0.5 * Math.pow((x - mean) / sd, 2)) / (sd * Math.sqrt(2 * Math.PI));
+            }
+
+            // Generate data points for the curve
+            const points = [];
+            for (let i = -4; i <= 4; i += 0.1) {
+                points.push({x: i, y: normalDensity(i)});
+            }
+
+            // Create the line
+            const line = d3.line()
+                .x(d => x(d.x))
+                .y(d => y(d.y))
+                .curve(d3.curveBasis);
+
+            // Add the X axis
+            svg.append('g')
+                .attr('transform', `translate(0,${height - margin.top - margin.bottom})`)
+                .call(d3.axisBottom(x).ticks(5));
+
+            // Add X axis label
+            svg.append('text')
+                .attr('text-anchor', 'middle')
+                .attr('x', (width - margin.left - margin.right) / 2)
+                .attr('y', height - margin.top)
+                .style('font-size', '10px')
+                .text('Z-score (standard deviations from mean)');
+
+            // Add the normal distribution curve
+            svg.append('path')
+                .datum(points)
+                .attr('fill', 'none')
+                .attr('stroke', '#4e73df')
+                .attr('stroke-width', 2)
+                .attr('d', line);
+
+            // Add vertical lines for thresholds
+            const thresholds = [-3, -2, 2, 3];
+            const colors = ['#e74a3b', '#f6c23e', '#f6c23e', '#e74a3b'];
+            const labels = ['Severe', 'Potential', 'Potential', 'Severe'];
+
+            thresholds.forEach((threshold, i) => {
+                // Add vertical line
+                svg.append('line')
+                    .attr('x1', x(threshold))
+                    .attr('y1', y(0))
+                    .attr('x2', x(threshold))
+                    .attr('y2', y(normalDensity(threshold)))
+                    .attr('stroke', colors[i])
+                    .attr('stroke-width', 2)
+                    .attr('stroke-dasharray', '4');
+
+                // Add label
+                svg.append('text')
+                    .attr('x', x(threshold))
+                    .attr('y', y(normalDensity(threshold)) - 10)
+                    .attr('text-anchor', 'middle')
+                    .style('font-size', '8px')
+                    .style('fill', colors[i])
+                    .text(labels[i]);
+            });
+
+            // Add shaded areas for anomaly zones
+            // Severe anomaly zone (left)
+            svg.append('path')
+                .datum(points.filter(d => d.x <= -3))
+                .attr('fill', '#e74a3b')
+                .attr('fill-opacity', 0.3)
+                .attr('d', d3.area()
+                    .x(d => x(d.x))
+                    .y0(height - margin.top - margin.bottom)
+                    .y1(d => y(d.y))
+                );
+
+            // Potential anomaly zone (left)
+            svg.append('path')
+                .datum(points.filter(d => d.x >= -3 && d.x <= -2))
+                .attr('fill', '#f6c23e')
+                .attr('fill-opacity', 0.3)
+                .attr('d', d3.area()
+                    .x(d => x(d.x))
+                    .y0(height - margin.top - margin.bottom)
+                    .y1(d => y(d.y))
+                );
+
+            // Potential anomaly zone (right)
+            svg.append('path')
+                .datum(points.filter(d => d.x >= 2 && d.x <= 3))
+                .attr('fill', '#f6c23e')
+                .attr('fill-opacity', 0.3)
+                .attr('d', d3.area()
+                    .x(d => x(d.x))
+                    .y0(height - margin.top - margin.bottom)
+                    .y1(d => y(d.y))
+                );
+
+            // Severe anomaly zone (right)
+            svg.append('path')
+                .datum(points.filter(d => d.x >= 3))
+                .attr('fill', '#e74a3b')
+                .attr('fill-opacity', 0.3)
+                .attr('d', d3.area()
+                    .x(d => x(d.x))
+                    .y0(height - margin.top - margin.bottom)
+                    .y1(d => y(d.y))
+                );
+        }
+
+        // Function to render Z-score visualizer
+        function renderZScoreVisualizer() {
+            const width = document.getElementById('zScoreVisualizer').clientWidth;
+            const height = 200;
+            const margin = {top: 20, right: 30, bottom: 50, left: 50};
+
+            // Sample data
+            const data = [
+                {x: 1, value: 120, zScore: 0.2},
+                {x: 2, value: 135, zScore: 1.0},
+                {x: 3, value: 90, zScore: -1.5},
+                {x: 4, value: 145, zScore: 1.8},
+                {x: 5, value: 80, zScore: -2.2},
+                {x: 6, value: 160, zScore: 2.5},
+                {x: 7, value: 70, zScore: -2.8},
+                {x: 8, value: 175, zScore: 3.2},
+                {x: 9, value: 130, zScore: 0.8},
+                {x: 10, value: 110, zScore: -0.5}
+            ];
+
+            // Clear previous visualization
+            d3.select('#zScoreVisualizer').html('');
+
+            // Create SVG
+            const svg = d3.select('#zScoreVisualizer')
+                .append('svg')
+                .attr('width', width)
+                .attr('height', height)
+                .append('g')
+                .attr('transform', `translate(${margin.left},${margin.top})`);
+
+            // X scale
+            const x = d3.scaleBand()
+                .domain(data.map(d => d.x))
+                .range([0, width - margin.left - margin.right])
+                .padding(0.1);
+
+            // Y scale for values
+            const y = d3.scaleLinear()
+                .domain([0, d3.max(data, d => d.value) * 1.1])
+                .range([height - margin.top - margin.bottom, 0]);
+
+            // Y scale for Z-scores
+            const yZ = d3.scaleLinear()
+                .domain([-4, 4])
+                .range([height - margin.top - margin.bottom, 0]);
+
+            // Add the X axis
+            svg.append('g')
+                .attr('transform', `translate(0,${height - margin.top - margin.bottom})`)
+                .call(d3.axisBottom(x))
+                .append('text')
+                .attr('x', (width - margin.left - margin.right) / 2)
+                .attr('y', 40)
+                .attr('fill', 'black')
+                .style('text-anchor', 'middle')
+                .text('Data Point');
+
+            // Add the Y axis for values
+            svg.append('g')
+                .call(d3.axisLeft(y))
+                .append('text')
+                .attr('transform', 'rotate(-90)')
+                .attr('y', -40)
+                .attr('x', -(height - margin.top - margin.bottom) / 2)
+                .attr('fill', 'black')
+                .style('text-anchor', 'middle')
+                .text('Value');
+
+            // Add the Y axis for Z-scores
+            svg.append('g')
+                .attr('transform', `translate(${width - margin.left - margin.right}, 0)`)
+                .call(d3.axisRight(yZ))
+                .append('text')
+                .attr('transform', 'rotate(-90)')
+                .attr('y', 40)
+                .attr('x', -(height - margin.top - margin.bottom) / 2)
+                .attr('fill', 'black')
+                .style('text-anchor', 'middle')
+                .text('Z-Score');
+
+            // Add horizontal lines for Z-score thresholds
+            const thresholds = [-3, -2, 0, 2, 3];
+            const dashArrays = ['4', '4', '0', '4', '4'];
+            const colors = ['#e74a3b', '#f6c23e', '#4e73df', '#f6c23e', '#e74a3b'];
+
+            thresholds.forEach((threshold, i) => {
+                svg.append('line')
+                    .attr('x1', 0)
+                    .attr('y1', yZ(threshold))
+                    .attr('x2', width - margin.left - margin.right)
+                    .attr('y2', yZ(threshold))
+                    .attr('stroke', colors[i])
+                    .attr('stroke-width', i === 2 ? 1 : 1)
+                    .attr('stroke-dasharray', dashArrays[i]);
+            });
+
+            // Add bars for values
+            svg.selectAll('.bar')
+                .data(data)
+                .enter()
+                .append('rect')
+                .attr('class', 'bar')
+                .attr('x', d => x(d.x))
+                .attr('width', x.bandwidth())
+                .attr('y', d => y(d.value))
+                .attr('height', d => height - margin.top - margin.bottom - y(d.value))
+                .attr('fill', '#4e73df')
+                .attr('fill-opacity', 0.7);
+
+            // Add circles for Z-scores
+            svg.selectAll('.z-score')
+                .data(data)
+                .enter()
+                .append('circle')
+                .attr('class', 'z-score')
+                .attr('cx', d => x(d.x) + x.bandwidth() / 2)
+                .attr('cy', d => yZ(d.zScore))
+                .attr('r', 5)
+                .attr('fill', d => {
+                    if (Math.abs(d.zScore) > 3) return '#e74a3b';
+                    if (Math.abs(d.zScore) > 2) return '#f6c23e';
+                    return '#1cc88a';
+                });
+
+            // Add legend
+            const legend = svg.append('g')
+                .attr('transform', `translate(${(width - margin.left - margin.right) / 2 - 100}, ${-10})`);
+
+            legend.append('rect')
+                .attr('x', 0)
+                .attr('width', 10)
+                .attr('height', 10)
+                .attr('fill', '#4e73df')
+                .attr('fill-opacity', 0.7);
+
+            legend.append('text')
+                .attr('x', 15)
+                .attr('y', 10)
+                .style('font-size', '10px')
+                .text('Value');
+
+            legend.append('circle')
+                .attr('cx', 80)
+                .attr('cy', 5)
+                .attr('r', 5)
+                .attr('fill', '#1cc88a');
+
+            legend.append('text')
+                .attr('x', 90)
+                .attr('y', 10)
+                .style('font-size', '10px')
+                .text('Z-Score (normal)');
+
+            legend.append('circle')
+                .attr('cx', 190)
+                .attr('cy', 5)
+                .attr('r', 5)
+                .attr('fill', '#f6c23e');
+
+            legend.append('text')
+                .attr('x', 200)
+                .attr('y', 10)
+                .style('font-size', '10px')
+                .text('Potential Anomaly');
+        }
+
+        // Initialize visualizations when the page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            // Render Z-score visualizer
+            renderZScoreVisualizer();
         });
     </script>
 </body>

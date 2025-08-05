@@ -11,6 +11,204 @@
     <script src="https://code.highcharts.com/modules/accessibility.js"></script>
     <!-- Chart Utils -->
     <script src="/js/chart-utils/highcharts-utils.js"></script>
+    <!-- MathJax for mathematical formulas -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <!-- D3.js for visualizations -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        .math-formula {
+            font-size: 1.1em;
+            margin: 10px 0;
+        }
+        .formula-component {
+            margin-left: 20px;
+            font-size: 0.9em;
+        }
+        .toggle-details {
+            cursor: pointer;
+            color: #4e73df;
+            text-decoration: underline;
+        }
+        .technical-details {
+            display: none;
+            background-color: #f8f9fc;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        #regressionVisualizer {
+            width: 100%;
+            height: 200px;
+            background-color: #f8f9fc;
+        }
+        .confidence-selector {
+            margin: 15px 0;
+        }
+        .residual-toggle {
+            margin: 15px 0;
+        }
+    </style>
+    <script>
+        // Toggle function for showing/hiding technical details
+        function toggleDetails(detailsId) {
+            const detailsElement = document.getElementById(detailsId);
+            const isVisible = detailsElement.style.display !== 'none';
+
+            detailsElement.style.display = isVisible ? 'none' : 'block';
+
+            // Update toggle text
+            const toggleElement = document.querySelector(`[onclick="toggleDetails('${detailsId}')"]`);
+            toggleElement.textContent = isVisible ? 'Show ' + (detailsId === 'linearRegressionDetails' ? 'mathematical details' : 'R² calculation details') : 'Hide ' + (detailsId === 'linearRegressionDetails' ? 'mathematical details' : 'R² calculation details');
+
+            // If showing details, render the appropriate visualization
+            if (!isVisible) {
+                if (detailsId === 'linearRegressionDetails') {
+                    renderRegressionVisualizer();
+                }
+            }
+        }
+
+        // Function to render regression visualizer
+        function renderRegressionVisualizer() {
+            const width = document.getElementById('regressionVisualizer').clientWidth;
+            const height = 200;
+            const margin = {top: 20, right: 30, bottom: 30, left: 40};
+
+            // Sample data - simulating daily production values
+            const data = [
+                {x: 1, y: 120},
+                {x: 2, y: 132},
+                {x: 3, y: 101},
+                {x: 4, y: 134},
+                {x: 5, y: 90},
+                {x: 6, y: 110},
+                {x: 7, y: 120},
+                {x: 8, y: 135},
+                {x: 9, y: 140},
+                {x: 10, y: 138},
+                {x: 11, y: 125},
+                {x: 12, y: 115},
+                {x: 13, y: 130},
+                {x: 14, y: 135},
+                {x: 15, y: 140}
+            ];
+
+            // Calculate means
+            const xMean = d3.mean(data, d => d.x);
+            const yMean = d3.mean(data, d => d.y);
+
+            // Calculate slope (m) and y-intercept (b)
+            let numerator = 0;
+            let denominator = 0;
+
+            data.forEach(d => {
+                const xDiff = d.x - xMean;
+                const yDiff = d.y - yMean;
+                numerator += xDiff * yDiff;
+                denominator += xDiff * xDiff;
+            });
+
+            const slope = numerator / denominator;
+            const yIntercept = yMean - slope * xMean;
+
+            // Calculate predicted values and R²
+            let ssRes = 0;
+            let ssTot = 0;
+
+            data.forEach(d => {
+                const predicted = slope * d.x + yIntercept;
+                ssRes += Math.pow(d.y - predicted, 2);
+                ssTot += Math.pow(d.y - yMean, 2);
+            });
+
+            const rSquared = 1 - (ssRes / ssTot);
+
+            // Clear previous visualization
+            d3.select('#regressionVisualizer').html('');
+
+            // Create SVG
+            const svg = d3.select('#regressionVisualizer')
+                .append('svg')
+                .attr('width', width)
+                .attr('height', height)
+                .append('g')
+                .attr('transform', `translate(${margin.left},${margin.top})`);
+
+            // X scale
+            const x = d3.scaleLinear()
+                .domain([0, d3.max(data, d => d.x) * 1.1])
+                .range([0, width - margin.left - margin.right]);
+
+            // Y scale
+            const y = d3.scaleLinear()
+                .domain([0, d3.max(data, d => d.y) * 1.1])
+                .range([height - margin.top - margin.bottom, 0]);
+
+            // Add the X axis
+            svg.append('g')
+                .attr('transform', `translate(0,${height - margin.top - margin.bottom})`)
+                .call(d3.axisBottom(x));
+
+            // Add the Y axis
+            svg.append('g')
+                .call(d3.axisLeft(y));
+
+            // Add data points
+            svg.selectAll('.data-point')
+                .data(data)
+                .enter()
+                .append('circle')
+                .attr('class', 'data-point')
+                .attr('cx', d => x(d.x))
+                .attr('cy', d => y(d.y))
+                .attr('r', 4)
+                .attr('fill', '#4e73df');
+
+            // Add regression line
+            const x1 = 0;
+            const y1 = yIntercept;
+            const x2 = d3.max(data, d => d.x) * 1.1;
+            const y2 = slope * x2 + yIntercept;
+
+            svg.append('line')
+                .attr('x1', x(x1))
+                .attr('y1', y(y1))
+                .attr('x2', x(x2))
+                .attr('y2', y(y2))
+                .attr('stroke', '#e74a3b')
+                .attr('stroke-width', 2);
+
+            // Add residual lines if checkbox is checked
+            if (document.getElementById('showResiduals') && document.getElementById('showResiduals').checked) {
+                data.forEach(d => {
+                    const predicted = slope * d.x + yIntercept;
+                    svg.append('line')
+                        .attr('x1', x(d.x))
+                        .attr('y1', y(d.y))
+                        .attr('x2', x(d.x))
+                        .attr('y2', y(predicted))
+                        .attr('stroke', '#858796')
+                        .attr('stroke-width', 1)
+                        .attr('stroke-dasharray', '3,3');
+                });
+            }
+
+            // Add formula annotation
+            svg.append('text')
+                .attr('x', width - margin.left - margin.right - 150)
+                .attr('y', 20)
+                .style('font-size', '12px')
+                .text(`y = ${slope.toFixed(2)}x + ${yIntercept.toFixed(2)}`);
+
+            // Add R² annotation
+            svg.append('text')
+                .attr('x', width - margin.left - margin.right - 150)
+                .attr('y', 40)
+                .style('font-size', '12px')
+                .text(`R² = ${rSquared.toFixed(3)}`);
+        }
+    </script>
 </head>
 <body>
     <div class="container-fluid">
@@ -33,18 +231,93 @@
                     </li>
                     <li class="list-group-item">
                         <strong>How it works:</strong> Uses statistical time series analysis and linear regression to detect upward, downward, or cyclical trends in production data.
+                        <div>
+                            <p class="mt-2 mb-1"><span class="toggle-details" onclick="toggleDetails('linearRegressionDetails')">Show mathematical details</span></p>
+                            <div id="linearRegressionDetails" class="technical-details">
+                                <p><strong>Linear Regression Formula:</strong></p>
+                                <div class="math-formula">
+                                    \[ y = mx + b \]
+                                </div>
+                                <div class="formula-component">
+                                    <p>Where:</p>
+                                    <ul>
+                                        <li>\(y\) = Dependent variable (CH4 recovery value)</li>
+                                        <li>\(x\) = Independent variable (time)</li>
+                                        <li>\(m\) = Slope (rate of change)</li>
+                                        <li>\(b\) = y-intercept (baseline value)</li>
+                                    </ul>
+                                </div>
+                                <p><strong>Calculating the Slope (m):</strong></p>
+                                <div class="math-formula">
+                                    \[ m = \frac{\sum_{i=1}^{n} (x_i - \bar{x})(y_i - \bar{y})}{\sum_{i=1}^{n} (x_i - \bar{x})^2} \]
+                                </div>
+                                <p><strong>Calculating the y-intercept (b):</strong></p>
+                                <div class="math-formula">
+                                    \[ b = \bar{y} - m\bar{x} \]
+                                </div>
+                                <div class="formula-component">
+                                    <p>Where:</p>
+                                    <ul>
+                                        <li>\(\bar{x}\) = Mean of x values</li>
+                                        <li>\(\bar{y}\) = Mean of y values</li>
+                                        <li>\(n\) = Number of data points</li>
+                                    </ul>
+                                </div>
+                                <div id="regressionVisualizer" style="width: 100%; height: 200px;"></div>
+                                <p class="text-center"><small>Visual representation of linear regression best-fit line</small></p>
+                            </div>
+                        </div>
                     </li>
                     <li class="list-group-item">
                         <strong>Why it's useful:</strong> Helps understand production patterns, plan maintenance schedules, and optimize operational strategies.
                     </li>
                     <li class="list-group-item">
                         <strong>Analysis methods:</strong> Linear regression analysis with R² correlation coefficients to measure trend strength.
+                        <div>
+                            <p class="mt-2 mb-1"><span class="toggle-details" onclick="toggleDetails('r2Details')">Show R² calculation details</span></p>
+                            <div id="r2Details" class="technical-details">
+                                <p><strong>R² (Coefficient of Determination) Formula:</strong></p>
+                                <div class="math-formula">
+                                    \[ R^2 = 1 - \frac{SS_{res}}{SS_{tot}} = 1 - \frac{\sum_{i=1}^{n} (y_i - \hat{y}_i)^2}{\sum_{i=1}^{n} (y_i - \bar{y})^2} \]
+                                </div>
+                                <div class="formula-component">
+                                    <p>Where:</p>
+                                    <ul>
+                                        <li>\(SS_{res}\) = Sum of squares of residuals (unexplained variation)</li>
+                                        <li>\(SS_{tot}\) = Total sum of squares (total variation)</li>
+                                        <li>\(y_i\) = Actual value</li>
+                                        <li>\(\hat{y}_i\) = Predicted value from regression line</li>
+                                        <li>\(\bar{y}\) = Mean of actual values</li>
+                                    </ul>
+                                </div>
+                                <p><strong>R² Interpretation:</strong></p>
+                                <ul>
+                                    <li>R² = 1.0: Perfect fit (100% of variation explained by the model)</li>
+                                    <li>R² = 0.7-0.9: Strong trend (70-90% of variation explained)</li>
+                                    <li>R² = 0.4-0.7: Moderate trend (40-70% of variation explained)</li>
+                                    <li>R² = 0.1-0.4: Weak trend (10-40% of variation explained)</li>
+                                    <li>R² = 0.0: No trend (0% of variation explained by the model)</li>
+                                </ul>
+                                <div class="residual-toggle">
+                                    <label><input type="checkbox" id="showResiduals"> Show residuals on visualization</label>
+                                </div>
+                            </div>
+                        </div>
                     </li>
                     <li class="list-group-item">
                         <strong>Limitations:</strong> Requires sufficient historical data (minimum 30 days) for accurate trend detection. Short-term fluctuations may mask underlying trends.
                     </li>
                     <li class="list-group-item">
                         <strong>Data Requirements:</strong> Minimum 5 historical data points needed for trend analysis. Select farms with sufficient production history.
+                    </li>
+                    <li class="list-group-item">
+                        <strong>How to interpret results:</strong> 
+                        <ul>
+                            <li><strong>Upward trend (positive slope):</strong> Production is increasing over time</li>
+                            <li><strong>Downward trend (negative slope):</strong> Production is decreasing over time</li>
+                            <li><strong>Flat trend (slope near zero):</strong> Production is stable over time</li>
+                            <li><strong>R² value:</strong> Indicates confidence in the trend (higher = more reliable)</li>
+                        </ul>
                     </li>
                 </ul>
             </div>
@@ -82,6 +355,54 @@
                 <div class="row">
                     <div class="col-12 text-center">
                         <button id="analyzeButton" class="btn btn-info">Analyze Trend</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Algorithm Breakdown Card -->
+        <div class="card bg-light mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="m-0"><i class="fas fa-calculator mr-2"></i>Linear Regression Algorithm Breakdown</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Step-by-Step Process:</h6>
+                        <ol>
+                            <li>Calculate the mean of x values (x̄) and y values (ȳ)</li>
+                            <li>Calculate the slope: m = Σ[(x<sub>i</sub> - x̄)·(y<sub>i</sub> - ȳ)] / Σ[(x<sub>i</sub> - x̄)²]</li>
+                            <li>Calculate the y-intercept: b = ȳ - m·x̄</li>
+                            <li>Calculate predicted values: ŷ<sub>i</sub> = m·x<sub>i</sub> + b</li>
+                            <li>Calculate R² = 1 - [Σ(y<sub>i</sub> - ŷ<sub>i</sub>)² / Σ(y<sub>i</sub> - ȳ)²]</li>
+                        </ol>
+                    </div>
+                    <div class="col-md-6">
+                        <div id="regressionStepVisualizer" style="height: 200px;"></div>
+                        <p class="text-center"><small>Visual representation of linear regression calculation</small></p>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <h6>Confidence Level Selector:</h6>
+                        <p>Adjust the confidence level to see how it affects the prediction intervals:</p>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="confidenceLevel">Confidence Level:</label>
+                                    <select id="confidenceLevel" class="form-control">
+                                        <option value="0.80">80% (Lower confidence, narrower interval)</option>
+                                        <option value="0.90" selected>90% (Standard confidence level)</option>
+                                        <option value="0.95">95% (Higher confidence, wider interval)</option>
+                                        <option value="0.99">99% (Highest confidence, widest interval)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div id="confidenceVisualizer" style="height: 200px;"></div>
+                                <p class="text-center"><small>Impact of confidence level on prediction intervals</small></p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -242,6 +563,346 @@
                     }]
                 });
             }
+        });
+    </script>
+
+    <!-- Additional JavaScript for enhanced visualizations and interactivity -->
+    <script>
+
+        // Function to render regression step visualizer
+        function renderRegressionStepVisualizer() {
+            const width = document.getElementById('regressionStepVisualizer').clientWidth;
+            const height = 200;
+            const margin = {top: 20, right: 30, bottom: 30, left: 40};
+
+            // Sample data
+            const data = [
+                {x: 1, y: 120},
+                {x: 2, y: 132},
+                {x: 3, y: 101},
+                {x: 4, y: 134},
+                {x: 5, y: 90},
+                {x: 6, y: 110},
+                {x: 7, y: 120}
+            ];
+
+            // Calculate means
+            const xMean = d3.mean(data, d => d.x);
+            const yMean = d3.mean(data, d => d.y);
+
+            // Calculate slope (m) and y-intercept (b)
+            let numerator = 0;
+            let denominator = 0;
+
+            data.forEach(d => {
+                const xDiff = d.x - xMean;
+                const yDiff = d.y - yMean;
+                numerator += xDiff * yDiff;
+                denominator += xDiff * xDiff;
+            });
+
+            const slope = numerator / denominator;
+            const yIntercept = yMean - slope * xMean;
+
+            // Clear previous visualization
+            d3.select('#regressionStepVisualizer').html('');
+
+            // Create SVG
+            const svg = d3.select('#regressionStepVisualizer')
+                .append('svg')
+                .attr('width', width)
+                .attr('height', height)
+                .append('g')
+                .attr('transform', `translate(${margin.left},${margin.top})`);
+
+            // X scale
+            const x = d3.scaleLinear()
+                .domain([0, d3.max(data, d => d.x) * 1.1])
+                .range([0, width - margin.left - margin.right]);
+
+            // Y scale
+            const y = d3.scaleLinear()
+                .domain([0, d3.max(data, d => d.y) * 1.1])
+                .range([height - margin.top - margin.bottom, 0]);
+
+            // Add the X axis
+            svg.append('g')
+                .attr('transform', `translate(0,${height - margin.top - margin.bottom})`)
+                .call(d3.axisBottom(x));
+
+            // Add the Y axis
+            svg.append('g')
+                .call(d3.axisLeft(y));
+
+            // Add mean lines
+            svg.append('line')
+                .attr('x1', 0)
+                .attr('y1', y(yMean))
+                .attr('x2', width - margin.left - margin.right)
+                .attr('y2', y(yMean))
+                .attr('stroke', '#858796')
+                .attr('stroke-width', 1)
+                .attr('stroke-dasharray', '3,3');
+
+            svg.append('line')
+                .attr('x1', x(xMean))
+                .attr('y1', 0)
+                .attr('x2', x(xMean))
+                .attr('y2', height - margin.top - margin.bottom)
+                .attr('stroke', '#858796')
+                .attr('stroke-width', 1)
+                .attr('stroke-dasharray', '3,3');
+
+            // Add data points
+            svg.selectAll('.data-point')
+                .data(data)
+                .enter()
+                .append('circle')
+                .attr('class', 'data-point')
+                .attr('cx', d => x(d.x))
+                .attr('cy', d => y(d.y))
+                .attr('r', 4)
+                .attr('fill', '#4e73df');
+
+            // Add regression line
+            const x1 = 0;
+            const y1 = yIntercept;
+            const x2 = d3.max(data, d => d.x) * 1.1;
+            const y2 = slope * x2 + yIntercept;
+
+            svg.append('line')
+                .attr('x1', x(x1))
+                .attr('y1', y(y1))
+                .attr('x2', x(x2))
+                .attr('y2', y(y2))
+                .attr('stroke', '#e74a3b')
+                .attr('stroke-width', 2);
+
+            // Add mean point
+            svg.append('circle')
+                .attr('cx', x(xMean))
+                .attr('cy', y(yMean))
+                .attr('r', 6)
+                .attr('fill', '#1cc88a')
+                .attr('stroke', '#fff')
+                .attr('stroke-width', 2);
+
+            // Add annotations
+            svg.append('text')
+                .attr('x', x(xMean) + 5)
+                .attr('y', y(yMean) - 10)
+                .style('font-size', '10px')
+                .text(`Mean (${xMean.toFixed(1)}, ${yMean.toFixed(1)})`);
+
+            svg.append('text')
+                .attr('x', width - margin.left - margin.right - 150)
+                .attr('y', 20)
+                .style('font-size', '10px')
+                .text(`Slope (m): ${slope.toFixed(2)}`);
+
+            svg.append('text')
+                .attr('x', width - margin.left - margin.right - 150)
+                .attr('y', 35)
+                .style('font-size', '10px')
+                .text(`Y-intercept (b): ${yIntercept.toFixed(2)}`);
+        }
+
+        // Function to render confidence visualizer
+        function renderConfidenceVisualizer() {
+            const width = document.getElementById('confidenceVisualizer').clientWidth;
+            const height = 200;
+            const margin = {top: 20, right: 30, bottom: 30, left: 40};
+
+            // Get selected confidence level
+            const confidenceLevel = parseFloat(document.getElementById('confidenceLevel').value);
+
+            // Sample data
+            const data = [];
+            for (let i = 1; i <= 20; i++) {
+                data.push({x: i, y: 100 + i * 2 + (Math.random() * 20 - 10)});
+            }
+
+            // Calculate means
+            const xMean = d3.mean(data, d => d.x);
+            const yMean = d3.mean(data, d => d.y);
+
+            // Calculate slope (m) and y-intercept (b)
+            let numerator = 0;
+            let denominator = 0;
+
+            data.forEach(d => {
+                const xDiff = d.x - xMean;
+                const yDiff = d.y - yMean;
+                numerator += xDiff * yDiff;
+                denominator += xDiff * xDiff;
+            });
+
+            const slope = numerator / denominator;
+            const yIntercept = yMean - slope * xMean;
+
+            // Calculate standard error and confidence intervals
+            let sumSquaredErrors = 0;
+            data.forEach(d => {
+                const predicted = slope * d.x + yIntercept;
+                sumSquaredErrors += Math.pow(d.y - predicted, 2);
+            });
+
+            const standardError = Math.sqrt(sumSquaredErrors / (data.length - 2));
+
+            // T-value for confidence level (approximation)
+            let tValue;
+            if (confidenceLevel === 0.80) tValue = 1.282;
+            else if (confidenceLevel === 0.90) tValue = 1.645;
+            else if (confidenceLevel === 0.95) tValue = 1.96;
+            else if (confidenceLevel === 0.99) tValue = 2.576;
+            else tValue = 1.645; // Default to 90%
+
+            // Calculate confidence intervals for each x
+            const confidenceIntervals = [];
+            for (let i = 0; i <= 25; i++) {
+                const x = i;
+                const predicted = slope * x + yIntercept;
+
+                // Simplified confidence interval calculation
+                const xDiff = x - xMean;
+                const sePrediction = standardError * Math.sqrt(1 + (xDiff * xDiff) / (data.length * denominator / data.length));
+                const marginOfError = tValue * sePrediction;
+
+                confidenceIntervals.push({
+                    x: x,
+                    y: predicted,
+                    upper: predicted + marginOfError,
+                    lower: predicted - marginOfError
+                });
+            }
+
+            // Clear previous visualization
+            d3.select('#confidenceVisualizer').html('');
+
+            // Create SVG
+            const svg = d3.select('#confidenceVisualizer')
+                .append('svg')
+                .attr('width', width)
+                .attr('height', height)
+                .append('g')
+                .attr('transform', `translate(${margin.left},${margin.top})`);
+
+            // X scale
+            const x = d3.scaleLinear()
+                .domain([0, 25])
+                .range([0, width - margin.left - margin.right]);
+
+            // Y scale
+            const y = d3.scaleLinear()
+                .domain([
+                    d3.min(confidenceIntervals, d => d.lower) * 0.9,
+                    d3.max(confidenceIntervals, d => d.upper) * 1.1
+                ])
+                .range([height - margin.top - margin.bottom, 0]);
+
+            // Add the X axis
+            svg.append('g')
+                .attr('transform', `translate(0,${height - margin.top - margin.bottom})`)
+                .call(d3.axisBottom(x).ticks(5));
+
+            // Add the Y axis
+            svg.append('g')
+                .call(d3.axisLeft(y).ticks(5));
+
+            // Add data points
+            svg.selectAll('.data-point')
+                .data(data)
+                .enter()
+                .append('circle')
+                .attr('class', 'data-point')
+                .attr('cx', d => x(d.x))
+                .attr('cy', d => y(d.y))
+                .attr('r', 3)
+                .attr('fill', '#4e73df');
+
+            // Create area generator for confidence interval
+            const area = d3.area()
+                .x(d => x(d.x))
+                .y0(d => y(d.lower))
+                .y1(d => y(d.upper))
+                .curve(d3.curveMonotoneX);
+
+            // Add confidence interval area
+            svg.append('path')
+                .datum(confidenceIntervals)
+                .attr('fill', '#4e73df')
+                .attr('fill-opacity', 0.2)
+                .attr('d', area);
+
+            // Create line generator for regression line
+            const line = d3.line()
+                .x(d => x(d.x))
+                .y(d => y(d.y))
+                .curve(d3.curveMonotoneX);
+
+            // Add regression line
+            svg.append('path')
+                .datum(confidenceIntervals)
+                .attr('fill', 'none')
+                .attr('stroke', '#e74a3b')
+                .attr('stroke-width', 2)
+                .attr('d', line);
+
+            // Add upper confidence bound line
+            const upperLine = d3.line()
+                .x(d => x(d.x))
+                .y(d => y(d.upper))
+                .curve(d3.curveMonotoneX);
+
+            svg.append('path')
+                .datum(confidenceIntervals)
+                .attr('fill', 'none')
+                .attr('stroke', '#4e73df')
+                .attr('stroke-width', 1)
+                .attr('stroke-dasharray', '3,3')
+                .attr('d', upperLine);
+
+            // Add lower confidence bound line
+            const lowerLine = d3.line()
+                .x(d => x(d.x))
+                .y(d => y(d.lower))
+                .curve(d3.curveMonotoneX);
+
+            svg.append('path')
+                .datum(confidenceIntervals)
+                .attr('fill', 'none')
+                .attr('stroke', '#4e73df')
+                .attr('stroke-width', 1)
+                .attr('stroke-dasharray', '3,3')
+                .attr('d', lowerLine);
+
+            // Add confidence level annotation
+            svg.append('text')
+                .attr('x', width - margin.left - margin.right - 120)
+                .attr('y', 20)
+                .style('font-size', '10px')
+                .text(`Confidence Level: ${(confidenceLevel * 100).toFixed(0)}%`);
+        }
+
+        // Initialize visualizations and event listeners when the page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize regression step visualizer
+            renderRegressionStepVisualizer();
+
+            // Initialize confidence visualizer
+            renderConfidenceVisualizer();
+
+            // Add event listener for residuals checkbox
+            document.getElementById('showResiduals').addEventListener('change', function() {
+                if (document.getElementById('linearRegressionDetails').style.display !== 'none') {
+                    renderRegressionVisualizer();
+                }
+            });
+
+            // Add event listener for confidence level selector
+            document.getElementById('confidenceLevel').addEventListener('change', function() {
+                renderConfidenceVisualizer();
+            });
         });
     </script>
 </body>

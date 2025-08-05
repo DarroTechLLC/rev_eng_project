@@ -29,18 +29,81 @@
                     </li>
                     <li class="list-group-item">
                         <strong>How it works:</strong> Uses a moving average algorithm that calculates the average of the last 7 data points to predict future values.
+                        <div>
+                            <p class="mt-2 mb-1"><span class="toggle-details" onclick="toggleDetails('movingAverageDetails')">Show mathematical details</span></p>
+                            <div id="movingAverageDetails" class="technical-details">
+                                <p><strong>Moving Average Formula:</strong></p>
+                                <div class="math-formula">
+                                    \[ F_t = \frac{1}{n} \sum_{i=0}^{n-1} x_{t-i} = \frac{x_t + x_{t-1} + ... + x_{t-n+1}}{n} \]
+                                </div>
+                                <div class="formula-component">
+                                    <p>Where:</p>
+                                    <ul>
+                                        <li>\(F_t\) = Forecast value for time period t</li>
+                                        <li>\(n\) = Window size (number of periods to average, 7 days in our implementation)</li>
+                                        <li>\(x_t\) = Actual value at time period t</li>
+                                        <li>\(x_{t-i}\) = Actual value at time period t-i</li>
+                                    </ul>
+                                </div>
+                                <p><strong>Window Size Effect:</strong></p>
+                                <p>The window size (n) determines how responsive the forecast is to recent changes:</p>
+                                <ul>
+                                    <li>Smaller window (e.g., n=3): More responsive to recent changes but more susceptible to noise</li>
+                                    <li>Larger window (e.g., n=14): Smoother forecast but slower to respond to trend changes</li>
+                                </ul>
+                                <div class="slider-container">
+                                    <label for="windowSizeSlider">Adjust window size to see effect: <span id="windowSizeValue" class="window-size-value">7</span> days</label>
+                                    <input type="range" id="windowSizeSlider" min="2" max="14" value="7" class="form-control-range">
+                                </div>
+                                <div id="movingAverageVisualizer" style="width: 100%; height: 200px;"></div>
+                                <p class="text-center"><small>Visual representation of moving average with different window sizes</small></p>
+                            </div>
+                        </div>
                     </li>
                     <li class="list-group-item">
                         <strong>Why it's useful:</strong> Helps with production planning, resource allocation, and financial forecasting for biogas operations.
                     </li>
                     <li class="list-group-item">
                         <strong>Accuracy:</strong> 70% confidence level for short-term predictions (1-7 days), decreasing for longer-term forecasts.
+                        <div>
+                            <p class="mt-2 mb-1"><span class="toggle-details" onclick="toggleDetails('confidenceLevelDetails')">Show confidence level details</span></p>
+                            <div id="confidenceLevelDetails" class="technical-details">
+                                <p><strong>Confidence Level Calculation:</strong></p>
+                                <p>The confidence level is calculated based on the historical accuracy of the model:</p>
+                                <div class="math-formula">
+                                    \[ \text{Confidence} = 1 - \frac{\text{MAE}}{\text{Range}} \]
+                                </div>
+                                <div class="formula-component">
+                                    <p>Where:</p>
+                                    <ul>
+                                        <li>\(\text{MAE}\) = Mean Absolute Error (average difference between forecast and actual values)</li>
+                                        <li>\(\text{Range}\) = Range of historical values (max - min)</li>
+                                    </ul>
+                                </div>
+                                <p><strong>Confidence Interpretation:</strong></p>
+                                <ul>
+                                    <li>90%+: Very high confidence (rare in production forecasting)</li>
+                                    <li>70-90%: High confidence (typical for short-term forecasts)</li>
+                                    <li>50-70%: Moderate confidence (typical for medium-term forecasts)</li>
+                                    <li>&lt;50%: Low confidence (typical for long-term forecasts)</li>
+                                </ul>
+                                <p>Our system displays confidence intervals as shaded areas around the forecast line, representing the range where actual values are likely to fall based on historical variance.</p>
+                            </div>
+                        </div>
                     </li>
                     <li class="list-group-item">
                         <strong>Limitations:</strong> This statistical forecasting model assumes stable conditions and doesn't account for seasonal variations or planned maintenance activities.
                     </li>
                     <li class="list-group-item">
                         <strong>Data Requirements:</strong> Minimum 10 historical data points needed for reliable forecasting. Select farms with sufficient production history.
+                    </li>
+                    <li class="list-group-item">
+                        <strong>How to interpret results:</strong> 
+                        <ul>
+                            <li><strong>Forecast line:</strong> The predicted values based on the moving average calculation</li>
+                            <li><strong>Confidence interval:</strong> Shaded area showing the range where actual values are likely to fall</li>
+                            <li><strong>Trend direction:</strong> Whether production is expected to increase, decrease, or remain stable</li>
+                        </ul>
                     </li>
                 </ul>
             </div>
@@ -84,6 +147,55 @@
                 <div class="row">
                     <div class="col-12 text-center">
                         <button id="forecastButton" class="btn btn-success">Generate Forecast</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Algorithm Breakdown Card -->
+        <div class="card bg-light mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="m-0"><i class="fas fa-calculator mr-2"></i>Moving Average Algorithm Breakdown</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Step-by-Step Process:</h6>
+                        <ol>
+                            <li>Select window size (n=7 days in our implementation)</li>
+                            <li>For each forecast point, calculate average of previous n values</li>
+                            <li>Calculate confidence intervals based on historical variance</li>
+                            <li>Project forward using the calculated average</li>
+                            <li>Adjust for known seasonal patterns (if applicable)</li>
+                        </ol>
+                    </div>
+                    <div class="col-md-6">
+                        <div id="movingAverageStepVisualizer" style="height: 200px;"></div>
+                        <p class="text-center"><small>Visual representation of moving average calculation</small></p>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <h6>What-If Scenario Tool:</h6>
+                        <p>Explore how changes in production might affect future forecasts. Adjust the values below to see the impact on the forecast.</p>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="scenarioChange">Production Change Scenario:</label>
+                                    <select id="scenarioChange" class="form-control">
+                                        <option value="stable">Stable Production (No Change)</option>
+                                        <option value="increase">Production Increase (10%)</option>
+                                        <option value="decrease">Production Decrease (10%)</option>
+                                        <option value="spike">Temporary Production Spike</option>
+                                        <option value="drop">Temporary Production Drop</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div id="scenarioVisualizer" style="height: 200px;"></div>
+                                <p class="text-center"><small>Impact of scenario on forecast</small></p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -270,6 +382,603 @@
                 initChartExportMenu(chart, document.getElementById('forecastChart'));
                 console.log('✅ Production Forecast Chart with enhanced export created');
             }
+        });
+    </script>
+
+    <!-- Additional JavaScript for enhanced visualizations and interactivity -->
+    <script>
+        // Toggle function for showing/hiding technical details
+        function toggleDetails(detailsId) {
+            const detailsElement = document.getElementById(detailsId);
+            const isVisible = detailsElement.style.display !== 'none';
+
+            detailsElement.style.display = isVisible ? 'none' : 'block';
+
+            // Update toggle text
+            const toggleElement = document.querySelector(`[onclick="toggleDetails('${detailsId}')"]`);
+            toggleElement.textContent = isVisible ? 'Show ' + (detailsId === 'movingAverageDetails' ? 'mathematical details' : 'confidence level details') : 'Hide ' + (detailsId === 'movingAverageDetails' ? 'mathematical details' : 'confidence level details');
+
+            // If showing details, render the appropriate visualization
+            if (!isVisible) {
+                if (detailsId === 'movingAverageDetails') {
+                    renderMovingAverageVisualizer();
+                }
+            }
+        }
+
+        // Function to render moving average visualizer
+        function renderMovingAverageVisualizer() {
+            const width = document.getElementById('movingAverageVisualizer').clientWidth;
+            const height = 200;
+            const margin = {top: 20, right: 30, bottom: 30, left: 40};
+
+            // Sample data - simulating daily production values
+            const rawData = [
+                {date: '2023-01-01', value: 120},
+                {date: '2023-01-02', value: 132},
+                {date: '2023-01-03', value: 101},
+                {date: '2023-01-04', value: 134},
+                {date: '2023-01-05', value: 90},
+                {date: '2023-01-06', value: 110},
+                {date: '2023-01-07', value: 120},
+                {date: '2023-01-08', value: 135},
+                {date: '2023-01-09', value: 140},
+                {date: '2023-01-10', value: 138},
+                {date: '2023-01-11', value: 125},
+                {date: '2023-01-12', value: 115},
+                {date: '2023-01-13', value: 130},
+                {date: '2023-01-14', value: 135},
+                {date: '2023-01-15', value: 140},
+                {date: '2023-01-16', value: 145},
+                {date: '2023-01-17', value: 150},
+                {date: '2023-01-18', value: 148},
+                {date: '2023-01-19', value: 135},
+                {date: '2023-01-20', value: 140}
+            ];
+
+            // Function to calculate moving average
+            function calculateMovingAverage(data, windowSize) {
+                const result = [];
+
+                // Need at least windowSize data points to start
+                for (let i = windowSize - 1; i < data.length; i++) {
+                    let sum = 0;
+                    for (let j = 0; j < windowSize; j++) {
+                        sum += data[i - j].value;
+                    }
+                    result.push({
+                        date: data[i].date,
+                        value: sum / windowSize
+                    });
+                }
+
+                return result;
+            }
+
+            // Get window size from slider
+            const windowSize = parseInt(document.getElementById('windowSizeSlider').value);
+
+            // Calculate moving average
+            const movingAvgData = calculateMovingAverage(rawData, windowSize);
+
+            // Clear previous visualization
+            d3.select('#movingAverageVisualizer').html('');
+
+            // Create SVG
+            const svg = d3.select('#movingAverageVisualizer')
+                .append('svg')
+                .attr('width', width)
+                .attr('height', height)
+                .append('g')
+                .attr('transform', `translate(${margin.left},${margin.top})`);
+
+            // X scale
+            const x = d3.scaleBand()
+                .domain(rawData.map(d => d.date))
+                .range([0, width - margin.left - margin.right])
+                .padding(0.1);
+
+            // Y scale
+            const y = d3.scaleLinear()
+                .domain([0, d3.max(rawData, d => d.value) * 1.1])
+                .range([height - margin.top - margin.bottom, 0]);
+
+            // Add the X axis
+            svg.append('g')
+                .attr('transform', `translate(0,${height - margin.top - margin.bottom})`)
+                .call(d3.axisBottom(x).tickValues(x.domain().filter((d, i) => i % 3 === 0)))
+                .selectAll('text')
+                .style('text-anchor', 'end')
+                .attr('dx', '-.8em')
+                .attr('dy', '.15em')
+                .attr('transform', 'rotate(-45)');
+
+            // Add the Y axis
+            svg.append('g')
+                .call(d3.axisLeft(y));
+
+            // Add raw data points
+            svg.selectAll('.raw-point')
+                .data(rawData)
+                .enter()
+                .append('circle')
+                .attr('class', 'raw-point')
+                .attr('cx', d => x(d.date) + x.bandwidth() / 2)
+                .attr('cy', d => y(d.value))
+                .attr('r', 3)
+                .attr('fill', '#4e73df');
+
+            // Create line generator for raw data
+            const rawLine = d3.line()
+                .x(d => x(d.date) + x.bandwidth() / 2)
+                .y(d => y(d.value))
+                .curve(d3.curveMonotoneX);
+
+            // Add raw data line
+            svg.append('path')
+                .datum(rawData)
+                .attr('fill', 'none')
+                .attr('stroke', '#4e73df')
+                .attr('stroke-width', 1.5)
+                .attr('d', rawLine);
+
+            // Create line generator for moving average
+            const maLine = d3.line()
+                .x(d => x(d.date) + x.bandwidth() / 2)
+                .y(d => y(d.value))
+                .curve(d3.curveMonotoneX);
+
+            // Add moving average line
+            svg.append('path')
+                .datum(movingAvgData)
+                .attr('fill', 'none')
+                .attr('stroke', '#e74a3b')
+                .attr('stroke-width', 2)
+                .attr('stroke-dasharray', '5,5')
+                .attr('d', maLine);
+
+            // Add moving average points
+            svg.selectAll('.ma-point')
+                .data(movingAvgData)
+                .enter()
+                .append('circle')
+                .attr('class', 'ma-point')
+                .attr('cx', d => x(d.date) + x.bandwidth() / 2)
+                .attr('cy', d => y(d.value))
+                .attr('r', 4)
+                .attr('fill', '#e74a3b');
+
+            // Add legend
+            const legend = svg.append('g')
+                .attr('transform', `translate(${(width - margin.left - margin.right) / 2 - 100}, ${-10})`);
+
+            legend.append('circle')
+                .attr('cx', 0)
+                .attr('cy', 5)
+                .attr('r', 3)
+                .attr('fill', '#4e73df');
+
+            legend.append('text')
+                .attr('x', 10)
+                .attr('y', 10)
+                .style('font-size', '10px')
+                .text('Actual Values');
+
+            legend.append('circle')
+                .attr('cx', 100)
+                .attr('cy', 5)
+                .attr('r', 4)
+                .attr('fill', '#e74a3b');
+
+            legend.append('text')
+                .attr('x', 110)
+                .attr('y', 10)
+                .style('font-size', '10px')
+                .text(`Moving Average (n=${windowSize})`);
+
+            // Add window size indicator
+            svg.append('text')
+                .attr('x', (width - margin.left - margin.right) / 2)
+                .attr('y', height - margin.top - margin.bottom + 25)
+                .attr('text-anchor', 'middle')
+                .style('font-size', '10px')
+                .text(`Window Size: ${windowSize} days`);
+        }
+
+        // Function to render moving average step visualizer
+        function renderMovingAverageStepVisualizer() {
+            const width = document.getElementById('movingAverageStepVisualizer').clientWidth;
+            const height = 200;
+            const margin = {top: 20, right: 30, bottom: 30, left: 40};
+
+            // Sample data
+            const data = [
+                {day: 1, value: 120},
+                {day: 2, value: 132},
+                {day: 3, value: 101},
+                {day: 4, value: 134},
+                {day: 5, value: 90},
+                {day: 6, value: 110},
+                {day: 7, value: 120},
+                {day: 8, value: 135},
+                {day: 9, value: 140},
+                {day: 10, value: 138}
+            ];
+
+            // Calculate 7-day moving average for day 8
+            const windowSize = 7;
+            const targetDay = 8;
+            const sum = data.slice(targetDay - windowSize, targetDay).reduce((acc, d) => acc + d.value, 0);
+            const average = sum / windowSize;
+
+            // Clear previous visualization
+            d3.select('#movingAverageStepVisualizer').html('');
+
+            // Create SVG
+            const svg = d3.select('#movingAverageStepVisualizer')
+                .append('svg')
+                .attr('width', width)
+                .attr('height', height)
+                .append('g')
+                .attr('transform', `translate(${margin.left},${margin.top})`);
+
+            // X scale
+            const x = d3.scaleBand()
+                .domain(data.map(d => d.day))
+                .range([0, width - margin.left - margin.right])
+                .padding(0.1);
+
+            // Y scale
+            const y = d3.scaleLinear()
+                .domain([0, d3.max(data, d => d.value) * 1.1])
+                .range([height - margin.top - margin.bottom, 0]);
+
+            // Add the X axis
+            svg.append('g')
+                .attr('transform', `translate(0,${height - margin.top - margin.bottom})`)
+                .call(d3.axisBottom(x).tickFormat(d => `Day ${d}`));
+
+            // Add the Y axis
+            svg.append('g')
+                .call(d3.axisLeft(y));
+
+            // Add bars
+            svg.selectAll('.bar')
+                .data(data)
+                .enter()
+                .append('rect')
+                .attr('class', 'bar')
+                .attr('x', d => x(d.day))
+                .attr('width', x.bandwidth())
+                .attr('y', d => y(d.value))
+                .attr('height', d => height - margin.top - margin.bottom - y(d.value))
+                .attr('fill', d => {
+                    if (d.day === targetDay) return '#1cc88a'; // Forecast day
+                    if (d.day >= targetDay - windowSize && d.day < targetDay) return '#4e73df'; // Window days
+                    return '#e9ecef'; // Other days
+                });
+
+            // Add window highlight
+            svg.append('rect')
+                .attr('x', x(targetDay - windowSize))
+                .attr('width', x.bandwidth() * windowSize)
+                .attr('y', 0)
+                .attr('height', height - margin.top - margin.bottom)
+                .attr('fill', 'none')
+                .attr('stroke', '#e74a3b')
+                .attr('stroke-width', 2)
+                .attr('stroke-dasharray', '5,5');
+
+            // Add average line
+            svg.append('line')
+                .attr('x1', x(targetDay - windowSize))
+                .attr('x2', x(targetDay - 1) + x.bandwidth())
+                .attr('y1', y(average))
+                .attr('y2', y(average))
+                .attr('stroke', '#e74a3b')
+                .attr('stroke-width', 2);
+
+            // Add forecast point
+            svg.append('circle')
+                .attr('cx', x(targetDay) + x.bandwidth() / 2)
+                .attr('cy', y(average))
+                .attr('r', 6)
+                .attr('fill', '#e74a3b')
+                .attr('stroke', '#fff')
+                .attr('stroke-width', 2);
+
+            // Add annotations
+            svg.append('text')
+                .attr('x', x(targetDay - windowSize / 2))
+                .attr('y', y(d3.max(data, d => d.value) * 1.05))
+                .attr('text-anchor', 'middle')
+                .style('font-size', '10px')
+                .text('Window (7 days)');
+
+            svg.append('text')
+                .attr('x', x(targetDay - windowSize / 2))
+                .attr('y', y(average) - 10)
+                .attr('text-anchor', 'middle')
+                .style('font-size', '10px')
+                .text(`Average: ${average.toFixed(1)}`);
+
+            svg.append('text')
+                .attr('x', x(targetDay) + x.bandwidth() / 2)
+                .attr('y', y(average) - 10)
+                .attr('text-anchor', 'middle')
+                .style('font-size', '10px')
+                .text('Forecast');
+        }
+
+        // Function to render scenario visualizer
+        function renderScenarioVisualizer() {
+            const width = document.getElementById('scenarioVisualizer').clientWidth;
+            const height = 200;
+            const margin = {top: 20, right: 30, bottom: 30, left: 40};
+
+            // Get selected scenario
+            const scenario = document.getElementById('scenarioChange').value;
+
+            // Base data
+            const baseData = [];
+            for (let i = 1; i <= 30; i++) {
+                baseData.push({day: i, value: 100 + Math.random() * 10});
+            }
+
+            // Create scenario data
+            const scenarioData = JSON.parse(JSON.stringify(baseData)); // Deep copy
+
+            // Apply scenario changes
+            switch (scenario) {
+                case 'increase':
+                    for (let i = 15; i < scenarioData.length; i++) {
+                        scenarioData[i].value *= 1.1; // 10% increase
+                    }
+                    break;
+                case 'decrease':
+                    for (let i = 15; i < scenarioData.length; i++) {
+                        scenarioData[i].value *= 0.9; // 10% decrease
+                    }
+                    break;
+                case 'spike':
+                    for (let i = 15; i < 20; i++) {
+                        scenarioData[i].value *= 1.3; // 30% spike
+                    }
+                    break;
+                case 'drop':
+                    for (let i = 15; i < 20; i++) {
+                        scenarioData[i].value *= 0.7; // 30% drop
+                    }
+                    break;
+                // 'stable' case - no changes needed
+            }
+
+            // Calculate 7-day moving average forecast
+            const windowSize = 7;
+            const baseForecasts = [];
+            const scenarioForecasts = [];
+
+            for (let i = windowSize; i < baseData.length; i++) {
+                let baseSum = 0;
+                let scenarioSum = 0;
+
+                for (let j = 0; j < windowSize; j++) {
+                    baseSum += baseData[i - j - 1].value;
+                    scenarioSum += scenarioData[i - j - 1].value;
+                }
+
+                baseForecasts.push({
+                    day: baseData[i].day,
+                    value: baseSum / windowSize
+                });
+
+                scenarioForecasts.push({
+                    day: scenarioData[i].day,
+                    value: scenarioSum / windowSize
+                });
+            }
+
+            // Clear previous visualization
+            d3.select('#scenarioVisualizer').html('');
+
+            // Create SVG
+            const svg = d3.select('#scenarioVisualizer')
+                .append('svg')
+                .attr('width', width)
+                .attr('height', height)
+                .append('g')
+                .attr('transform', `translate(${margin.left},${margin.top})`);
+
+            // X scale
+            const x = d3.scaleLinear()
+                .domain([1, 30])
+                .range([0, width - margin.left - margin.right]);
+
+            // Y scale
+            const y = d3.scaleLinear()
+                .domain([
+                    d3.min([
+                        d3.min(baseData, d => d.value),
+                        d3.min(scenarioData, d => d.value),
+                        d3.min(baseForecasts, d => d.value),
+                        d3.min(scenarioForecasts, d => d.value)
+                    ]) * 0.9,
+                    d3.max([
+                        d3.max(baseData, d => d.value),
+                        d3.max(scenarioData, d => d.value),
+                        d3.max(baseForecasts, d => d.value),
+                        d3.max(scenarioForecasts, d => d.value)
+                    ]) * 1.1
+                ])
+                .range([height - margin.top - margin.bottom, 0]);
+
+            // Add the X axis
+            svg.append('g')
+                .attr('transform', `translate(0,${height - margin.top - margin.bottom})`)
+                .call(d3.axisBottom(x).ticks(5).tickFormat(d => `Day ${d}`));
+
+            // Add the Y axis
+            svg.append('g')
+                .call(d3.axisLeft(y).ticks(5));
+
+            // Create line generator for base data
+            const baseLine = d3.line()
+                .x(d => x(d.day))
+                .y(d => y(d.value))
+                .curve(d3.curveMonotoneX);
+
+            // Create line generator for scenario data
+            const scenarioLine = d3.line()
+                .x(d => x(d.day))
+                .y(d => y(d.value))
+                .curve(d3.curveMonotoneX);
+
+            // Create line generator for base forecast
+            const baseForecastLine = d3.line()
+                .x(d => x(d.day))
+                .y(d => y(d.value))
+                .curve(d3.curveMonotoneX);
+
+            // Create line generator for scenario forecast
+            const scenarioForecastLine = d3.line()
+                .x(d => x(d.day))
+                .y(d => y(d.value))
+                .curve(d3.curveMonotoneX);
+
+            // Add base data line
+            svg.append('path')
+                .datum(baseData)
+                .attr('fill', 'none')
+                .attr('stroke', '#4e73df')
+                .attr('stroke-width', 1)
+                .attr('d', baseLine);
+
+            // Add scenario data line
+            svg.append('path')
+                .datum(scenarioData)
+                .attr('fill', 'none')
+                .attr('stroke', '#e74a3b')
+                .attr('stroke-width', 1)
+                .attr('d', scenarioLine);
+
+            // Add base forecast line
+            svg.append('path')
+                .datum(baseForecasts)
+                .attr('fill', 'none')
+                .attr('stroke', '#4e73df')
+                .attr('stroke-width', 2)
+                .attr('stroke-dasharray', '5,5')
+                .attr('d', baseForecastLine);
+
+            // Add scenario forecast line
+            svg.append('path')
+                .datum(scenarioForecasts)
+                .attr('fill', 'none')
+                .attr('stroke', '#e74a3b')
+                .attr('stroke-width', 2)
+                .attr('stroke-dasharray', '5,5')
+                .attr('d', scenarioForecastLine);
+
+            // Add vertical line at day 15 (scenario change point)
+            svg.append('line')
+                .attr('x1', x(15))
+                .attr('x2', x(15))
+                .attr('y1', 0)
+                .attr('y2', height - margin.top - margin.bottom)
+                .attr('stroke', '#858796')
+                .attr('stroke-width', 1)
+                .attr('stroke-dasharray', '3,3');
+
+            // Add annotation for scenario change
+            svg.append('text')
+                .attr('x', x(15))
+                .attr('y', 10)
+                .attr('text-anchor', 'middle')
+                .style('font-size', '9px')
+                .text('Scenario Change');
+
+            // Add legend
+            const legend = svg.append('g')
+                .attr('transform', `translate(${(width - margin.left - margin.right) / 2 - 100}, ${-10})`);
+
+            legend.append('line')
+                .attr('x1', 0)
+                .attr('x2', 15)
+                .attr('y1', 5)
+                .attr('y2', 5)
+                .attr('stroke', '#4e73df')
+                .attr('stroke-width', 1);
+
+            legend.append('text')
+                .attr('x', 20)
+                .attr('y', 9)
+                .style('font-size', '8px')
+                .text('Base Data');
+
+            legend.append('line')
+                .attr('x1', 80)
+                .attr('x2', 95)
+                .attr('y1', 5)
+                .attr('y2', 5)
+                .attr('stroke', '#e74a3b')
+                .attr('stroke-width', 1);
+
+            legend.append('text')
+                .attr('x', 100)
+                .attr('y', 9)
+                .style('font-size', '8px')
+                .text('Scenario Data');
+
+            legend.append('line')
+                .attr('x1', 0)
+                .attr('x2', 15)
+                .attr('y1', 20)
+                .attr('y2', 20)
+                .attr('stroke', '#4e73df')
+                .attr('stroke-width', 2)
+                .attr('stroke-dasharray', '5,5');
+
+            legend.append('text')
+                .attr('x', 20)
+                .attr('y', 24)
+                .style('font-size', '8px')
+                .text('Base Forecast');
+
+            legend.append('line')
+                .attr('x1', 80)
+                .attr('x2', 95)
+                .attr('y1', 20)
+                .attr('y2', 20)
+                .attr('stroke', '#e74a3b')
+                .attr('stroke-width', 2)
+                .attr('stroke-dasharray', '5,5');
+
+            legend.append('text')
+                .attr('x', 100)
+                .attr('y', 24)
+                .style('font-size', '8px')
+                .text('Scenario Forecast');
+        }
+
+        // Initialize visualizations and event listeners when the page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize moving average step visualizer
+            renderMovingAverageStepVisualizer();
+
+            // Initialize scenario visualizer
+            renderScenarioVisualizer();
+
+            // Add event listener for window size slider
+            document.getElementById('windowSizeSlider').addEventListener('input', function() {
+                const windowSize = this.value;
+                document.getElementById('windowSizeValue').textContent = windowSize;
+                renderMovingAverageVisualizer();
+            });
+
+            // Add event listener for scenario change
+            document.getElementById('scenarioChange').addEventListener('change', function() {
+                renderScenarioVisualizer();
+            });
         });
     </script>
 </body>
