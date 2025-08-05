@@ -57,6 +57,9 @@ public class UserManagementServiceImpl implements UserManagementServiceInterface
     @Autowired
     private UserContactTypeRepository userContactTypeRepository;
 
+    @Autowired
+    private EmailService emailService;
+
     /**
      * Get all users with their roles and companies
      *
@@ -638,24 +641,17 @@ public class UserManagementServiceImpl implements UserManagementServiceInterface
             user.setResetPswd((byte) 1); // Flag that password reset is required
             userRepository.save(user);
 
-            // Create email content with mailto link
-            String subject = "Reset Your Password";
-            String body = "Hello " + user.getUsername() + ",\n\n" +
-                    "A password reset has been requested for your account.\n\n" +
-                    "Your reset key is: " + resetKey + "\n\n" +
-                    "Please use this key to reset your password.\n\n" +
-                    "This key will expire on: " + expirationDate + "\n\n" +
-                    "If you did not request this reset, please ignore this email.";
+            // Send email using EmailService
+            boolean emailSent = emailService.sendForgotPasswordEmail(email, user.getUsername(), resetKey);
 
-            // Create mailto link
-            String mailtoLink = "mailto:" + email + "?subject=" + 
-                    java.net.URLEncoder.encode(subject, "UTF-8") + 
-                    "&body=" + java.net.URLEncoder.encode(body, "UTF-8");
+            if (!emailSent) {
+                logger.warning("⚠️ Failed to send password reset email to: " + email);
+                return false;
+            }
 
-            logger.info("📧 Password reset link generated for user: " + userId);
+            logger.info("📧 Password reset email sent to user: " + userId);
             logger.info("📧 Reset key: " + resetKey);
             logger.info("📧 Expiration date: " + expirationDate);
-            logger.info("📧 Mailto link: " + mailtoLink);
 
             return true;
         } catch (Exception e) {
