@@ -1,6 +1,5 @@
 package com.darro_tech.revengproject.security;
 
-import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -11,7 +10,6 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.header.HeaderWriter;
 import org.springframework.security.web.servlet.util.matcher.MvcRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.web.servlet.handler.HandlerMappingIntrospector;
@@ -19,7 +17,6 @@ import org.springframework.web.servlet.handler.HandlerMappingIntrospector;
 import com.darro_tech.revengproject.controllers.AuthenticationController;
 import com.darro_tech.revengproject.models.User;
 import com.darro_tech.revengproject.services.UserRoleService;
-import com.darro_tech.revengproject.util.LoggerUtils;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -28,16 +25,11 @@ import jakarta.servlet.http.HttpSession;
 @EnableWebSecurity
 public class SecurityConfig {
 
-    private static final Logger logger = LoggerUtils.getLogger(SecurityConfig.class);
-
     @Autowired
     private AuthenticationController authenticationController;
 
     @Autowired
     private UserRoleService userRoleService;
-
-    @Autowired
-    private HeaderWriter securityHeadersWriter;
 
     @Bean
     public MvcRequestMatcher.Builder mvc(HandlerMappingIntrospector introspector) {
@@ -54,18 +46,6 @@ public class SecurityConfig {
     public SecurityFilterChain adminFilterChain(HttpSecurity http, MvcRequestMatcher.Builder mvc) throws Exception {
         http
                 .securityMatcher(new AdminRequestMatcher())
-                // Add CSRF configuration
-                .csrf(csrf -> csrf
-                    .ignoringRequestMatchers(
-                        mvc.pattern("/api/**"),
-                        mvc.pattern("/webauthn/**")
-                    )
-                )
-                // Add security headers
-                .headers(headers -> headers
-                    .frameOptions(frameOptions -> frameOptions.sameOrigin())
-                    .addHeaderWriter(securityHeadersWriter)
-                )
                 .authorizeHttpRequests(authorize -> authorize
                 .anyRequest().access((authentication, object) -> {
                     HttpServletRequest request = object.getRequest();
@@ -96,46 +76,32 @@ public class SecurityConfig {
     public SecurityFilterChain superAdminFilterChain(HttpSecurity http, MvcRequestMatcher.Builder mvc) throws Exception {
         http
                 .securityMatcher(new SuperAdminRequestMatcher())
-                // Add CSRF configuration
-                .csrf(csrf -> csrf
-                    .ignoringRequestMatchers(
-                        mvc.pattern("/api/**"),
-                        mvc.pattern("/webauthn/**")
-                    )
-                )
-                // Add security headers
-                .headers(headers -> headers
-                    .frameOptions(frameOptions -> frameOptions.sameOrigin())
-                    .addHeaderWriter(securityHeadersWriter)
-                )
                 .authorizeHttpRequests(authorize -> authorize
                 .anyRequest().access((authentication, object) -> {
                     HttpServletRequest request = object.getRequest();
                     HttpSession session = request.getSession(false);
                     if (session == null) {
-                        logger.debug("❌ Super admin access denied: No session found");
+                        System.out.println("❌ Super admin access denied: No session found");
                         return new AuthorizationDecision(false);
                     }
 
                     User user = authenticationController.getUserFromSession(session);
                     if (user == null) {
-                        logger.debug("❌ Super admin access denied: No user found in session");
+                        System.out.println("❌ Super admin access denied: No user found in session");
                         return new AuthorizationDecision(false);
                     }
 
                     boolean isSuperAdmin = userRoleService.isSuperAdmin(user);
-                    if (isSuperAdmin) {
-                        logger.debug("✅ Super admin access granted for user: {}", user.getUsername());
-                    } else {
-                        logger.debug("❌ Super admin access denied for user: {}", user.getUsername());
-                    }
+                    System.out.println(isSuperAdmin
+                            ? "✅ Super admin access granted for user: " + user.getUsername()
+                            : "❌ Super admin access denied for user: " + user.getUsername());
 
                     return new AuthorizationDecision(isSuperAdmin);
                 })
                 )
                 .exceptionHandling(handling -> handling
                 .accessDeniedHandler((request, response, accessDeniedException) -> {
-                    logger.warn("⛔ Access denied to super admin resource: {}", request.getRequestURI());
+                    System.out.println("⛔ Access denied to super admin resource: " + request.getRequestURI());
                     response.sendRedirect("/access-denied");
                 })
                 )
@@ -148,15 +114,9 @@ public class SecurityConfig {
     @Order(3)
     public SecurityFilterChain defaultFilterChain(HttpSecurity http, MvcRequestMatcher.Builder mvc) throws Exception {
         http
-                .csrf(csrf -> csrf
-                    .ignoringRequestMatchers(
-                        mvc.pattern("/api/**"),
-                        mvc.pattern("/webauthn/**")
-                    )
-                ) // Enable CSRF with exclusions for API endpoints
+                .csrf(csrf -> csrf.disable()) // Disable CSRF for now to simplify login
                 .headers(headers -> headers
                     .frameOptions(frameOptions -> frameOptions.sameOrigin())
-                    .addHeaderWriter(securityHeadersWriter)
                 )
                 .authorizeHttpRequests(authorize -> authorize
                 .requestMatchers(
@@ -218,7 +178,7 @@ public class SecurityConfig {
             String path = request.getRequestURI();
             boolean isMatch = path.startsWith("/admin/alerts")
                     || path.startsWith("/admin/companies");  // Add companies to superadmin access
-            logger.debug("🔍 Super admin path check: {} -> {}", path, (isMatch ? "matches" : "no match"));
+            System.out.println("🔍 Super admin path check: " + path + " -> " + (isMatch ? "matches" : "no match"));
             return isMatch;
         }
     }

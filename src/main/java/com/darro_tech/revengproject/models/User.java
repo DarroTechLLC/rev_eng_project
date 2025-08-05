@@ -73,7 +73,7 @@ public class User {
     private Instant resetPassExpires;
 
     // Define many-to-many relationship with roles
-    @ManyToMany(fetch = FetchType.LAZY)
+    @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "user_roles",
             joinColumns = @JoinColumn(name = "user_id"),
@@ -82,7 +82,7 @@ public class User {
     private Set<Role> roles = new HashSet<>();
 
     // Define many-to-many relationship with companies
-    @ManyToMany(fetch = FetchType.LAZY)
+    @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "company_users",
             joinColumns = @JoinColumn(name = "user_id"),
@@ -120,7 +120,7 @@ public class User {
 
     public boolean isMatchingPassword(String password) {
         if (pwHash == null || pwHash.length() < 6) {
-            logger.warning("Stored password hash is invalid or too short");
+            logger.warning("Stored password hash is invalid: " + pwHash);
             return false;
         }
 
@@ -129,7 +129,7 @@ public class User {
 
         boolean match = pwHash.equals(computed);
         if (!match) {
-            logger.warning("Password mismatch for user: " + username);
+            logger.warning("Password mismatch. Input: " + password + ", Computed: " + computed);
         }
 
         return match;

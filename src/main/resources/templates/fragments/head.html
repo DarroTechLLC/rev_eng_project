@@ -6,15 +6,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title th:text="${title}">Dashboard</title>
 
-    <!-- CSRF token for Ajax requests -->
-    <meta name="_csrf" th:content="${_csrf != null ? _csrf.token : ''}" />
-    <meta name="_csrf_header" th:content="${_csrf != null ? _csrf.headerName : ''}" />
-
     <!-- Styles -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" th:href="@{/css/sb-admin-2.min.css}">
     <link rel="stylesheet" th:href="@{https://fonts.googleapis.com/css?family=Nunito:200,300,400,700,900}">
-
+    
     <!-- Custom CSS -->
     <link rel="stylesheet" th:href="@{/css/custom.css}">
 </head>

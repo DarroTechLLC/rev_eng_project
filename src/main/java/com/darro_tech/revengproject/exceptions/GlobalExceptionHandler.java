@@ -2,10 +2,8 @@ package com.darro_tech.revengproject.exceptions;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Logger;
 
-import org.slf4j.Logger;
-
-import com.darro_tech.revengproject.util.LoggerUtils;
 import com.fasterxml.jackson.databind.exc.InvalidDefinitionException;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
@@ -30,15 +28,15 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 @ControllerAdvice(annotations = RestController.class)
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
-    private static final Logger logger = LoggerUtils.getLogger(GlobalExceptionHandler.class);
+    private static final Logger logger = Logger.getLogger(GlobalExceptionHandler.class.getName());
 
     /**
      * Handle general exceptions
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Object> handleException(Exception ex) {
-        logger.error("💥 Unhandled exception: {}", ex.getMessage());
-        LoggerUtils.logException(logger, ex, "handling exception");
+        logger.severe("💥 Unhandled exception: " + ex.getMessage());
+        ex.printStackTrace();
 
         ApiError error = new ApiError(
             HttpStatus.INTERNAL_SERVER_ERROR.value(),
@@ -55,7 +53,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
      */
     @ExceptionHandler({InvalidCsrfTokenException.class, MissingCsrfTokenException.class})
     public ResponseEntity<Object> handleCsrfException(Exception ex) {
-        logger.warn("🛡️ CSRF token error: {}", ex.getMessage());
+        logger.warning("🛡️ CSRF token error: " + ex.getMessage());
 
         Map<String, Object> errorResponse = new HashMap<>();
         errorResponse.put("success", false);
@@ -75,7 +73,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             HttpStatusCode status, 
             WebRequest request) {
 
-        logger.warn("⚠️ Invalid request format: {}", ex.getMessage());
+        logger.warning("⚠️ Invalid request format: " + ex.getMessage());
 
         Map<String, Object> errorResponse = new HashMap<>();
         errorResponse.put("success", false);
@@ -94,15 +92,15 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 @Order(Ordered.HIGHEST_PRECEDENCE)
 class ApiExceptionHandler {
 
-    private static final Logger logger = LoggerUtils.getLogger(ApiExceptionHandler.class);
+    private static final Logger logger = Logger.getLogger(ApiExceptionHandler.class.getName());
 
     /**
      * Handle InvalidDefinitionException specifically for ByteArrayInputStream serialization issues
      */
     @ExceptionHandler(InvalidDefinitionException.class)
     public ResponseEntity<Map<String, Object>> handleInvalidDefinitionException(InvalidDefinitionException ex) {
-        logger.error("🔴 API serialization error: {}", ex.getMessage());
-        LoggerUtils.logException(logger, ex, "API serialization");
+        logger.severe("🔴 API serialization error: " + ex.getMessage());
+        ex.printStackTrace();
 
         // Check if it's a ByteArrayInputStream issue
         if (ex.getMessage() != null && ex.getMessage().contains("ByteArrayInputStream")) {
@@ -122,8 +120,8 @@ class ApiExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleAllExceptions(Exception ex) {
-        logger.error("🔴 API error: {}", ex.getMessage());
-        LoggerUtils.logException(logger, ex, "API request");
+        logger.severe("🔴 API error: " + ex.getMessage());
+        ex.printStackTrace();
 
         Map<String, Object> errorResponse = new HashMap<>();
         errorResponse.put("success", false);

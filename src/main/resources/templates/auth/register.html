@@ -41,8 +41,6 @@
                                 <h1 class="h4 text-gray-900 mb-4">Create an Account!</h1>
                             </div>
                             <form class="user" method="post" th:object="${registerFormDTO}">
-                                <!-- Add CSRF token -->
-                                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                                 <div class="form-group">
                                     <input type="text" class="form-control form-control-user" 
                                            id="username" th:field="*{username}"

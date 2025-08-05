@@ -102,6 +102,45 @@
         }
     }
 
+    // Function to update the URL without page reload
+    function updateUrlWithoutReload(farmName, farmId) {
+        console.group('🔗 Updating URL');
+        try {
+            // Get current URL path components
+            const pathParts = window.location.pathname.split('/');
+
+            // Check if we're on a project page (URL format: /{companyName}/projects/{farmName}/{projectType})
+            if (pathParts.length >= 4 && pathParts[2] === 'projects') {
+                const companySlug = pathParts[1];
+                const projectType = pathParts[4] || 'production'; // Default to production if not specified
+
+                // Format farm name for URL
+                const formattedFarmName = farmName.toLowerCase().replace(/\s+/g, '-');
+
+                // Construct new URL
+                const newUrl = `/${companySlug}/projects/${formattedFarmName}/${projectType}`;
+
+                // Update URL without reloading the page
+                window.history.pushState({ 
+                    path: newUrl,
+                    farmId: farmId,
+                    farmName: farmName
+                }, '', newUrl);
+
+                console.log(`✅ URL updated to: ${newUrl}`);
+                return true;
+            } else {
+                console.log('⚠️ Not on a project page, URL not updated');
+                return false;
+            }
+        } catch (error) {
+            console.error('❌ Error updating URL:', error);
+            return false;
+        } finally {
+            console.groupEnd();
+        }
+    }
+
     // Function to handle farm selection changes
     async function handleFarmSelection(e) {
         const event = e;
@@ -175,9 +214,12 @@
                 console.log('✅ Updated farm name in header to:', farmName);
             }
 
-            // Check if we're on a production page
-            if (window.location.pathname.includes('/production')) {
-                console.log('📊 On production page, refreshing data...');
+            // Update the URL to reflect the selected farm
+            const urlUpdated = updateUrlWithoutReload(farmName, newFarmId);
+
+            // Check if we're on any project page
+            if (window.location.pathname.includes('/projects/')) {
+                console.log('📊 On project page, refreshing data without reload...');
 
                 // Try multiple ways to refresh the data
                 try {
@@ -187,12 +229,13 @@
                         await window.loadChartData();
                     }
 
-                    // 2. Try custom event
+                    // 2. Try custom event with more detailed information
                     const customEvent = new CustomEvent('farmSelectionChanged', { 
                         detail: { 
                             farmId: newFarmId,
                             farmName: farmName,
-                            previousId: lastSelectedFarmId
+                            previousId: lastSelectedFarmId,
+                            urlUpdated: urlUpdated
                         },
                         bubbles: true,
                         cancelable: true
@@ -204,15 +247,28 @@
                         console.log('📊 Triggering auto-refresh...');
                         window.refreshData();
                     }
+
+                    // 4. Update any farm name displays again after content refresh
+                    setTimeout(() => {
+                        const farmNameDisplay = document.getElementById('farmNameDisplay');
+                        if (farmNameDisplay) {
+                            farmNameDisplay.textContent = farmName;
+                            console.log('✅ Re-updated farm name in header to:', farmName);
+                        }
+
+                        // Re-sync selectors to ensure they all show the same value
+                        $('#farmSelector, #mobileFarmSelector').val(newFarmId);
+                    }, 500);
                 } catch (error) {
                     console.error('❌ Error refreshing data:', error);
                 }
 
-                // Don't reload the page, let the event handler update the charts
+                // Don't reload the page, let the event handler update the content
                 return true;
             }
 
-            // For other pages, reload to ensure everything is in sync
+            // For non-project pages, we still need to reload
+            // This is for pages that don't have the project structure in the URL
             window.location.reload();
 
             return true;
@@ -314,6 +370,50 @@
         setTimeout(async function() {
             await initializeFarmSelectors();
         }, 500);
+    });
+
+    // Add listener for popstate event to handle browser back/forward navigation
+    window.addEventListener('popstate', function(event) {
+        console.group('⬅️ Browser Navigation');
+        try {
+            if (event.state && event.state.farmId) {
+                console.log('🔄 Restoring state from history:', event.state);
+
+                // Update selectors without triggering change event
+                $('#farmSelector, #mobileFarmSelector').val(event.state.farmId);
+                lastSelectedFarmId = event.state.farmId;
+
+                // Update farm name display
+                const farmNameDisplay = document.getElementById('farmNameDisplay');
+                if (farmNameDisplay && event.state.farmName) {
+                    farmNameDisplay.textContent = event.state.farmName;
+                }
+
+                // Trigger content refresh without page reload
+                if (typeof window.refreshData === 'function') {
+                    window.refreshData();
+                }
+
+                // Dispatch custom event
+                const customEvent = new CustomEvent('farmSelectionChanged', { 
+                    detail: { 
+                        farmId: event.state.farmId,
+                        farmName: event.state.farmName,
+                        fromHistory: true
+                    },
+                    bubbles: true,
+                    cancelable: true
+                });
+                window.dispatchEvent(customEvent);
+            } else {
+                console.log('⚠️ No farm state in history, reloading page');
+                window.location.reload();
+            }
+        } catch (error) {
+            console.error('❌ Error handling popstate:', error);
+        } finally {
+            console.groupEnd();
+        }
     });
 
 })(jQuery); 
