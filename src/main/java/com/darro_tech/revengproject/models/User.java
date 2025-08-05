@@ -120,7 +120,7 @@ public class User {
 
     public boolean isMatchingPassword(String password) {
         if (pwHash == null || pwHash.length() < 6) {
-            logger.warning("Stored password hash is invalid: " + pwHash);
+            logger.warning("Stored password hash is invalid or too short");
             return false;
         }
 
@@ -129,7 +129,7 @@ public class User {
 
         boolean match = pwHash.equals(computed);
         if (!match) {
-            logger.warning("Password mismatch. Input: " + password + ", Computed: " + computed);
+            logger.warning("Password mismatch for user: " + username);
         }
 
         return match;
