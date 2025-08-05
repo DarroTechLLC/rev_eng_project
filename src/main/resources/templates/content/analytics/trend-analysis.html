@@ -36,6 +36,30 @@
             padding: 15px;
             border-radius: 5px;
             margin-top: 10px;
+            overflow-x: auto;
+        }
+        /* Make math formulas responsive */
+        .math-formula {
+            overflow-x: auto;
+            max-width: 100%;
+        }
+        /* Make visualizers responsive */
+        #regressionVisualizer, #regressionStepVisualizer, #confidenceVisualizer {
+            width: 100%;
+            max-width: 100%;
+            overflow-x: auto;
+        }
+        /* Responsive adjustments for small screens */
+        @media (max-width: 768px) {
+            .formula-component {
+                margin-left: 10px;
+            }
+            .technical-details {
+                padding: 10px;
+            }
+            .slider-container, .residual-toggle {
+                margin: 10px 0;
+            }
         }
         #regressionVisualizer {
             width: 100%;

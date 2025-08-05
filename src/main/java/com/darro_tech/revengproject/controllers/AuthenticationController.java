@@ -319,8 +319,19 @@ public class AuthenticationController {
             // User authenticated successfully
             LoggerUtils.logAuthentication(logger, true, theUser.getUsername(), "User authenticated successfully");
 
+            // Implement session fixation protection
+            // Invalidate old session if it exists
+            HttpSession oldSession = request.getSession(false);
+            if (oldSession != null) {
+                logger.debug("🔒 Invalidating old session for security (session fixation protection)");
+                oldSession.invalidate();
+            }
+
+            // Create new session
+            HttpSession session = request.getSession(true);
+            logger.debug("🔐 Created new session after successful authentication");
+
             // Store user info in session
-            HttpSession session = request.getSession();
             setUserInSession(session, theUser);
             logger.debug("🔐 User stored in session: {}", theUser.getUsername());
 

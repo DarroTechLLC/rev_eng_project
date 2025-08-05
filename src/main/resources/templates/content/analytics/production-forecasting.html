@@ -7,6 +7,58 @@
     <div th:replace="fragments/highcharts-scripts :: chart-export-menu"></div>
     <!-- jQuery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- MathJax for mathematical formulas -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <!-- D3.js for visualizations -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+        <style>
+            .math-formula {
+                font-size: 1.1em;
+                margin: 10px 0;
+                overflow-x: auto;
+                max-width: 100%;
+            }
+            .formula-component {
+                margin-left: 20px;
+                font-size: 0.9em;
+            }
+            .toggle-details {
+                cursor: pointer;
+                color: #4e73df;
+                text-decoration: underline;
+            }
+            .technical-details {
+                display: none;
+                background-color: #f8f9fc;
+                padding: 15px;
+                border-radius: 5px;
+                margin-top: 10px;
+                overflow-x: auto;
+            }
+            /* Make visualizers responsive */
+            #movingAverageVisualizer, #movingAverageStepVisualizer, #scenarioVisualizer {
+                width: 100%;
+                max-width: 100%;
+                overflow-x: auto;
+            }
+            /* Responsive adjustments for small screens */
+            @media (max-width: 768px) {
+                .formula-component {
+                    margin-left: 10px;
+                }
+                .technical-details {
+                    padding: 10px;
+                }
+                .slider-container {
+                    margin: 10px 0;
+                }
+                .window-size-value {
+                    display: inline-block;
+                    min-width: 20px;
+                }
+            }
+        </style>
 </head>
 <body>
     <div class="container-fluid">
