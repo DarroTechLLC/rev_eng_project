@@ -1,5 +1,6 @@
 package com.darro_tech.revengproject.security;
 
+import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,6 +18,7 @@ import org.springframework.web.servlet.handler.HandlerMappingIntrospector;
 import com.darro_tech.revengproject.controllers.AuthenticationController;
 import com.darro_tech.revengproject.models.User;
 import com.darro_tech.revengproject.services.UserRoleService;
+import com.darro_tech.revengproject.util.LoggerUtils;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -24,6 +26,8 @@ import jakarta.servlet.http.HttpSession;
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
+
+    private static final Logger logger = LoggerUtils.getLogger(SecurityConfig.class);
 
     @Autowired
     private AuthenticationController authenticationController;
@@ -95,27 +99,29 @@ public class SecurityConfig {
                     HttpServletRequest request = object.getRequest();
                     HttpSession session = request.getSession(false);
                     if (session == null) {
-                        System.out.println("❌ Super admin access denied: No session found");
+                        logger.debug("❌ Super admin access denied: No session found");
                         return new AuthorizationDecision(false);
                     }
 
                     User user = authenticationController.getUserFromSession(session);
                     if (user == null) {
-                        System.out.println("❌ Super admin access denied: No user found in session");
+                        logger.debug("❌ Super admin access denied: No user found in session");
                         return new AuthorizationDecision(false);
                     }
 
                     boolean isSuperAdmin = userRoleService.isSuperAdmin(user);
-                    System.out.println(isSuperAdmin
-                            ? "✅ Super admin access granted for user: " + user.getUsername()
-                            : "❌ Super admin access denied for user: " + user.getUsername());
+                    if (isSuperAdmin) {
+                        logger.debug("✅ Super admin access granted for user: {}", user.getUsername());
+                    } else {
+                        logger.debug("❌ Super admin access denied for user: {}", user.getUsername());
+                    }
 
                     return new AuthorizationDecision(isSuperAdmin);
                 })
                 )
                 .exceptionHandling(handling -> handling
                 .accessDeniedHandler((request, response, accessDeniedException) -> {
-                    System.out.println("⛔ Access denied to super admin resource: " + request.getRequestURI());
+                    logger.warn("⛔ Access denied to super admin resource: {}", request.getRequestURI());
                     response.sendRedirect("/access-denied");
                 })
                 )
@@ -197,7 +203,7 @@ public class SecurityConfig {
             String path = request.getRequestURI();
             boolean isMatch = path.startsWith("/admin/alerts")
                     || path.startsWith("/admin/companies");  // Add companies to superadmin access
-            System.out.println("🔍 Super admin path check: " + path + " -> " + (isMatch ? "matches" : "no match"));
+            logger.debug("🔍 Super admin path check: {} -> {}", path, (isMatch ? "matches" : "no match"));
             return isMatch;
         }
     }

@@ -73,7 +73,7 @@ public class User {
     private Instant resetPassExpires;
 
     // Define many-to-many relationship with roles
-    @ManyToMany(fetch = FetchType.EAGER)
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "user_roles",
             joinColumns = @JoinColumn(name = "user_id"),
@@ -82,7 +82,7 @@ public class User {
     private Set<Role> roles = new HashSet<>();
 
     // Define many-to-many relationship with companies
-    @ManyToMany(fetch = FetchType.EAGER)
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "company_users",
             joinColumns = @JoinColumn(name = "user_id"),
