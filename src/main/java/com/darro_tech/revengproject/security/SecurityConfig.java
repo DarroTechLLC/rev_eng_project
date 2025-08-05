@@ -11,6 +11,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.header.HeaderWriter;
 import org.springframework.security.web.servlet.util.matcher.MvcRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.web.servlet.handler.HandlerMappingIntrospector;
@@ -35,6 +36,9 @@ public class SecurityConfig {
     @Autowired
     private UserRoleService userRoleService;
 
+    @Autowired
+    private HeaderWriter securityHeadersWriter;
+
     @Bean
     public MvcRequestMatcher.Builder mvc(HandlerMappingIntrospector introspector) {
         return new MvcRequestMatcher.Builder(introspector);
@@ -56,6 +60,11 @@ public class SecurityConfig {
                         mvc.pattern("/api/**"),
                         mvc.pattern("/webauthn/**")
                     )
+                )
+                // Add security headers
+                .headers(headers -> headers
+                    .frameOptions(frameOptions -> frameOptions.sameOrigin())
+                    .addHeaderWriter(securityHeadersWriter)
                 )
                 .authorizeHttpRequests(authorize -> authorize
                 .anyRequest().access((authentication, object) -> {
@@ -93,6 +102,11 @@ public class SecurityConfig {
                         mvc.pattern("/api/**"),
                         mvc.pattern("/webauthn/**")
                     )
+                )
+                // Add security headers
+                .headers(headers -> headers
+                    .frameOptions(frameOptions -> frameOptions.sameOrigin())
+                    .addHeaderWriter(securityHeadersWriter)
                 )
                 .authorizeHttpRequests(authorize -> authorize
                 .anyRequest().access((authentication, object) -> {
@@ -142,6 +156,7 @@ public class SecurityConfig {
                 ) // Enable CSRF with exclusions for API endpoints
                 .headers(headers -> headers
                     .frameOptions(frameOptions -> frameOptions.sameOrigin())
+                    .addHeaderWriter(securityHeadersWriter)
                 )
                 .authorizeHttpRequests(authorize -> authorize
                 .requestMatchers(
