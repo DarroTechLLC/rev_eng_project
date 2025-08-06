@@ -129,7 +129,7 @@ public class User {
 
         boolean match = pwHash.equals(computed);
         if (!match) {
-            logger.warning("Password mismatch. Input: " + password + ", Computed: " + computed);
+            logger.warning("Password mismatch!");
         }
 
         return match;

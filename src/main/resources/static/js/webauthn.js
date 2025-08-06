@@ -701,6 +701,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     alert('Biometric authentication failed: ' + result.error);
                 }
             } else if (result.success) {
+                // Directly redirect to the app index after successful authentication
+                // The user is already authenticated on the server side
                 window.location.href = '/';
             }
         });

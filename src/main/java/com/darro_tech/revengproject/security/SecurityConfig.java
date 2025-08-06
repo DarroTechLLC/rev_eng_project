@@ -114,7 +114,8 @@ public class SecurityConfig {
     @Order(3)
     public SecurityFilterChain defaultFilterChain(HttpSecurity http, MvcRequestMatcher.Builder mvc) throws Exception {
         http
-                .csrf(csrf -> csrf.disable()) // Disable CSRF for now to simplify login
+                // Enable CSRF protection
+                .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**", "/webauthn/**")) // Ignore CSRF for API and WebAuthn endpoints
                 .headers(headers -> headers
                     .frameOptions(frameOptions -> frameOptions.sameOrigin())
                 )

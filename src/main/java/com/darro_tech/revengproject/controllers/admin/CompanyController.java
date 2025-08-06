@@ -182,26 +182,12 @@ public class CompanyController extends BaseController {
         return "redirect:/admin/companies";
     }
 
-    // Delete company
+    // Delete company - functionality has been disabled as per user request
     @PostMapping("/{id}/delete")
     public String deleteCompany(@PathVariable String id, RedirectAttributes redirectAttributes) {
-        try {
-            // Check if company exists
-            Optional<Company> companyOpt = companyService.getCompanyById(id);
-            if (companyOpt.isPresent()) {
-                String companyName = companyOpt.get().getDisplayName();
-
-                // Delete company logic - you'll need to add this method to CompanyService
-                companyService.deleteCompany(id);
-
-                redirectAttributes.addFlashAttribute("success",
-                        "Company '" + companyName + "' has been deleted successfully!");
-            } else {
-                redirectAttributes.addFlashAttribute("error", "Company not found");
-            }
-        } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", "Error deleting company: " + e.getMessage());
-        }
+        // Company delete functionality has been disabled
+        System.out.println("⛔ Company delete functionality has been disabled as per user request");
+        redirectAttributes.addFlashAttribute("error", "Company deletion has been disabled by administrator");
         return "redirect:/admin/companies";
     }
 

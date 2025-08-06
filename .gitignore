@@ -55,3 +55,7 @@ Scratches
 docs
 
 todo.txt
+
+# Ignore all logs
+logs/
+*.log

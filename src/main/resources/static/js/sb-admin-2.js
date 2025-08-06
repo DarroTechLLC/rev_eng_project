@@ -3,6 +3,55 @@
 
   console.log('🚀 Initializing sb-admin-2.js');
 
+  // CSRF Protection for AJAX requests
+  function addCsrfToAjax() {
+    console.log('🔒 Setting up CSRF protection for AJAX requests');
+
+    // Get CSRF token and header from meta tags
+    const csrfToken = $('meta[name="_csrf"]').attr('content');
+    const csrfHeader = $('meta[name="_csrf_header"]').attr('content');
+
+    if (csrfToken && csrfHeader) {
+      console.log('✅ CSRF token found, setting up AJAX prefilter');
+
+      // Add CSRF token to all AJAX requests
+      $.ajaxPrefilter(function(options, originalOptions, jqXHR) {
+        // Only add CSRF for non-GET requests to non-API endpoints
+        if (options.type && options.type.toUpperCase() !== 'GET' && 
+            (!options.url || !options.url.startsWith('/api/'))) {
+          jqXHR.setRequestHeader(csrfHeader, csrfToken);
+          console.log(`🔒 Added CSRF token to ${options.url || 'request'}`);
+        }
+      });
+
+      // Add CSRF token to fetch requests
+      const originalFetch = window.fetch;
+      window.fetch = function(url, options = {}) {
+        // Only add CSRF for non-GET requests to non-API endpoints
+        // Always add CSRF for WebAuthn endpoints
+        const urlString = url.toString();
+        if (options.method && options.method.toUpperCase() !== 'GET' && 
+            (!urlString || !urlString.startsWith('/api/') || urlString.startsWith('/webauthn/'))) {
+          if (!options.headers) {
+            options.headers = {};
+          }
+
+          options.headers[csrfHeader] = csrfToken;
+          console.log(`🔒 Added CSRF token to fetch request: ${url}`);
+        }
+
+        return originalFetch.call(this, url, options);
+      };
+    } else {
+      console.warn('⚠️ CSRF token not found in meta tags');
+    }
+  }
+
+  // Initialize CSRF protection
+  $(document).ready(function() {
+    addCsrfToAjax();
+  });
+
   // Toggle the side navigation or open mobile menu
   $("#sidebarToggle, #sidebarToggleTop").on('click', function(e) {
     console.log('👆 Sidebar/hamburger toggle clicked');

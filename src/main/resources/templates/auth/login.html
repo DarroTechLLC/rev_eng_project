@@ -7,6 +7,10 @@
     <meta name="description" content="">
     <meta name="author" content="">
 
+    <!-- CSRF token for Ajax requests -->
+    <meta name="_csrf" th:content="${_csrf != null ? _csrf.token : ''}" />
+    <meta name="_csrf_header" th:content="${_csrf != null ? _csrf.headerName : ''}" />
+
     <title>Roeslein Dashboard</title>
 
     <!-- Custom fonts for this template-->
@@ -99,7 +103,7 @@
                         </div>
                         <div class="col-lg-6" style="border-left: 1px solid #e3e6f0;">
                             <div class="p-5">
-                                <form class="user" method="post" th:object="${loginFormDTO}">
+                                <form class="user" method="post" th:action="@{/login}" th:object="${loginFormDTO}">
                                     <div class="form-group">
                                         <input type="text" class="form-control form-control-user"
                                                id="username" th:field="*{username}"

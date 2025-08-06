@@ -117,8 +117,9 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                <form id="deleteUserForm" method="post" action="/admin/users/delete">
+                <form id="deleteUserForm" method="post" th:action="@{/admin/users/delete}">
                     <input type="hidden" id="deleteUserId" name="id" value="">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                     <button type="submit" class="btn btn-danger">Delete</button>
                 </form>
             </div>

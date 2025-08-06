@@ -428,7 +428,7 @@ public class WebAuthnController {
 
             logger.info("✅ User authenticated with biometrics: {}", username);
 
-            return ResponseEntity.ok(Map.of("success", true));
+            return ResponseEntity.ok(Map.of("success", true, "username", username));
         } catch (Exception e) {
             logger.error("Error verifying authentication", e);
             return ResponseEntity.badRequest().body(Map.of("error", "Error verifying authentication: " + e.getMessage()));
