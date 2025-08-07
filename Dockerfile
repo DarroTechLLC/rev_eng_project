@@ -10,11 +10,15 @@ RUN chmod +x ./gradlew && \
 FROM openjdk:17-jdk-slim
 WORKDIR /app
 COPY --from=build /app/build/libs/rev-eng-project-0.0.1-SNAPSHOT.jar app.jar
-COPY .env .env
+
+# Add build argument to specify which env file to use (.env, .env.prod, or .env.docker)
+ARG ENV_FILE=.env.prod
+COPY ${ENV_FILE} .env
 EXPOSE 8080
 
-# Using standard .env file for all environments
-# No hardcoded environment variables for better security and flexibility
+# Environment file can be specified during build with:
+# docker build --build-arg ENV_FILE=.env.prod -t app-name .
+# Default is .env if not specified
 
 # Add health check to ensure database is available before starting the application
 # Give the application time to start up (30s) and check every 10s with a 5s timeout

@@ -153,6 +153,23 @@ function fetchAllActiveAlerts() {
 
         console.log('👑 Admin view - Total alerts:', allAlerts.length, 'Active alerts:', activeAlerts.length);
 
+        // Enhanced debugging: Log each alert with its date information
+        console.log('[DEBUG_LOG] ===== ADMIN ALERTS DEBUGGING INFORMATION =====');
+        allAlerts.forEach((alert, index) => {
+            console.log(`[DEBUG_LOG] Admin Alert #${index + 1} - ID: ${alert.id}, Active: ${alert.is_active}`);
+            console.log(`[DEBUG_LOG] Admin Alert #${index + 1} - Date values - created_at: ${alert.created_at}, updated_at: ${alert.updated_at}`);
+            console.log(`[DEBUG_LOG] Admin Alert #${index + 1} - Date types - created_at type: ${typeof alert.created_at}, updated_at type: ${typeof alert.updated_at}`);
+
+            // Try to parse dates and see if they're valid
+            try {
+                const createdDate = new Date(alert.created_at);
+                const updatedDate = new Date(alert.updated_at);
+                console.log(`[DEBUG_LOG] Admin Alert #${index + 1} - Parsed dates - created: ${createdDate.toISOString()}, updated: ${updatedDate.toISOString()}`);
+            } catch (e) {
+                console.log(`[DEBUG_LOG] Admin Alert #${index + 1} - Error parsing dates: ${e.message}`);
+            }
+        });
+
         // Process the active alerts
         processAlerts(activeAlerts, true);
     })
@@ -202,6 +219,17 @@ function fetchActiveAlerts(companyId) {
         // Log details of each alert
         alerts.forEach((alert, index) => {
             console.log(`[DEBUG_LOG] Alert #${index + 1} - ID: ${alert.id}, Active: ${alert.is_active}, Message: "${alert.message.substring(0, 30)}${alert.message.length > 30 ? '...' : ''}"`);
+            console.log(`[DEBUG_LOG] Alert #${index + 1} - Date values - created_at: ${alert.created_at}, updated_at: ${alert.updated_at}`);
+            console.log(`[DEBUG_LOG] Alert #${index + 1} - Date types - created_at type: ${typeof alert.created_at}, updated_at type: ${typeof alert.updated_at}`);
+
+            // Try to parse dates and see if they're valid
+            try {
+                const createdDate = new Date(alert.created_at);
+                const updatedDate = new Date(alert.updated_at);
+                console.log(`[DEBUG_LOG] Alert #${index + 1} - Parsed dates - created: ${createdDate.toISOString()}, updated: ${updatedDate.toISOString()}`);
+            } catch (e) {
+                console.log(`[DEBUG_LOG] Alert #${index + 1} - Error parsing dates: ${e.message}`);
+            }
         });
 
         // Process the alerts (false = not admin view)

@@ -47,6 +47,13 @@ public class WebsiteAlertPublicApiController {
         logger.info("📢 API - List active alerts for company ID: {}", companyId);
         try {
             List<WebsiteAlertDTO> alerts = websiteAlertService.getActiveAlertsByCompanyId(companyId);
+
+            // Debug log for date values
+            for (WebsiteAlertDTO alert : alerts) {
+                logger.info("[DEBUG_LOG] Active Alert ID: {}, createdAt: {}, updatedAt: {}", 
+                    alert.getId(), alert.getCreatedAt(), alert.getUpdatedAt());
+            }
+
             return ResponseEntity.ok(ApiResponse.success(alerts));
         } catch (Exception e) {
             logger.error("📢 Error listing active alerts for company ID: {}", companyId, e);

@@ -20,9 +20,9 @@
                     </div>
                     <p class="mt-2">Loading alerts...</p>
                 </div>
-                
+
                 <div id="errorContainer" class="alert alert-danger" style="display: none;"></div>
-                
+
                 <div id="alertsContainer" style="display: none;">
                     <!-- Search Box -->
                     <div class="mb-3">
@@ -33,7 +33,7 @@
                             <input type="text" id="tableSearch" class="form-control" placeholder="Search alerts..." aria-label="Search">
                         </div>
                     </div>
-                    
+
                 <div class="table-responsive">
                     <table class="table table-bordered" id="alertsTable" width="100%" cellspacing="0">
                         <thead>
@@ -50,7 +50,7 @@
                         </tbody>
                     </table>
                     </div>
-                    
+
                     <div id="noAlertsMessage" class="alert alert-info text-center" style="display: none;">
                         No website alerts found. <a href="/admin/alerts/create">Create a new alert</a>.
                     </div>
@@ -94,35 +94,35 @@
 <!-- JavaScript to handle alerts -->
 <script th:inline="javascript">
     console.log("🚀 Alerts page script starting...");
-    
+
     // Store company name mapping for lookup
     const companyMap = {};
     let alertsData = [];
     let alertToDelete = null;
     let currentSortColumn = 'created';
     let currentSortDirection = 'desc';
-    
+
     document.addEventListener('DOMContentLoaded', function() {
         console.log("📄 Alerts DOM content loaded");
-        
+
         // Load companies first (for display purposes)
         loadCompanies().then(() => {
             // Then load alerts
             loadAlerts();
         });
-        
+
         // Setup delete modal
         document.getElementById('confirmDeleteBtn').addEventListener('click', function() {
             if (alertToDelete) {
                 deleteAlert(alertToDelete);
             }
         });
-        
+
         // Setup search functionality
         document.getElementById('tableSearch').addEventListener('input', function() {
             filterAlerts(this.value);
         });
-        
+
         // Setup sorting
         document.querySelectorAll('.sortable').forEach(header => {
             header.addEventListener('click', function() {
@@ -131,7 +131,7 @@
             });
         });
     });
-    
+
     // Load companies for reference
     async function loadCompanies() {
         try {
@@ -141,18 +141,18 @@
                     'Content-Type': 'application/json'
                 }
             });
-            
+
             if (!response.ok) {
                 throw new Error(`HTTP error! Status: ${response.status}`);
             }
-            
+
             const result = await response.json();
             console.log("🏢 Companies response received:", result);
-            
+
             if (!result) {
                 throw new Error("Empty response received");
             }
-            
+
             if (result.data && Array.isArray(result.data)) {
                 result.data.forEach(company => {
                     companyMap[company.companyId] = company.companyName;
@@ -164,7 +164,7 @@
             showError('Failed to load companies: ' + error.message);
         }
     }
-    
+
     // Load and display alerts
     function loadAlerts() {
         fetch('/api/admin/website-alerts/list', {
@@ -183,22 +183,22 @@
             // Hide loading indicator
             document.getElementById('loadingIndicator').style.display = 'none';
             document.getElementById('alertsContainer').style.display = 'block';
-            
+
             if (result.error) {
                 showError(result.error);
                 return;
             }
-            
+
             alertsData = result.data || [];
-            
+
             if (alertsData.length === 0) {
                 document.getElementById('noAlertsMessage').style.display = 'block';
                 return;
             }
-            
+
             // Sort data by default column and direction
             sortData();
-            
+
             // Render the alerts table
             renderAlertTable();
         })
@@ -207,15 +207,15 @@
             showError('Failed to load alerts: ' + error.message);
         });
     }
-    
+
     // Render alerts table
     function renderAlertTable() {
         const tableBody = document.getElementById('alertsTableBody');
         tableBody.innerHTML = '';
-        
+
         alertsData.forEach(alert => {
             const row = document.createElement('tr');
-            
+
             // Message column (clickable)
             const messageCell = document.createElement('td');
             const messageLink = document.createElement('a');
@@ -231,7 +231,7 @@
             });
             messageCell.appendChild(messageLink);
             row.appendChild(messageCell);
-            
+
             // Companies column
             const companiesCell = document.createElement('td');
             if (alert.company_ids.includes('all')) {
@@ -241,7 +241,7 @@
                 companiesCell.textContent = companyNames;
             }
             row.appendChild(companiesCell);
-            
+
             // Active column
             const activeCell = document.createElement('td');
             if (alert.is_active) {
@@ -256,23 +256,23 @@
                 activeCell.appendChild(badge);
             }
             row.appendChild(activeCell);
-            
+
             // Created column
             const createdCell = document.createElement('td');
             createdCell.textContent = formatDate(alert.created_at);
             row.appendChild(createdCell);
-            
+
             // Updated column
             const updatedCell = document.createElement('td');
             updatedCell.textContent = formatDate(alert.updated_at);
             row.appendChild(updatedCell);
-            
+
             // No actions column needed
-            
+
             tableBody.appendChild(row);
         });
     }
-    
+
     // Delete an alert
     function deleteAlert(id) {
         fetch('/api/admin/website-alerts/delete', {
@@ -286,12 +286,12 @@
         .then(result => {
             // Hide the modal
             $('#deleteModal').modal('hide');
-            
+
             if (result.error) {
                 showError(result.error);
                 return;
             }
-            
+
             // Reload alerts
             loadAlerts();
         })
@@ -300,7 +300,7 @@
             showError('Failed to delete alert: ' + error.message);
         });
     }
-    
+
     // Filter alerts based on search text
     function filterAlerts(searchText) {
         if (!searchText) {
@@ -308,27 +308,27 @@
             alertsData.forEach(alert => alert.hidden = false);
         } else {
             searchText = searchText.toLowerCase();
-            
+
             // Filter alerts based on message and company names
             alertsData.forEach(alert => {
                 const message = alert.message.toLowerCase();
                 let companyText = '';
-                
+
                 if (alert.company_ids.includes('all')) {
                     companyText = 'all companies';
                 } else {
                     companyText = alert.company_ids.map(id => companyMap[id] || id).join(' ').toLowerCase();
                 }
-                
+
                 // Check if either message or company names contain search text
                 alert.hidden = !message.includes(searchText) && !companyText.includes(searchText);
             });
         }
-        
+
         // Re-render the table with filtered data
         renderAlertTable();
     }
-    
+
     // Sort alerts by the specified column
     function sortAlerts(column) {
         if (currentSortColumn === column) {
@@ -339,22 +339,22 @@
             currentSortColumn = column;
             currentSortDirection = 'asc';
         }
-        
+
         // Update sort icons in header
         updateSortIcons();
-        
+
         // Sort the data
         sortData();
-        
+
         // Re-render the table with sorted data
         renderAlertTable();
     }
-    
+
     // Sort the data based on current sort column and direction
     function sortData() {
         alertsData.sort((a, b) => {
             let valueA, valueB;
-            
+
             switch (currentSortColumn) {
                 case 'message':
                     valueA = a.message;
@@ -382,31 +382,31 @@
                     valueA = a[currentSortColumn];
                     valueB = b[currentSortColumn];
             }
-            
+
             // Handle string comparison
             if (typeof valueA === 'string' && typeof valueB === 'string') {
                 const result = valueA.localeCompare(valueB);
                 return currentSortDirection === 'asc' ? result : -result;
             }
-            
+
             // Handle number comparison
             const result = valueA - valueB;
             return currentSortDirection === 'asc' ? result : -result;
         });
     }
-    
+
     // Update sort icons in table headers
     function updateSortIcons() {
         document.querySelectorAll('.sortable i').forEach(icon => {
             icon.className = 'fas fa-sort';
         });
-        
+
         const currentHeader = document.querySelector(`.sortable[data-sort="${currentSortColumn}"] i`);
         if (currentHeader) {
             currentHeader.className = `fas fa-sort-${currentSortDirection === 'asc' ? 'up' : 'down'}`;
         }
     }
-    
+
     // Truncate text to a specific length
     function truncateText(text, maxLength) {
         if (!text) return '';
@@ -414,14 +414,28 @@
             ? text.substring(0, maxLength - 3) + '...'
             : text;
     }
-    
+
     // Format a date string
     function formatDate(dateString) {
-        if (!dateString) return '';
-        const date = new Date(dateString);
-        return date.toLocaleString();
+        if (!dateString) {
+            console.log('[DEBUG_LOG] formatDate received empty dateString');
+            return '';
+        }
+
+        console.log(`[DEBUG_LOG] formatDate received dateString: ${dateString}, type: ${typeof dateString}`);
+
+        // Convert seconds to milliseconds by multiplying by 1000
+        const timestamp = typeof dateString === 'number' ? dateString * 1000 : dateString;
+        const date = new Date(timestamp);
+
+        console.log(`[DEBUG_LOG] formatDate parsed date: ${date.toISOString()}, timestamp: ${timestamp}`);
+
+        const formatted = date.toLocaleString();
+        console.log(`[DEBUG_LOG] formatDate formatted result: ${formatted}`);
+
+        return formatted;
     }
-    
+
     // Show error message
     function showError(message) {
         const errorContainer = document.getElementById('errorContainer');

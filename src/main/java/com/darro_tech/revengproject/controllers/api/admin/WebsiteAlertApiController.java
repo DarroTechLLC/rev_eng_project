@@ -37,6 +37,13 @@ public class WebsiteAlertApiController {
         logger.info("📢 API - List all website alerts");
         try {
             List<WebsiteAlertDTO> alerts = websiteAlertService.getAllAlerts();
+
+            // Debug log for date values
+            for (WebsiteAlertDTO alert : alerts) {
+                logger.info("[DEBUG_LOG] Alert ID: {}, createdAt: {}, updatedAt: {}", 
+                    alert.getId(), alert.getCreatedAt(), alert.getUpdatedAt());
+            }
+
             return ResponseEntity.ok(ApiResponse.success(alerts));
         } catch (Exception e) {
             logger.error("📢 Error listing website alerts", e);
@@ -56,11 +63,16 @@ public class WebsiteAlertApiController {
         if (id == null) {
             return ResponseEntity.ok(ApiResponse.error("No ID provided"));
         }
-        
+
         logger.info("📢 API - Get website alert by ID: {}", id);
         try {
             return websiteAlertService.getAlertById(id)
-                    .map(alert -> ResponseEntity.ok(ApiResponse.success(alert)))
+                    .map(alert -> {
+                        // Debug log for date values
+                        logger.info("[DEBUG_LOG] Get Alert ID: {}, createdAt: {}, updatedAt: {}", 
+                            alert.getId(), alert.getCreatedAt(), alert.getUpdatedAt());
+                        return ResponseEntity.ok(ApiResponse.success(alert));
+                    })
                     .orElseGet(() -> ResponseEntity.ok(ApiResponse.error("Alert not found with ID: " + id)));
         } catch (Exception e) {
             logger.error("📢 Error getting website alert with ID: {}", id, e);
@@ -81,8 +93,13 @@ public class WebsiteAlertApiController {
             if (request.getMessage() == null || request.getMessage().trim().isEmpty()) {
                 return ResponseEntity.ok(ApiResponse.error("Message cannot be empty"));
             }
-            
+
             WebsiteAlertDTO alert = websiteAlertService.upsertAlert(request);
+
+            // Debug log for date values
+            logger.info("[DEBUG_LOG] Upsert Alert ID: {}, createdAt: {}, updatedAt: {}", 
+                alert.getId(), alert.getCreatedAt(), alert.getUpdatedAt());
+
             return ResponseEntity.ok(ApiResponse.success(alert));
         } catch (Exception e) {
             logger.error("📢 Error upserting website alert", e);
@@ -102,7 +119,7 @@ public class WebsiteAlertApiController {
         if (id == null) {
             return ResponseEntity.ok(ApiResponse.error("No ID provided"));
         }
-        
+
         logger.info("📢 API - Delete website alert with ID: {}", id);
         try {
             boolean deleted = websiteAlertService.deleteAlert(id);
