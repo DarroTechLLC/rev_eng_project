@@ -25,10 +25,16 @@ public class RevEngProjectApplication {
         LoggerUtils.logStartup(logger, "RevEngProject Application");
 
         // Load environment variables from .env file
+        logger.info("📦 Attempting to load environment variables from .env file");
         try {
-            logger.info("📦 Loading environment variables from .env file");
-            Dotenv dotenv = Dotenv.load();
-            logger.debug("🔍 Environment variables loaded: SPRING_DATASOURCE_URL configured as {}", maskSensitiveInfo(dotenv.get("SPRING_DATASOURCE_URL")));
+            Dotenv dotenv = Dotenv.configure()
+                .directory(System.getProperty("user.dir"))
+                .filename(".env")
+                .ignoreIfMissing()  // Don't fail if .env is missing
+                .load();
+
+            logger.debug("🔍 Environment variables loaded: SPRING_DATASOURCE_URL configured as {}", 
+                        maskSensitiveInfo(dotenv.get("SPRING_DATASOURCE_URL")));
 
             // Set system properties from .env
             configureSystemProperties(dotenv);
@@ -110,7 +116,17 @@ public class RevEngProjectApplication {
      * @param envVarName The name of the environment variable
      */
     private static void setPropertyIfExists(Dotenv dotenv, String propertyName, String envVarName) {
+        // First try to get from .env
         String value = dotenv.get(envVarName);
+
+        // If not in .env, try system environment variables
+        if (value == null || value.isEmpty()) {
+            value = System.getenv(envVarName);
+            if (value != null && !value.isEmpty()) {
+                logger.debug("🔄 Environment variable {} found in system environment", envVarName);
+            }
+        }
+
         if (value != null && !value.isEmpty()) {
             System.setProperty(propertyName, value);
 
