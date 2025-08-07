@@ -15,6 +15,7 @@ public class DailyReportCompany {
     @JoinColumn(name = "company_id", nullable = false)
     private Company company;
 
+    @Lob
     @Column(name = "pdf", nullable = false)
     private byte[] pdf;
 

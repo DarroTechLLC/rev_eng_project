@@ -654,8 +654,8 @@ public class RoutingController extends BaseController {
                     ? LocalDate.parse(dateParam)
                     : LocalDate.now();
 
-            // Get max date (yesterday)
-            LocalDate maxDate = LocalDate.now().minusDays(1);
+            // Get max date (today)
+            LocalDate maxDate = LocalDate.now();
 
             // Ensure selected date is not in the future
             if (selectedDate.isAfter(maxDate)) {

@@ -15,11 +15,11 @@ public class PageviewAnalytic {
     private String page;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "farm")
+    @JoinColumn(name = "farm", columnDefinition = "varchar(36)")
     private Farm farm;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "company")
+    @JoinColumn(name = "company", columnDefinition = "varchar(36)")
     private Company company;
 
     @Column(name = "timestamp", nullable = false)
