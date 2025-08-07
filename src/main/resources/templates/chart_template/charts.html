@@ -360,9 +360,9 @@
 
                     <!-- Page Heading -->
                     <h1 class="h3 mb-2 text-gray-800">Charts</h1>
-                    <p class="mb-4">Chart.js is a third party plugin that is used to generate the charts in this theme.
+                    <p class="mb-4">Highcharts is a powerful charting library that is used to generate the charts in this theme.
                         The charts below have been customized - for further customization options, please visit the <a
-                            target="_blank" href="https://www.chartjs.org/docs/latest/">official Chart.js
+                            target="_blank" href="https://www.highcharts.com/docs/">official Highcharts
                             documentation</a>.</p>
 
                     <!-- Content Row -->
@@ -377,7 +377,7 @@
                                 </div>
                                 <div class="card-body">
                                     <div class="chart-area">
-                                        <canvas id="myAreaChart"></canvas>
+                                        <div id="myAreaChart" style="height: 300px;"></div>
                                     </div>
                                     <hr>
                                     Styling for the area chart can be found in the
@@ -392,7 +392,7 @@
                                 </div>
                                 <div class="card-body">
                                     <div class="chart-bar">
-                                        <canvas id="myBarChart"></canvas>
+                                        <div id="myBarChart" style="height: 300px;"></div>
                                     </div>
                                     <hr>
                                     Styling for the bar chart can be found in the
@@ -412,7 +412,7 @@
                                 <!-- Card Body -->
                                 <div class="card-body">
                                     <div class="chart-pie pt-4">
-                                        <canvas id="myPieChart"></canvas>
+                                        <div id="myPieChart" style="height: 300px;"></div>
                                     </div>
                                     <hr>
                                     Styling for the donut chart can be found in the
@@ -479,8 +479,14 @@
     <!-- Custom scripts for all pages-->
     <script src="js/sb-admin-2.min.js"></script>
 
-    <!-- Page level plugins -->
-    <script src="vendor/chart.js/Chart.min.js"></script>
+    <!-- Highcharts -->
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.highcharts.com/modules/exporting.js"></script>
+    <script src="https://code.highcharts.com/modules/export-data.js"></script>
+    <script src="https://code.highcharts.com/modules/accessibility.js"></script>
+
+    <!-- Add Highcharts Utils -->
+    <script src="js/chart-utils/highcharts-utils.js"></script>
 
     <!-- Page level custom scripts -->
     <script src="js/demo/chart-area-demo.js"></script>

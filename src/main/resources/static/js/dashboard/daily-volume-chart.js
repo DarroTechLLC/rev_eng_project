@@ -217,11 +217,9 @@ class DailyVolumeController {
     }
 
     /**
-     * Initialize the Chart.js chart with the provided data
+     * Initialize the Highcharts chart with the provided data
      */
     initializeChart(data) {
-        const ctx = document.getElementById('dailyVolumeChart').getContext('2d');
-
         // Generate consistent colors for farms
         data.farms.forEach(farm => {
             if (!this.farmColors[farm.id]) {
@@ -256,76 +254,60 @@ class DailyVolumeController {
 
         this.log(`Using chart type: ${chartType} (multiple dates: ${hasMultipleDates}, fake data: ${this.useFakeData})`);
 
-        // Create the chart
-        this.chart = new Chart(ctx, {
-            type: chartType,
-            data: {
-                datasets: datasets
+        // Create the chart with Highcharts
+        this.chart = Highcharts.chart('dailyVolumeChart', {
+            chart: {
+                type: chartType,
+                height: 400
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                interaction: {
-                    mode: 'index',
-                    intersect: false,
+            title: {
+                text: `Daily Production Volume: (${Math.round(totalVolume).toLocaleString()} MMBTUs)`,
+                style: {
+                    fontSize: '16px',
+                    fontWeight: 'bold'
+                }
+            },
+            xAxis: {
+                type: hasMultipleDates || this.useFakeData ? 'datetime' : 'category',
+                title: {
+                    text: hasMultipleDates || this.useFakeData ? 'Date' : 'Farm'
                 },
-                scales: {
-                    x: {
-                        type: hasMultipleDates || this.useFakeData ? 'time' : 'category',
-                        time: hasMultipleDates || this.useFakeData ? {
-                            unit: 'day',
-                            displayFormats: {
-                                day: 'MMM d'
-                            },
-                            tooltipFormat: 'MMM d, yyyy'
-                        } : undefined,
-                        title: {
-                            display: true,
-                            text: hasMultipleDates || this.useFakeData ? 'Date' : 'Farm'
-                        }
-                    },
-                    y: {
-                        beginAtZero: true,
-                        title: {
-                            display: true,
-                            text: 'MMBTUs'
-                        },
-                        ticks: {
-                            callback: (value) => {
-                                return new Intl.NumberFormat().format(value);
-                            }
-                        }
-                    }
+                labels: hasMultipleDates || this.useFakeData ? {
+                    format: '{value:%b %d}'
+                } : {}
+            },
+            yAxis: {
+                min: 0,
+                title: {
+                    text: 'MMBTUs'
                 },
-                plugins: {
-                    title: {
-                        display: true,
-                        text: `Daily Production Volume: (${Math.round(totalVolume).toLocaleString()} MMBTUs)`,
-                        font: {
-                            size: 16,
-                            weight: 'bold'
-                        },
-                        padding: {
-                            top: 10,
-                            bottom: 20
-                        }
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: (context) => {
-                                const value = context.parsed.y;
-                                return `${context.dataset.label}: ${new Intl.NumberFormat().format(value)} MMBTUs`;
-                            }
-                        }
-                    },
-                    legend: {
-                        position: 'bottom',
-                        labels: {
-                            usePointStyle: true,
-                            padding: 20
-                        }
+                labels: {
+                    formatter: function() {
+                        return Highcharts.numberFormat(this.value, 0);
                     }
                 }
+            },
+            tooltip: {
+                formatter: function() {
+                    return `<b>${this.series.name}</b><br/>
+                            ${hasMultipleDates ? Highcharts.dateFormat('%b %d, %Y', this.x) : this.x}: 
+                            ${Highcharts.numberFormat(this.y, 0)} MMBTUs`;
+                }
+            },
+            series: datasets.map(ds => ({
+                name: ds.label,
+                data: hasMultipleDates || this.useFakeData ? 
+                    ds.data.map(d => [d.x instanceof Date ? d.x.getTime() : d.x, d.y]) : 
+                    ds.data.map(d => d.y),
+                color: ds.borderColor
+            })),
+            legend: {
+                enabled: true,
+                align: 'center',
+                verticalAlign: 'bottom'
+            },
+            credits: {
+                enabled: false
             }
         });
     }
@@ -358,13 +340,17 @@ class DailyVolumeController {
      * Toggle visibility of a specific farm in the chart
      */
     toggleFarmVisibility(farmId, visible) {
-        const datasetIndex = this.chart.data.datasets.findIndex(
-            ds => ds.label === this.currentData.farms.find(f => f.id === farmId).name
+        const seriesIndex = this.chart.series.findIndex(
+            series => series.name === this.currentData.farms.find(f => f.id === farmId).name
         );
 
-        if (datasetIndex !== -1) {
-            this.chart.setDatasetVisibility(datasetIndex, visible);
-            this.chart.update();
+        if (seriesIndex !== -1) {
+            const series = this.chart.series[seriesIndex];
+            if (visible) {
+                series.show();
+            } else {
+                series.hide();
+            }
         }
     }
 
