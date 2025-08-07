@@ -105,16 +105,32 @@
     }
 
     function updateChart() {
-        // Ensure we're using today's date if no date is selected
+        // Get the selected date
         let selectedDate = dateSelector.value;
+
+        // If no date is selected, use today's date
         if (!selectedDate) {
-            // Get today's date and use it as default
             const today = window.dateHelpers ? 
                 window.dateHelpers.getCurrentDateString() : 
                 new Date().toISOString().split('T')[0];
 
             selectedDate = today;
             dateSelector.value = selectedDate;
+        }
+
+        // Validate the date string
+        let isDateValid = true;
+        if (window.dateHelpers && window.dateHelpers.isValidDateString) {
+            isDateValid = window.dateHelpers.isValidDateString(selectedDate);
+            if (!isDateValid) {
+                // Show error but don't reset the date - allow user to correct it
+                showError('Invalid date format. Please use YYYY-MM-DD format.');
+                hideLoading();
+                return;
+            } else {
+                // Valid date, clear any previous error
+                hideError();
+            }
         }
 
         const chartSelector = window.chartSelectors?.find(s => s.containerId === 'daily-volume-chart-selector');
@@ -147,11 +163,26 @@
         .then(data => {
             console.log('📊 Received data:', data);
 
-            if (chart) {
-                chart.destroy();
+            // Check for error flag in response
+            if (data.error) {
+                throw new Error(data.errorMessage || 'Error in API response');
             }
 
-            // Process data for chart - match NextJS implementation exactly
+            // Safely destroy existing chart
+            if (chart) {
+                try {
+                    if (typeof chart.destroy === 'function') {
+                        chart.destroy();
+                    }
+                } catch (e) {
+                    console.warn('Error destroying chart:', e);
+                }
+                // Always clear the container
+                chartContainer.innerHTML = '';
+                chart = null;
+            }
+
+            // Process data for chart
             const chartData = data.data || [];
             if (chartData.length === 0) {
                 showError('No data available for the selected date.');
@@ -226,7 +257,32 @@
         })
         .catch(error => {
             console.error('❌ Error fetching daily volume data:', error);
-            showError('Error loading chart data: ' + error.message);
+
+            // Provide specific error message based on error type
+            let errorMessage = 'Error loading chart data: ' + error.message;
+
+            // Check if it's a network error
+            if (!navigator.onLine || error.name === 'TypeError') {
+                errorMessage = 'Network error. Please check your internet connection and try again.';
+            }
+
+            showError(errorMessage);
+
+            // Safely destroy existing chart
+            if (chart) {
+                try {
+                    if (typeof chart.destroy === 'function') {
+                        chart.destroy();
+                    }
+                } catch (e) {
+                    console.warn('Error destroying chart during error handling:', e);
+                }
+
+                // Always clear the container
+                chartContainer.innerHTML = '';
+                chart = null;
+            }
+
             hideLoading();
         });
     }
@@ -243,8 +299,46 @@
         // Initialize chart type selectors
         initChartTypeSelectors();
 
-        // Set up event listeners
-        dateSelector.addEventListener('change', updateChart);
+        // Set up event listeners for date selector
+        dateSelector.addEventListener('change', function(e) {
+            // Get the entered date value
+            const value = e.target.value;
+
+            // Clear any previous errors
+            hideError();
+
+            // Validate the date before updating the chart
+            if (value && window.dateHelpers && window.dateHelpers.isValidDateString) {
+                const isValid = window.dateHelpers.isValidDateString(value);
+                if (isValid) {
+                    // Valid date - update the chart
+                    updateChart();
+                } else {
+                    // Invalid date - show error but keep the value to allow correction
+                    showError('Invalid date format. Please use YYYY-MM-DD format.');
+                }
+            } else {
+                // If date is empty or can't be validated, update with default (today)
+                updateChart();
+            }
+        });
+
+        // Allow manual typing in date field
+        dateSelector.addEventListener('input', function(e) {
+            // Clear error message when user is typing to provide immediate feedback
+            hideError();
+        });
+
+        // Handle blur event to validate date when user clicks outside
+        dateSelector.addEventListener('blur', function(e) {
+            const value = e.target.value;
+            if (value && window.dateHelpers && window.dateHelpers.isValidDateString) {
+                const isValid = window.dateHelpers.isValidDateString(value);
+                if (!isValid) {
+                    showError('Invalid date format. Please use YYYY-MM-DD format.');
+                }
+            }
+        });
 
         // Initial chart load
         updateChart();
