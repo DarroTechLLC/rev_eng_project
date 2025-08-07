@@ -581,6 +581,7 @@ public class RoutingController extends BaseController {
         model.addAttribute("dashboardType", dashboardType);
         model.addAttribute("currentUser", user);
         // Add current date to model for date selectors
+        // Ensure we're using the current date for all charts
         model.addAttribute("selectedDate", java.time.LocalDate.now());
         logger.debug("🧩 Added company, company ID, dashboard type, and current date to model");
 

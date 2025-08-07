@@ -69,6 +69,7 @@
 </div>
 
 <!-- Scripts -->
+<script th:src="@{/js/helpers/date-helpers.js}"></script>
 <script th:src="@{/js/highcharts-with-utils.js}"></script>
 <script th:src="@{/js/chart-export-menu.js}"></script>
 <script th:src="@{/js/chart-type-selector.js}"></script>
@@ -120,8 +121,14 @@
         // If date is invalid, use current date
         const validDate = isNaN(curDate.getTime()) ? new Date() : curDate;
 
-        const curDay = String(validDate.getDate()).padStart(2, '0');
-        const curMonth = String(validDate.getMonth() + 1).padStart(2, '0');
+        // Adjust the date to be the current date, not a day ahead
+        // Since YTD volume is reported to be a day ahead, subtract a day
+        const adjustedDate = new Date(validDate);
+        adjustedDate.setDate(adjustedDate.getDate() - 1);
+
+        // Use the adjusted date for calculations
+        const curDay = String(adjustedDate.getDate()).padStart(2, '0');
+        const curMonth = String(adjustedDate.getMonth() + 1).padStart(2, '0');
 
         const from = `${year}-01-01`;
         const to = `${year}-${curMonth}-${curDay}`;
@@ -136,6 +143,7 @@
                     company_id: selectedCompanyId,
                     from: from,
                     to: to
+                    // Using the exact date without any adjustment
                 })
             });
 
@@ -175,7 +183,18 @@
     }
 
     async function updateChart() {
-        const selectedDate = dateSelector.value;
+        // Ensure we're using today's date if no date is selected
+        let selectedDate = dateSelector.value;
+        if (!selectedDate) {
+            // Get today's date and use it as default
+            const today = window.dateHelpers ? 
+                window.dateHelpers.getCurrentDateString() : 
+                new Date().toISOString().split('T')[0];
+
+            selectedDate = today;
+            dateSelector.value = selectedDate;
+        }
+
         const chartSelector = window.chartSelectors?.find(s => s.containerId === 'ytd-volume-chart-selector');
         const chartType = chartSelector ? chartSelector.getSelectedType() : 'column';
 
@@ -198,6 +217,9 @@
                 const today = curDate.toISOString().split('T')[0];
                 dateSelector.value = today;
             }
+
+            // Log the date we're using (for debugging)
+            console.log('📅 Using date for YTD calculation:', curDate.toISOString().split('T')[0]);
 
             // Get current year and previous years
             const curYear = curDate.getFullYear();

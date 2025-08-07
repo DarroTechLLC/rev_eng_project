@@ -67,13 +67,11 @@ class DailyVolumeController {
         const startDate = document.getElementById('startDate');
         const endDate = document.getElementById('endDate');
 
-        // Set default date range (last 30 days)
-        const end = new Date();
-        const start = new Date();
-        start.setDate(start.getDate() - 30);
+        // Set default date to today
+        const today = new Date();
 
-        startDate.value = start.toISOString().split('T')[0];
-        endDate.value = end.toISOString().split('T')[0];
+        startDate.value = today.toISOString().split('T')[0];
+        endDate.value = today.toISOString().split('T')[0];
 
         // Event Listeners
         startDate.addEventListener('change', () => this.refreshData());
@@ -131,8 +129,12 @@ class DailyVolumeController {
                     throw new Error("Invalid company ID: " + companyId);
                 }
 
-                const date = document.getElementById('startDate').value;
-                this.log("Using date for data fetch", date);
+                // Use today's date
+                const today = window.dateHelpers ? 
+                    window.dateHelpers.getCurrentDateString() : 
+                    new Date().toISOString().split('T')[0];
+
+                this.log("Using today's date for data fetch", today);
 
                 // Get CSRF token for POST request
                 const csrfToken = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
@@ -140,7 +142,7 @@ class DailyVolumeController {
                 this.log("CSRF token retrieved", csrfToken ? "Token found" : "Token missing");
 
                 // Make API request to get data
-                const apiUrl = `/api/charts/multi-farm/farm-volumes-for-date?company_id=${companyId}&date=${date}`;
+                const apiUrl = `/api/charts/multi-farm/farm-volumes-for-date?company_id=${companyId}&date=${today}`;
                 this.log("Making API request", apiUrl);
 
                 const response = await fetch(apiUrl, {
@@ -185,7 +187,7 @@ class DailyVolumeController {
                         id: item.farmId,
                         name: item.farmName,
                         volumes: [{
-                            date: new Date(date),
+                            date: new Date(today),
                             value: item.volume
                         }]
                     }))
@@ -444,8 +446,12 @@ class DailyVolumeController {
                     throw new Error("Invalid company ID: " + companyId);
                 }
 
-                const date = document.getElementById('startDate').value;
-                this.log("Using date for data fetch", date);
+                // Use today's date
+                const today = window.dateHelpers ? 
+                    window.dateHelpers.getCurrentDateString() : 
+                    new Date().toISOString().split('T')[0];
+
+                this.log("Using today's date for data fetch", today);
 
                 // Get CSRF token for POST request
                 const csrfToken = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
@@ -453,7 +459,7 @@ class DailyVolumeController {
                 this.log("CSRF token retrieved", csrfToken ? "Token found" : "Token missing");
 
                 // Make API request to get data
-                const apiUrl = `/api/charts/multi-farm/farm-volumes-for-date?company_id=${companyId}&date=${date}`;
+                const apiUrl = `/api/charts/multi-farm/farm-volumes-for-date?company_id=${companyId}&date=${today}`;
                 this.log("Making API request", apiUrl);
 
                 const response = await fetch(apiUrl, {
@@ -498,7 +504,7 @@ class DailyVolumeController {
                         id: item.farmId,
                         name: item.farmName,
                         volumes: [{
-                            date: new Date(date),
+                            date: new Date(today),
                             value: item.volume
                         }]
                     }))
