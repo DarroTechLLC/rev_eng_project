@@ -62,7 +62,7 @@ This approach ensures that:
 ## Files
 
 - `.env`: Local development environment variables (not committed to version control)
-- `.env.prod`: Production environment variables for Docker (committed to version control)
+- `.env.prod`: Production environment variables for Docker (not committed to version control)
 - `.env.example`: Example environment variables with dummy values (committed to version control)
 - `application.properties`: Default values for environment variables
 
