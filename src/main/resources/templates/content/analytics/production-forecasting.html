@@ -363,14 +363,33 @@
                 const historicalData = forecast.historicalData || [];
                 const forecastData = forecast.forecastData || [];
 
+                // Function to ensure timestamp is in milliseconds
+                function formatTimestamp(timestamp) {
+                    // If it's a number and appears to be in seconds (Unix timestamp in seconds has 10 digits for dates around now)
+                    if (typeof timestamp === 'number' && timestamp.toString().length <= 10) {
+                        return timestamp * 1000; // Convert seconds to milliseconds
+                    }
+                    // If it's a string that can be parsed as a number
+                    if (typeof timestamp === 'string' && !isNaN(Number(timestamp))) {
+                        const numericTimestamp = Number(timestamp);
+                        // Check if it appears to be in seconds
+                        if (numericTimestamp.toString().length <= 10) {
+                            return numericTimestamp * 1000; // Convert seconds to milliseconds
+                        }
+                        return numericTimestamp; // Already in milliseconds
+                    }
+                    // Otherwise, return the original timestamp
+                    return timestamp;
+                }
+
                 const historicalSeries = historicalData.map(point => ({
-                    x: new Date(point.timestamp).getTime(),
+                    x: new Date(formatTimestamp(point.timestamp)).getTime(),
                     y: point.value,
                     name: 'Historical Data'
                 }));
 
                 const forecastSeries = forecastData.map(point => ({
-                    x: new Date(point.timestamp).getTime(),
+                    x: new Date(formatTimestamp(point.timestamp)).getTime(),
                     y: point.value,
                     name: 'Forecast'
                 }));
@@ -396,7 +415,7 @@
                             text: 'Date'
                         },
                         labels: {
-                            format: '{value:%b %Y}'
+                            format: '{value:%b %d, %Y}'
                         }
                     },
                     yAxis: {
@@ -412,7 +431,7 @@
                     tooltip: {
                         formatter: function() {
                             return `<b>${this.series.name}</b><br/>
-                                    ${Highcharts.dateFormat('%b %Y', this.x)}: ${Highcharts.numberFormat(this.y, 0)} MMBTUs`;
+                                    ${Highcharts.dateFormat('%b %d, %Y', this.x)}: ${Highcharts.numberFormat(this.y, 0)} MMBTUs`;
                         }
                     },
                     series: [{
