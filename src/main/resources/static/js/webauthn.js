@@ -712,12 +712,38 @@ document.addEventListener('DOMContentLoaded', function() {
     const biometricRegisterButton = document.getElementById('biometric-register-button');
     if (biometricRegisterButton) {
         biometricRegisterButton.addEventListener('click', async function() {
+            // Change button state to show processing
+            biometricRegisterButton.disabled = true;
+            biometricRegisterButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Registering...';
+
             const result = await registerBiometric();
 
             if (result.error) {
+                // Reset button on error
+                biometricRegisterButton.disabled = false;
+                biometricRegisterButton.innerHTML = '<i class="fas fa-fingerprint mr-1"></i> Register Biometric Authentication';
+
+                // Show error message
                 alert('Biometric registration failed: ' + result.error);
             } else if (result.success) {
-                alert('Biometric registration successful! You can now use biometric authentication to log in.');
+                // Update UI to show success without page refresh
+                const registeredElement = document.getElementById('biometric-registered');
+                if (registeredElement) {
+                    // Show the success message
+                    registeredElement.style.display = 'block';
+
+                    // Add tooltip information to the success message
+                    registeredElement.innerHTML = '<i class="fas fa-check-circle mr-1"></i> Biometric authentication is registered and available for login. <span class="text-muted"><small>(You can use it on your next login)</small></span>';
+
+                    // Hide the register button
+                    biometricRegisterButton.style.display = 'none';
+                } else {
+                    // Fallback if the element doesn't exist
+                    biometricRegisterButton.disabled = true;
+                    biometricRegisterButton.classList.remove('btn-success');
+                    biometricRegisterButton.classList.add('btn-secondary');
+                    biometricRegisterButton.innerHTML = '<i class="fas fa-check-circle mr-1"></i> Biometrics Registered - Available on Next Login';
+                }
             }
         });
     }
