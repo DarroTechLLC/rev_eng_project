@@ -282,7 +282,20 @@ function displayAlerts(activeAlerts, isAdminView, isAdminUser) {
 
     // Update alert count - show the actual number of active alerts
     if (alertCount) {
-        alertCount.textContent = activeAlerts.length > 0 ? activeAlerts.length : '';
+        const count = activeAlerts.length;
+        alertCount.textContent = count > 0 ? (count > 99 ? '99+' : String(count)) : '';
+        // Accessible label for screen readers
+        alertCount.setAttribute('aria-label', count > 0 ? `${count} active alert${count !== 1 ? 's' : ''}` : 'No active alerts');
+
+        // Toggle a class on the trigger to optionally animate the bell when count changes
+        const trigger = document.getElementById('alertsDropdown');
+        if (trigger) {
+            if (count > 0) {
+                trigger.classList.add('has-alerts');
+            } else {
+                trigger.classList.remove('has-alerts');
+            }
+        }
         console.log('[DEBUG_LOG] Bell count has been updated to show:', alertCount.textContent);
     }
 

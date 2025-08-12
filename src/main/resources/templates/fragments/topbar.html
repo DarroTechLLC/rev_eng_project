@@ -33,6 +33,49 @@
             white-space: pre-line;
             text-align: center;
         }
+
+        /* Notification badge: larger and closer to the bell */
+        .notification-badge {
+            position: absolute;
+            top: 0.15rem;
+            right: 0.15rem;
+            min-width: 1.1rem;
+            height: 1.1rem;
+            padding: 0;
+            font-size: 0.8rem;
+            line-height: 1.1rem;
+            border-radius: 0.65rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Ensure the alerts trigger is a positioned ancestor */
+        #alertsDropdown { position: relative; }
+
+        /* Override tiny default counter scaling */
+        .nav-link .badge-counter {
+            transform: none !important;
+            margin-top: 0 !important;
+            right: 0.15rem !important;
+        }
+
+        /* Subtle ring animation when there are active alerts */
+        @keyframes bell-ring {
+            0% { transform: rotate(0); }
+            10% { transform: rotate(10deg); }
+            20% { transform: rotate(-8deg); }
+            30% { transform: rotate(6deg); }
+            40% { transform: rotate(-4deg); }
+            50% { transform: rotate(2deg); }
+            60% { transform: rotate(0); }
+            100% { transform: rotate(0); }
+        }
+        #alertsDropdown.has-alerts .fa-bell {
+            animation: bell-ring 1.5s ease-in-out 2; /* ring twice on update */
+            color: #e74a3b !important; /* turn bell red when active */
+            filter: drop-shadow(0 0 4px rgba(231, 74, 59, 0.7));
+        }
     </style>
 </head>
 <body>
@@ -183,7 +226,7 @@
                     <!-- Larger bell icon for mobile -->
                     <i class="fas fa-bell fa-2x d-sm-none" style="color: #4e73df; filter: drop-shadow(0px 0px 4px rgba(78, 115, 223, 0.6));"></i>
                     <!-- Counter - Alerts -->
-                    <span id="alertCount" class="badge badge-danger badge-counter" style="font-size: 0.75rem; position: absolute; top: 5px; right: -2px;"></span>
+                    <span id="alertCount" class="badge badge-danger badge-pill badge-counter notification-badge" aria-live="polite"></span>
                 </a>
                 <!-- Dropdown - Alerts -->
                 <div id="alertMessagesPanel" class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in"
