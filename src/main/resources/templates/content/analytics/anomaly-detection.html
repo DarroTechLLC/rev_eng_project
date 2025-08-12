@@ -419,7 +419,9 @@
         // Toggle function for showing/hiding technical details
         function toggleDetails(detailsId) {
             const detailsElement = document.getElementById(detailsId);
-            const isVisible = detailsElement.style.display !== 'none';
+            // Use getComputedStyle to get the actual display value, not just the inline style
+            const computedStyle = window.getComputedStyle(detailsElement);
+            const isVisible = computedStyle.display !== 'none';
 
             detailsElement.style.display = isVisible ? 'none' : 'block';
 
