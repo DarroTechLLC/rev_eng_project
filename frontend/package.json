@@ -3,9 +3,12 @@
   "version": "1.0.0",
   "description": "Frontend for RevEng Project",
   "scripts": {
-    "start": "npx browser-sync start --proxy 'localhost:8080' --files 'src/main/resources/templates/**/*.html, src/main/resources/static/**/*' --no-open"
+    "start": "npx browser-sync start --proxy 'localhost:8080' --files 'src/main/resources/templates/**/*.html, src/main/resources/static/**/*' --no-open",
+    "test": "jest"
   },
   "devDependencies": {
-    "browser-sync": "^2.29.3"
+    "browser-sync": "^2.29.3",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0"
   }
 }

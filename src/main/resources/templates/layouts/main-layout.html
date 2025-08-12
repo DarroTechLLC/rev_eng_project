@@ -1,6 +1,28 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
+    <script>
+        (function() {
+            // Store original console methods (in case you need to restore them later)
+            var originalConsole = {};
+            Object.keys(console).forEach(function(method) {
+                originalConsole[method] = console[method];
+            });
+
+            // Replace all console methods with empty functions
+            Object.keys(console).forEach(function(method) {
+                console[method] = function() {};
+            });
+
+            // Optional: Add a hidden method to restore console if needed for debugging
+            window._restoreConsole = function() {
+                Object.keys(originalConsole).forEach(function(method) {
+                    console[method] = originalConsole[method];
+                });
+                return 'Console restored';
+            };
+        })();
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title th:with="viewName=${content != null ? content.substring(content.lastIndexOf('/') + 1) : 'Application'}">RAE/[[${viewName}]]</title>
