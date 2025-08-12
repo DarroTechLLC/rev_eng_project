@@ -4,7 +4,6 @@
  * - Company selector dropdown
  */
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🔄 Initializing dropdowns.js');
     initAllDropdowns();
     initRoleBasedMenu();
 });
@@ -13,8 +12,6 @@ document.addEventListener('DOMContentLoaded', function() {
  * Initialize all dropdowns with a consistent approach
  */
 function initAllDropdowns() {
-    console.log('🔽 Initializing all dropdowns');
-
     // Add consistent styles for all dropdowns
     addDropdownStyles();
 
@@ -37,12 +34,8 @@ function initAllDropdowns() {
             document.querySelectorAll('.dropdown-menu.show, .dropdown-content.show, .dropdown-list.show').forEach(function(menu) {
                 menu.classList.remove('show');
             });
-
-            console.log('🔒 All dropdowns closed (outside click)');
         }
     });
-
-    console.log('✅ All dropdowns initialized');
 }
 
 /**
@@ -98,7 +91,6 @@ function addDropdownStyles() {
         }
     `;
     document.head.appendChild(style);
-    console.log('💅 Dropdown styles added');
 }
 
 /**

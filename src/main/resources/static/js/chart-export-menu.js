@@ -8,8 +8,6 @@ function exportChartToXLSX(chart, fileName) {
     // Get the default filename from chart title if not provided
     const defaultFileName = fileName || (chart.title && chart.title.textStr) || 'chart-data';
 
-    console.log('📊 Exporting chart to XLSX:', defaultFileName);
-
     // Get the chart data in tabular format
     const rows = chart.getDataRows();
     const headers = rows[0];
@@ -45,8 +43,6 @@ function exportChartToXLSX(chart, fileName) {
         type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     });
     saveAs(blob, `${defaultFileName}.xlsx`);
-
-    console.log('✅ XLSX export completed');
 }
 
 class ChartExportMenu {
@@ -58,16 +54,12 @@ class ChartExportMenu {
     }
 
     init() {
-        console.log('🔧 Initializing Chart Export Menu'); // Debug log
-
         // Create export button
         this.createExportButton();
         // Create dropdown menu
         this.createExportMenu();
         // Add event listeners
         this.addEventListeners();
-
-        console.log('✅ Chart Export Menu initialized'); // Debug log
     }
 
     createExportButton() {
@@ -117,7 +109,6 @@ class ChartExportMenu {
         });
         this.exportButton = button;
         this.container.appendChild(button);
-        console.log('📥 Export button created'); // Debug log
     }
 
     createExportMenu() {
@@ -189,7 +180,6 @@ class ChartExportMenu {
 
         this.exportMenu = menu;
         this.container.appendChild(menu);
-        console.log('📋 Export menu created'); // Debug log
     }
 
     addEventListeners() {
@@ -212,8 +202,6 @@ class ChartExportMenu {
                 this.hideMenu();
             }
         });
-
-        console.log('🎧 Event listeners added'); // Debug log
     }
 
     toggleMenu() {
@@ -227,13 +215,11 @@ class ChartExportMenu {
     showMenu() {
         this.exportMenu.style.display = 'block';
         this.showOptions = true;
-        console.log('📂 Export menu shown'); // Debug log
     }
 
     hideMenu() {
         this.exportMenu.style.display = 'none';
         this.showOptions = false;
-        console.log('📂 Export menu hidden'); // Debug log
     }
 
     getDefaultFileName() {
@@ -247,8 +233,6 @@ class ChartExportMenu {
     }
 
     exportChart(type) {
-        console.log(`📤 Exporting chart as ${type.toUpperCase()}`); // Debug log
-
         try {
             switch (type) {
                 case 'png':
@@ -273,7 +257,6 @@ class ChartExportMenu {
                 default:
                     console.error('❌ Unknown export type:', type);
             }
-            console.log(`✅ Chart exported as ${type.toUpperCase()}`); // Debug log
         } catch (error) {
             console.error('❌ Export failed:', error);
         }
@@ -287,13 +270,11 @@ class ChartExportMenu {
  * @returns {ChartExportMenu} - Export menu instance
  */
 function initChartExportMenu(chart, container) {
-    console.log('🚀 Initializing chart export menu'); // Debug log
-    
     if (!chart) {
         console.error('❌ Chart instance is required');
         return null;
     }
-    
+
     if (!container) {
         console.error('❌ Container element is required');
         return null;
@@ -306,7 +287,6 @@ function initChartExportMenu(chart, container) {
 
     try {
         const exportMenu = new ChartExportMenu(chart, container);
-        console.log('✅ Chart export menu initialized successfully'); // Debug log
         return exportMenu;
     } catch (error) {
         console.error('❌ Failed to initialize chart export menu:', error);

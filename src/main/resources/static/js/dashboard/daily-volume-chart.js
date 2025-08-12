@@ -38,12 +38,6 @@ class DailyVolumeController {
                 }
             }
 
-            if (isError) {
-                console.error(prefix + fullMessage);
-            } else {
-                console.log(prefix + fullMessage);
-            }
-
             // Add to page for easier debugging if debug element exists
             const debugLogElement = document.getElementById('chart-debug-log');
             if (debugLogElement) {
@@ -209,7 +203,6 @@ class DailyVolumeController {
 
         } catch (error) {
             this.log(`Error in loadInitialData: ${error.message}`, error.stack, true);
-            console.error('Error loading data:', error);
             this.showError(error);
         } finally {
             this.hideLoading();
@@ -566,7 +559,6 @@ class DailyVolumeController {
             this.log("Chart refresh complete");
         } catch (error) {
             this.log(`Error in refreshData: ${error.message}`, error.stack, true);
-            console.error('Error refreshing data:', error);
             this.showError(error);
         } finally {
             this.hideLoading();
@@ -653,3 +645,8 @@ class DailyVolumeController {
 document.addEventListener('DOMContentLoaded', () => {
     new DailyVolumeController();
 });
+
+// Export the class for testing
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { DailyVolumeController };
+}

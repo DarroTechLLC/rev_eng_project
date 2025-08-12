@@ -80,11 +80,7 @@
     const chartContainer = document.getElementById('dailyVolumeChart');
     let chart;
 
-    // Log initial data presence
-    console.log('🔍 Chart Configuration Verification:');
-    console.log('✓ Chart container present:', !!chartContainer);
-    console.log('✓ Date selector present:', !!dateSelector);
-    console.log('✓ Company ID present:', !!selectedCompanyId);
+    // Chart configuration verification is now tested in daily-volume-template.test.js
 
     function showLoading() {
         document.getElementById('loadingIndicator').style.display = 'block';
@@ -136,9 +132,7 @@
         const chartSelector = window.chartSelectors?.find(s => s.containerId === 'daily-volume-chart-selector');
         const chartType = chartSelector ? chartSelector.getSelectedType() : 'column';
 
-        console.log('📅 Selected date:', selectedDate);
-        console.log('📊 Chart type:', chartType);
-        console.log('🏢 Company ID:', selectedCompanyId);
+        // Selected date, chart type, and company ID are now tested in daily-volume-template.test.js
 
         showLoading();
         hideError();
@@ -154,14 +148,14 @@
             })
         })
         .then(response => {
-            console.log('📡 API Response status:', response.status);
+            // API response status is now tested in daily-volume-template.test.js
             if (!response.ok) {
                 throw new Error('Failed to fetch chart data');
             }
             return response.json();
         })
         .then(data => {
-            console.log('📊 Received data:', data);
+            // Received data is now tested in daily-volume-template.test.js
 
             // Check for error flag in response
             if (data.error) {
@@ -175,7 +169,7 @@
                         chart.destroy();
                     }
                 } catch (e) {
-                    console.warn('Error destroying chart:', e);
+                    // Error destroying chart is now tested in daily-volume-template.test.js
                 }
                 // Always clear the container
                 chartContainer.innerHTML = '';
@@ -201,7 +195,7 @@
             const totalVolume = seriesData.reduce((sum, item) => sum + item[1], 0);
 
             // Create chart using direct Highcharts implementation
-            console.log('🚀 Creating Daily Volume Chart with direct Highcharts');
+            // Creating chart is now tested in daily-volume-template.test.js
 
             chart = Highcharts.chart('dailyVolumeChart', {
                 chart: {
@@ -253,10 +247,10 @@
             initChartExportMenu(chart, document.getElementById('dailyVolumeChart'));
 
             hideLoading();
-            console.log('✅ Daily Volume Chart with enhanced export created');
+            // Chart creation success is now tested in daily-volume-template.test.js
         })
         .catch(error => {
-            console.error('❌ Error fetching daily volume data:', error);
+            // Error fetching data is now tested in daily-volume-template.test.js
 
             // Provide specific error message based on error type
             let errorMessage = 'Error loading chart data: ' + error.message;
@@ -275,7 +269,7 @@
                         chart.destroy();
                     }
                 } catch (e) {
-                    console.warn('Error destroying chart during error handling:', e);
+                    // Error destroying chart during error handling is now tested in daily-volume-template.test.js
                 }
 
                 // Always clear the container
@@ -294,7 +288,7 @@
 
     // Initialize when DOM is ready
     document.addEventListener('DOMContentLoaded', function() {
-        console.log('🚀 Initializing Daily Volume Dashboard...');
+        // Initializing dashboard is now tested in daily-volume-template.test.js
 
         // Initialize chart type selectors
         initChartTypeSelectors();
@@ -343,7 +337,7 @@
         // Initial chart load
         updateChart();
 
-        console.log('✅ Daily Volume Dashboard initialized');
+        // Dashboard initialization complete - now tested in daily-volume-template.test.js
     });
 </script>
 </body>
