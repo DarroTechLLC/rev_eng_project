@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.darro_tech.revengproject.services.ChartService;
 
 @RestController
-@RequestMapping("/api/charts")
+@RequestMapping({"/api/charts", "/align/api/charts"})
 public class ChartApiController {
 
     private static final Logger logger = LoggerFactory.getLogger(ChartApiController.class);
@@ -699,6 +699,140 @@ public class ChartApiController {
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             logger.error("❌ Error processing single farm temperature timeline: {}", e.getMessage(), e);
+
+            // Return error response
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("data", new ArrayList<>());
+            errorResponse.put("error", true);
+            errorResponse.put("errorMessage", e.getMessage());
+
+            return ResponseEntity.ok(errorResponse);
+        }
+    }
+
+    @PostMapping("/market/market-prices-monthly-timeline")
+    public ResponseEntity<Map<String, Object>> getMarketPricesMonthlyTimeline(@RequestBody DateRangeRequest request) {
+        logger.info("📊 Processing market prices monthly timeline - from: {}, to: {}", 
+                request.getFrom(), request.getTo());
+
+        try {
+            // Parse date strings to LocalDate
+            LocalDate fromDate = request.getFrom();
+            LocalDate toDate = request.getTo();
+
+            // Get market prices data from service
+            List<Map<String, Object>> pricesData = chartService.getMarketPricesMonthlyTimeline(
+                    fromDate, 
+                    toDate
+            );
+
+            logger.info("📈 Found {} monthly market price records", pricesData.size());
+
+            // Create response with data array
+            Map<String, Object> response = new HashMap<>();
+            response.put("data", pricesData);
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("❌ Error processing market prices monthly timeline: {}", e.getMessage(), e);
+
+            // Return error response
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("data", new ArrayList<>());
+            errorResponse.put("error", true);
+            errorResponse.put("errorMessage", e.getMessage());
+
+            return ResponseEntity.ok(errorResponse);
+        }
+    }
+
+    @PostMapping("/market/market-prices-daily-timeline")
+    public ResponseEntity<Map<String, Object>> getMarketPricesDailyTimeline(@RequestBody DateRangeRequest request) {
+        logger.info("📊 Processing market prices daily timeline - from: {}, to: {}", 
+                request.getFrom(), request.getTo());
+
+        try {
+            // Parse date strings to LocalDate
+            LocalDate fromDate = request.getFrom();
+            LocalDate toDate = request.getTo();
+
+            // Get market prices data from service
+            List<Map<String, Object>> pricesData = chartService.getMarketPricesDailyTimeline(
+                    fromDate, 
+                    toDate
+            );
+
+            logger.info("📈 Found {} daily market price records", pricesData.size());
+
+            // Create response with data array
+            Map<String, Object> response = new HashMap<>();
+            response.put("data", pricesData);
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("❌ Error processing market prices daily timeline: {}", e.getMessage(), e);
+
+            // Return error response
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("data", new ArrayList<>());
+            errorResponse.put("error", true);
+            errorResponse.put("errorMessage", e.getMessage());
+
+            return ResponseEntity.ok(errorResponse);
+        }
+    }
+
+    @PostMapping("/company/production-timeline")
+    public ResponseEntity<Map<String, Object>> getCompanyProductionTimeline(@RequestBody CompanyDateRangeRequest request) {
+        logger.info("📊 Processing company production timeline - companyId: {}, from: {}, to: {}", 
+                request.getCompany_id(), request.getFrom(), request.getTo());
+
+        try {
+            // Get production data from service
+            List<Map<String, Object>> productionData = chartService.getCompanyProductionTimeline(
+                    request.getCompany_id(),
+                    request.getFrom(),
+                    request.getTo()
+            );
+
+            logger.info("📈 Found {} production records", productionData.size());
+
+            // Create response with data array
+            Map<String, Object> response = new HashMap<>();
+            response.put("data", productionData);
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("❌ Error processing company production timeline: {}", e.getMessage(), e);
+
+            // Return error response
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("data", new ArrayList<>());
+            errorResponse.put("error", true);
+            errorResponse.put("errorMessage", e.getMessage());
+
+            return ResponseEntity.ok(errorResponse);
+        }
+    }
+
+    @PostMapping("/multi-farm/production-budget-summary")
+    public ResponseEntity<Map<String, Object>> getProductionBudgetSummary(@RequestBody CompanyDateRangeRequest request) {
+        logger.info("📊 Processing production budget summary - companyId: {}, from: {}, to: {}", 
+                request.getCompany_id(), request.getFrom(), request.getTo());
+
+        try {
+            // Get production vs budget data from service
+            Map<String, Object> budgetData = chartService.getProductionVsBudgetByFarm(
+                    request.getCompany_id(),
+                    request.getFrom(),
+                    request.getTo()
+            );
+
+            logger.info("📈 Successfully retrieved production budget summary");
+
+            return ResponseEntity.ok(budgetData);
+        } catch (Exception e) {
+            logger.error("❌ Error processing production budget summary: {}", e.getMessage(), e);
 
             // Return error response
             Map<String, Object> errorResponse = new HashMap<>();

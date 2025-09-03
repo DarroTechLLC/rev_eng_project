@@ -164,6 +164,7 @@
         /*<![CDATA[*/
         const farmId = /*[[${selectedFarmId}]]*/ '';
         const selectedFarmName = /*[[${selectedFarmName}]]*/ '';
+        const companyId = /*[[${selectedCompanyId}]]*/ '';
 
         function getCurrentYear() {
             return new Date().getFullYear();
@@ -349,7 +350,7 @@
         function fetchCumulativeProductionData(year, chartType, colorIndex) {
             const { from, to } = getDateRange(year);
 
-            return fetch('/api/charts/company/production-timeline', {
+            return fetch('/align/api/charts/company/production-timeline', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -508,7 +509,7 @@
             const from = `${year}-01-01`;
             const to = `${year}-${mm}-${dd}`;
 
-            return fetch('/api/charts/multi-farm/farm-volumes-for-range', {
+            return fetch('/align/api/charts/multi-farm/farm-volumes-for-range', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -559,7 +560,7 @@
             const prodColor = getChartColor(0); // Blue
             const pctColor = getChartColor(1); // Green
 
-            fetch('/api/charts/multi-farm/production-budget-summary', {
+            fetch('/align/api/charts/multi-farm/production-budget-summary', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -674,7 +675,7 @@
             // Show loading indicator
             document.getElementById('production-budget-pie-chart').innerHTML = '<div style="text-align: center; padding: 20px;">Loading...</div>';
 
-            fetch('/api/charts/company/production-budget-summary', {
+            fetch('/align/api/charts/company/production-budget-summary', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -756,7 +757,7 @@
             // Show loading indicator
             document.getElementById('production-farm-pie-chart').innerHTML = '<div style="text-align: center; padding: 20px;">Loading...</div>';
 
-            fetch('/api/charts/multi-farm/farm-volumes-for-range', {
+            fetch('/align/api/charts/multi-farm/farm-volumes-for-range', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
