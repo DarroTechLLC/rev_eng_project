@@ -840,7 +840,7 @@
 
                 // Format data for pie chart with percentage labels for small slices
                 const pieData = data.map(item => {
-                    const name = item.farm_name || item.farm_id;
+                    const name = item.farmName || item.farmId;
                     const volume = item.volume || 0;
                     const pct = volume / total;
 
