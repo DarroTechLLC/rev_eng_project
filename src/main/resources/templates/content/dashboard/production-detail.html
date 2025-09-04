@@ -152,6 +152,44 @@
                         </div>
                     </div>
                 </div>
+                <div class="grid-row">
+                    <div class="grid-col">
+                        <div class="chart-panel">
+                            <div class="chart-nav">
+                                <div>
+                                    <div class="chart-title">Production & Remaining Budget</div>
+                                    <div class="chart-year-selector" id="budget-pie-chart-year-selector">
+                                        <div class="items">
+                                            <!-- Year buttons will be added dynamically -->
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="chart-type-selector" id="budget-pie-chart-selector">
+                                    <!-- Chart type buttons will be added dynamically -->
+                                </div>
+                            </div>
+                            <div id="production-budget-pie-chart"></div>
+                        </div>
+                    </div>
+                    <div class="grid-col">
+                        <div class="chart-panel">
+                            <div class="chart-nav">
+                                <div>
+                                    <div class="chart-title">Share of Production</div>
+                                    <div class="chart-year-selector" id="farm-pie-chart-year-selector">
+                                        <div class="items">
+                                            <!-- Year buttons will be added dynamically -->
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="chart-type-selector" id="farm-pie-chart-selector">
+                                    <!-- Chart type buttons will be added dynamically -->
+                                </div>
+                            </div>
+                            <div id="production-farm-pie-chart"></div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -181,7 +219,9 @@
         let selectedYears = {
             'cumulative': getCurrentYear(),
             'ytd': getCurrentYear(),
-            'budget': getCurrentYear()
+            'budget': getCurrentYear(),
+            'budget-pie': getCurrentYear(),
+            'farm-pie': getCurrentYear()
         };
 
         function initYearSelectors() {
@@ -194,6 +234,8 @@
             initYearSelector('cumulative-chart-year-selector', 'cumulative', years);
             initYearSelector('ytd-chart-year-selector', 'ytd', years);
             initYearSelector('budget-chart-year-selector', 'budget', years);
+            initYearSelector('budget-pie-chart-year-selector', 'budget-pie', years);
+            initYearSelector('farm-pie-chart-year-selector', 'farm-pie', years);
         }
 
         function initYearSelector(selectorId, chartType, years) {
@@ -247,6 +289,12 @@
                     const budgetSelector = window.chartSelectors?.find(s => s.containerId === 'budget-chart-selector');
                     const budgetType = budgetSelector ? budgetSelector.getSelectedType() : 'column';
                     loadProductionBudgetChart(budgetType);
+                    break;
+                case 'budget-pie':
+                    loadProductionBudgetPieChart();
+                    break;
+                case 'farm-pie':
+                    loadProductionFarmPieChart();
                     break;
             }
         }
@@ -322,11 +370,7 @@
                                     ${Highcharts.dateFormat('%b %Y', this.x)}: ${Highcharts.numberFormat(this.y, 0)} MMBTUs`;
                         }
                     },
-                    series: [{
-                        name: 'Cumulative Production',
-                        data: chartData,
-                        color: 'rgba(54, 162, 235, 1)'
-                    }],
+                    series: allSeries,
                     exporting: {
                         enabled: false // Disabled built-in exporting as we're using custom export menu
                     },
@@ -597,7 +641,7 @@
                 // Render chart using direct Highcharts implementation
                 console.log('🚀 Creating Production vs Budget Chart with direct Highcharts');
 
-                const chart = Highcharts.chart('productionBudgetChart', {
+                const chart = Highcharts.chart('production-budget-chart', {
                     chart: {
                         type: chartType === 'column' ? 'column' : chartType,
                         inverted: chartType === 'bar', // For horizontal bar charts
@@ -611,12 +655,9 @@
                         }
                     },
                     xAxis: {
-                        type: 'datetime',
+                        categories: data.map(d => d.farm_name || d.farm_id),
                         title: {
-                            text: 'Date'
-                        },
-                        labels: {
-                            format: '{value:%b %Y}'
+                            text: 'Farm'
                         }
                     },
                     yAxis: {
@@ -633,7 +674,7 @@
                     tooltip: {
                         formatter: function() {
                             return `<b>${this.series.name}</b><br/>
-                                    ${Highcharts.dateFormat('%b %Y', this.x)}: ${Highcharts.numberFormat(this.y, 0)} MMBTUs`;
+                                    ${this.x}: ${Highcharts.numberFormat(this.y, 0)} MMBTUs`;
                         }
                     },
                     series: [{
@@ -654,7 +695,7 @@
                 });
 
                 // Initialize enhanced export menu
-                initChartExportMenu(chart, document.getElementById('productionBudgetChart'));
+                initChartExportMenu(chart, document.getElementById('production-budget-chart'));
                 console.log('✅ Production vs Budget Chart with enhanced export created');
             })
             .catch(error => {
@@ -702,16 +743,22 @@
                 // Calculate remaining budget
                 const remainingBudget = budget - production;
 
+                // Prepare chart data
+                const chartData = [
+                    { name: 'Production', y: production },
+                    { name: 'Remaining Budget', y: remainingBudget }
+                ];
+
                 // Render chart using direct Highcharts implementation
                 console.log('🚀 Creating Production vs Budget Pie Chart with direct Highcharts');
 
-                const chart = Highcharts.chart('productionBudgetPieChart', {
+                const chart = Highcharts.chart('production-budget-pie-chart', {
                     chart: {
                         type: 'pie',
                         height: 400
                     },
                     title: {
-                        text: 'Production vs Budget Distribution',
+                        text: 'Production & Remaining Budget',
                         style: {
                             fontSize: '16px',
                             fontWeight: 'bold'
@@ -721,6 +768,16 @@
                         formatter: function() {
                             return `<b>${this.point.name}</b><br/>
                                     ${Highcharts.numberFormat(this.y, 0)} MMBTUs (${Highcharts.numberFormat(this.percentage, 1)}%)`;
+                        }
+                    },
+                    plotOptions: {
+                        pie: {
+                            allowPointSelect: true,
+                            cursor: 'pointer',
+                            dataLabels: {
+                                enabled: true,
+                                format: '<b>{point.name}</b>: {point.percentage:.1f} %'
+                            }
                         }
                     },
                     series: [{
@@ -736,7 +793,7 @@
                 });
 
                 // Initialize enhanced export menu
-                initChartExportMenu(chart, document.getElementById('productionBudgetPieChart'));
+                initChartExportMenu(chart, document.getElementById('production-budget-pie-chart'));
                 console.log('✅ Production vs Budget Pie Chart with enhanced export created');
             })
             .catch(error => {
@@ -799,13 +856,13 @@
                 // Render chart using direct Highcharts implementation
                 console.log('🚀 Creating Production by Farm Pie Chart with direct Highcharts');
 
-                const chart = Highcharts.chart('productionFarmPieChart', {
+                const chart = Highcharts.chart('production-farm-pie-chart', {
                     chart: {
                         type: 'pie',
                         height: 400
                     },
                     title: {
-                        text: 'Production by Farm',
+                        text: 'Share of Production',
                         style: {
                             fontSize: '16px',
                             fontWeight: 'bold'
@@ -815,6 +872,30 @@
                         formatter: function() {
                             return `<b>${this.point.name}</b><br/>
                                     ${Highcharts.numberFormat(this.y, 0)} MMBTUs (${Highcharts.numberFormat(this.percentage, 1)}%)`;
+                        }
+                    },
+                    plotOptions: {
+                        pie: {
+                            allowPointSelect: true,
+                            cursor: 'pointer',
+                            dataLabels: [{
+                                enabled: true,
+                                distance: 20
+                            }, {
+                                enabled: true,
+                                distance: -40,
+                                format: '{point.percentage:.1f}%',
+                                style: {
+                                    fontSize: '1.2em',
+                                    textOutline: 'none',
+                                    opacity: 0.7
+                                },
+                                filter: {
+                                    operator: '>',
+                                    property: 'percentage',
+                                    value: 10
+                                }
+                            }]
                         }
                     },
                     series: [{
@@ -830,7 +911,7 @@
                 });
 
                 // Initialize enhanced export menu
-                initChartExportMenu(chart, document.getElementById('productionFarmPieChart'));
+                initChartExportMenu(chart, document.getElementById('production-farm-pie-chart'));
                 console.log('✅ Production by Farm Pie Chart with enhanced export created');
             })
             .catch(error => {
@@ -854,6 +935,8 @@
             loadCumulativeProductionChart();
             loadProductionYTDChart();
             loadProductionBudgetChart();
+            loadProductionBudgetPieChart();
+            loadProductionFarmPieChart();
 
             console.log('✅ Production Detail Dashboard initialized');
         });

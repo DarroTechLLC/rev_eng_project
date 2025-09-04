@@ -843,4 +843,37 @@ public class ChartApiController {
             return ResponseEntity.ok(errorResponse);
         }
     }
+
+    @PostMapping("/company/production-budget-summary")
+    public ResponseEntity<Map<String, Object>> getCompanyProductionBudgetSummary(@RequestBody CompanyDateRangeRequest request) {
+        logger.info("📊 Processing company production budget summary - companyId: {}, from: {}, to: {}", 
+                request.getCompany_id(), request.getFrom(), request.getTo());
+
+        try {
+            // Get company production budget summary data from service
+            List<Map<String, Object>> budgetData = chartService.getCompanyProductionBudgetSummary(
+                    request.getCompany_id(),
+                    request.getFrom(),
+                    request.getTo()
+            );
+
+            logger.info("📈 Successfully retrieved company production budget summary");
+
+            // Create response with data array
+            Map<String, Object> response = new HashMap<>();
+            response.put("data", budgetData);
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("❌ Error processing company production budget summary: {}", e.getMessage(), e);
+
+            // Return error response
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("data", new ArrayList<>());
+            errorResponse.put("error", true);
+            errorResponse.put("errorMessage", e.getMessage());
+
+            return ResponseEntity.ok(errorResponse);
+        }
+    }
 }

@@ -1,14 +1,14 @@
 package com.darro_tech.revengproject.repositories;
 
-import com.darro_tech.revengproject.models.Budget;
+import java.time.Instant;
+import java.util.List;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.time.Instant;
-import java.time.LocalDate;
-import java.util.List;
+import com.darro_tech.revengproject.models.Budget;
 
 @Repository
 public interface BudgetRepository extends JpaRepository<Budget, Integer> {
@@ -18,39 +18,39 @@ public interface BudgetRepository extends JpaRepository<Budget, Integer> {
      */
     @Query("SELECT b FROM Budget b WHERE b.farm.id = :farmId AND b.timestamp BETWEEN :fromDate AND :toDate")
     List<Budget> findByFarmIdAndTimestampBetween(
-        @Param("farmId") String farmId,
-        @Param("fromDate") Instant fromDate,
-        @Param("toDate") Instant toDate);
+            @Param("farmId") String farmId,
+            @Param("fromDate") Instant fromDate,
+            @Param("toDate") Instant toDate);
 
     /**
      * Find budgets for farms in a company within a date range
      */
-    @Query(value = 
-        "SELECT b.* FROM budget b " +
-        "JOIN farms f ON b.farm_id = f.id " +
-        "JOIN company_farms cf ON f.id = cf.farm_id " +
-        "WHERE cf.company_id = :companyId " +
-        "AND b.timestamp BETWEEN :fromDate AND :toDate", 
-        nativeQuery = true)
+    @Query(value
+            = "SELECT b.* FROM budget b "
+            + "JOIN farms f ON b.farm_id = f.id "
+            + "JOIN company_farms cf ON f.id = cf.farm_id "
+            + "WHERE cf.company_id = :companyId "
+            + "AND b.timestamp BETWEEN :fromDate AND :toDate",
+            nativeQuery = true)
     List<Budget> findByCompanyIdAndTimestampBetween(
-        @Param("companyId") String companyId,
-        @Param("fromDate") Instant fromDate,
-        @Param("toDate") Instant toDate);
+            @Param("companyId") String companyId,
+            @Param("fromDate") Instant fromDate,
+            @Param("toDate") Instant toDate);
 
     /**
      * Get total budget by farm for a company within a date range
      */
-    @Query(value = 
-        "SELECT f.id as farmId, SUM(b.value) as totalBudget " +
-        "FROM budget b " +
-        "JOIN farms f ON b.farm_id = f.id " +
-        "JOIN company_farms cf ON f.id = cf.farm_id " +
-        "WHERE cf.company_id = :companyId " +
-        "AND b.timestamp BETWEEN :fromDate AND :toDate " +
-        "GROUP BY f.id", 
-        nativeQuery = true)
+    @Query(value
+            = "SELECT f.id as farmId, SUM(b.value) as totalBudget "
+            + "FROM budget b "
+            + "JOIN farms f ON b.farm_id = f.id "
+            + "JOIN company_farms cf ON f.id = cf.farm_id "
+            + "WHERE cf.company_id = :companyId "
+            + "AND b.timestamp BETWEEN :fromDate AND :toDate "
+            + "GROUP BY f.id",
+            nativeQuery = true)
     List<Object[]> findTotalBudgetByFarmForCompanyAndDateRange(
-        @Param("companyId") String companyId,
-        @Param("fromDate") Instant fromDate,
-        @Param("toDate") Instant toDate);
+            @Param("companyId") String companyId,
+            @Param("fromDate") Instant fromDate,
+            @Param("toDate") Instant toDate);
 }

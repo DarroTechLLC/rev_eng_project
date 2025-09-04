@@ -1018,4 +1018,56 @@ public class ChartService {
         }
         return results;
     }
+
+    /**
+     * Get company-level production and budget summary for a date range
+     */
+    public List<Map<String, Object>> getCompanyProductionBudgetSummary(String companyId, LocalDate fromDate, LocalDate toDate) {
+        logger.info("🔍 Fetching company production budget summary for company: {} from {} to {}", companyId, fromDate, toDate);
+
+        try {
+            // Get production data by farm
+            List<FarmVolumeData> productionData = getVolumeByFarmForDateRange(companyId, fromDate, toDate);
+            logger.info("Found {} farm production records", productionData.size());
+
+            // Convert LocalDate to Instant for budget query
+            Instant fromInstant = fromDate.atStartOfDay(ZoneId.systemDefault()).toInstant();
+            Instant toInstant = toDate.atTime(23, 59, 59).atZone(ZoneId.systemDefault()).toInstant();
+
+            // Get budget data by farm
+            logger.debug("Querying database for farm budget data...");
+            List<Object[]> budgetResults = budgetRepository.findTotalBudgetByFarmForCompanyAndDateRange(
+                    companyId, fromInstant, toInstant);
+            logger.info("Query returned {} budget results", budgetResults != null ? budgetResults.size() : 0);
+
+            // Calculate total production and budget
+            double totalProduction = productionData.stream()
+                    .mapToDouble(FarmVolumeData::getVolume)
+                    .sum();
+
+            double totalBudget = 0.0;
+            if (budgetResults != null) {
+                totalBudget = budgetResults.stream()
+                        .mapToDouble(result -> ((Number) result[1]).doubleValue())
+                        .sum();
+            }
+
+            // Create the response
+            List<Map<String, Object>> result = new ArrayList<>();
+            Map<String, Object> companyData = new HashMap<>();
+            companyData.put("production", totalProduction);
+            companyData.put("budget", totalBudget);
+            result.add(companyData);
+
+            // Log data presence verification
+            logger.info("📊 Data verification:");
+            logger.info("✓ Total production: {}", totalProduction);
+            logger.info("✓ Total budget: {}", totalBudget);
+
+            return result;
+        } catch (Exception e) {
+            logger.error("❌ Error in getCompanyProductionBudgetSummary: {}", e.getMessage(), e);
+            return new ArrayList<>();
+        }
+    }
 }
