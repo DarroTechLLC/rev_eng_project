@@ -25,11 +25,14 @@ import com.darro_tech.revengproject.models.Company;
 import com.darro_tech.revengproject.models.DailyReportCompany;
 import com.darro_tech.revengproject.models.Farm;
 import com.darro_tech.revengproject.models.User;
+import com.darro_tech.revengproject.models.WeeklyReportCompany;
 import com.darro_tech.revengproject.repositories.DailyReportCompanyRepository;
+import com.darro_tech.revengproject.repositories.WeeklyReportCompanyRepository;
 import com.darro_tech.revengproject.services.CompanyService;
 import com.darro_tech.revengproject.services.DailyReportService;
 import com.darro_tech.revengproject.services.FarmService;
 import com.darro_tech.revengproject.services.UserRoleService;
+import com.darro_tech.revengproject.services.WeeklyReportService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -62,7 +65,13 @@ public class RoutingController extends BaseController {
     private DailyReportService dailyReportService;
 
     @Autowired
+    private WeeklyReportService weeklyReportService;
+
+    @Autowired
     private DailyReportCompanyRepository dailyReportRepository;
+
+    @Autowired
+    private WeeklyReportCompanyRepository weeklyReportRepository;
 
     /**
      * Dashboard main entry - redirects to default dashboard view IMPORTANT:
@@ -301,6 +310,20 @@ public class RoutingController extends BaseController {
 
         // Handle like a company dashboard but use 'align' as the company name
         return handleDirectDashboardAccess("align", "daily-report", model, session, request);
+    }
+
+    /**
+     * Special route for Align weekly report Format: /align/weekly-report
+     */
+    @GetMapping("/align/weekly-report")
+    public String alignWeeklyReport(
+            Model model,
+            HttpSession session,
+            HttpServletRequest request) {
+        logger.info("📅 Routing: Weekly Report route accessed - /align/weekly-report");
+
+        // Handle like a company dashboard but use 'align' as the company name
+        return handleDirectDashboardAccess("align", "weekly-report", model, session, request);
     }
 
     /**
@@ -592,6 +615,69 @@ public class RoutingController extends BaseController {
         if ("weekly-report".equals(dashboardType)) {
             logger.debug("📊 Adding default objects for weekly report");
 
+            // Get date parameter or use today's date
+            String dateParam = request.getParameter("date");
+            LocalDate selectedDate = dateParam != null
+                    ? LocalDate.parse(dateParam)
+                    : LocalDate.now();
+
+            // Get max date (today)
+            LocalDate maxDate = LocalDate.now();
+
+            // Ensure selected date is not in the future
+            if (selectedDate.isAfter(maxDate)) {
+                selectedDate = maxDate;
+            }
+
+            // Format dates for the view
+            String selectedDateStr = selectedDate.toString();
+            String maxDateStr = maxDate.toString();
+
+            // Build PDF URL
+            String pdfUrl = String.format("/api/weekly-reports/pdf/%s?company_id=%s&date=%s",
+                    company.getName(), company.getId(), selectedDateStr);
+
+            // Check if report exists for this date
+            try {
+                List<WeeklyReportCompany> reports = weeklyReportRepository.findByCompanyIdAndDateBetween(
+                        company.getId(),
+                        selectedDate.atStartOfDay(ZoneId.systemDefault()).toInstant(),
+                        selectedDate.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant()
+                );
+
+                if (reports.isEmpty()) {
+                    model.addAttribute("errorMessage", "No Report Available");
+                    model.addAttribute("errorDetails",
+                            String.format("No weekly report was generated for %s on %s. Please try a different date.",
+                                    company.getName(),
+                                    selectedDate.format(DateTimeFormatter.ofPattern("MMMM d, yyyy"))));
+                    pdfUrl = null;
+                } else {
+                    WeeklyReportCompany report = reports.get(0);
+                    if (report.getPdf() == null || report.getPdf().length == 0) {
+                        model.addAttribute("errorMessage", "Report Data Error");
+                        model.addAttribute("errorDetails",
+                                "The report exists but contains no data. This may indicate a system error. Please contact support.");
+                        pdfUrl = null;
+                    } else {
+                        // Add timestamp to model
+                        model.addAttribute("timestamp", 
+                            selectedDate.format(DateTimeFormatter.ofPattern("MM/dd/yyyy")));
+                    }
+                }
+            } catch (Exception e) {
+                logger.error("❌ Error checking report existence", e);
+                model.addAttribute("errorMessage", "System Error");
+                model.addAttribute("errorDetails",
+                        "An error occurred while checking for report availability. Please try again later or contact support if the problem persists.");
+                pdfUrl = null;
+            }
+
+            // Add attributes to model
+            model.addAttribute("selectedDate", selectedDateStr);
+            model.addAttribute("maxDate", maxDateStr);
+            model.addAttribute("pdfUrl", pdfUrl);
+
             // Add BudgetComparison object
             model.addAttribute("budgetComparison", new BudgetComparison());
 
@@ -641,7 +727,7 @@ public class RoutingController extends BaseController {
 
             model.addAttribute("reportDate", java.time.LocalDate.now().toString());
 
-            logger.debug("📊 Added empty data structures for weekly report to prevent null pointer exceptions");
+            logger.debug("📊 Added date selection, PDF URL, and empty data structures for weekly report");
         }
 
         // Add default objects for daily-report to prevent null pointer exceptions
@@ -667,7 +753,7 @@ public class RoutingController extends BaseController {
             String maxDateStr = maxDate.toString();
 
             // Build PDF URL
-            String pdfUrl = String.format("/api/reports/daily-pdf/%s?company_id=%s&date=%s",
+            String pdfUrl = String.format("/api/daily-reports/pdf/%s?company_id=%s&date=%s",
                     company.getName(), company.getId(), selectedDateStr);
 
             // Check if report exists for this date

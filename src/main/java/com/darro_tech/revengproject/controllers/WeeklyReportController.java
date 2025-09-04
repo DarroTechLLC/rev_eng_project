@@ -1,8 +1,10 @@
 package com.darro_tech.revengproject.controllers;
 
 import java.time.LocalDate;
+import java.util.Map;
 
 import com.darro_tech.revengproject.services.PdfGenerationService;
+import com.darro_tech.revengproject.services.WeeklyReportService;
 import com.itextpdf.text.DocumentException;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
@@ -10,14 +12,15 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Placeholder for WeeklyReportController This is a minimal implementation to
- * satisfy the compiler
+ * Controller for weekly report endpoints
  */
 @Controller
 @Slf4j
@@ -25,7 +28,16 @@ import lombok.extern.slf4j.Slf4j;
 public class WeeklyReportController {
 
     private final PdfGenerationService pdfGenerationService;
+    private final WeeklyReportService weeklyReportService;
 
+    /**
+     * Download weekly report PDF
+     * 
+     * @param companyId The ID of the company
+     * @param date The date for the report
+     * @return PDF file as response
+     * @throws DocumentException if PDF generation fails
+     */
     @GetMapping("/align/weekly-report/pdf")
     public ResponseEntity<byte[]> downloadWeeklyReportPdf(
             @RequestParam(required = false) String companyId,
@@ -54,5 +66,53 @@ public class WeeklyReportController {
             log.error("❌ Error generating PDF: {}", e.getMessage(), e);
             throw e;
         }
+    }
+
+    /**
+     * Get weekly report PDF timestamp
+     * 
+     * @param company_id The ID of the company
+     * @param date The date for the report
+     * @return Timestamp of the latest weekly report PDF
+     */
+    @GetMapping("/api/weekly-reports/pdf/timestamp")
+    @ResponseBody
+    public Map<String, Object> getWeeklyPdfTimestamp(
+            @RequestParam(required = false) String company_id,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+
+        log.info("🕒 Getting timestamp for weekly report - companyId: {}, date: {}", company_id, date);
+
+        // Use current date if not provided
+        LocalDate reportDate = date != null ? date : LocalDate.now();
+
+        return Map.of("timestamp", weeklyReportService.getLatestTimestamp(company_id, reportDate));
+    }
+
+    /**
+     * Get weekly report PDF
+     * 
+     * @param companyName The name of the company
+     * @param company_id The ID of the company
+     * @param date The date for the report
+     * @return PDF file as response
+     */
+    @GetMapping("/api/weekly-reports/pdf/{companyName}")
+    public ResponseEntity<byte[]> getWeeklyPdf(
+            @PathVariable String companyName,
+            @RequestParam(required = false) String company_id,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+
+        log.info("📊 Getting PDF for weekly report - companyName: {}, companyId: {}, date: {}", companyName, company_id, date);
+
+        // Use current date if not provided
+        LocalDate reportDate = date != null ? date : LocalDate.now();
+
+        // Get PDF data
+        byte[] pdfData = weeklyReportService.getPdfData(company_id, reportDate);
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdfData);
     }
 }

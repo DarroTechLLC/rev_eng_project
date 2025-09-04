@@ -6,6 +6,7 @@ import java.time.format.DateTimeFormatter;
 
 import org.springframework.stereotype.Service;
 
+import com.darro_tech.revengproject.dto.DailyReportDTO;
 import com.darro_tech.revengproject.dto.WeeklyReportDTO;
 import com.itextpdf.text.Document;
 import com.itextpdf.text.DocumentException;
@@ -25,10 +26,137 @@ import lombok.extern.slf4j.Slf4j;
 public class PdfGenerationService {
 
     private final WeeklyReportService weeklyReportService;
+    private final DailyReportService dailyReportService;
 
     @PostConstruct
     public void init() {
         log.info("📑 Initializing PDF Generation Service");
+    }
+
+    /**
+     * Generates a PDF version of the daily report
+     *
+     * @param companyId The ID of the company
+     * @param reportDate The date for which to generate the report
+     * @return byte array containing the PDF data
+     * @throws DocumentException if PDF generation fails
+     */
+    public byte[] generateDailyReportPdf(String companyId, LocalDate reportDate) throws DocumentException {
+        log.info("📑 Generating PDF daily report for company: {} as of date: {}", companyId, reportDate);
+
+        try {
+            // Get report data
+            DailyReportDTO reportData = dailyReportService.getDailyReport(companyId, reportDate);
+
+            // Create PDF document
+            Document document = new Document(PageSize.A4);
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            PdfWriter.getInstance(document, outputStream);
+
+            // Open document
+            document.open();
+
+            // Add content
+            addDailyReportHeader(document, reportData);
+            addDailyReportContent(document, reportData);
+
+            // Close document
+            document.close();
+
+            log.info("✅ Successfully generated PDF report");
+            return outputStream.toByteArray();
+
+        } catch (Exception e) {
+            log.error("❌ Error generating PDF: {}", e.getMessage(), e);
+            throw new DocumentException("Failed to generate PDF report: " + e.getMessage());
+        }
+    }
+
+    private void addDailyReportHeader(Document document, DailyReportDTO reportData) throws DocumentException {
+        Font titleFont = new Font(Font.FontFamily.HELVETICA, 16, Font.BOLD);
+        Font normalFont = new Font(Font.FontFamily.HELVETICA, 12);
+
+        Paragraph title = new Paragraph("Daily Production Report", titleFont);
+        title.setAlignment(Element.ALIGN_CENTER);
+        document.add(title);
+
+        document.add(new Paragraph(" ")); // Add some spacing
+
+        Paragraph dateInfo = new Paragraph(
+                "Report Date: " + reportData.getReportDate().format(DateTimeFormatter.ISO_LOCAL_DATE),
+                normalFont
+        );
+        document.add(dateInfo);
+
+        if (reportData.getCompanyName() != null) {
+            Paragraph companyInfo = new Paragraph("Company: " + reportData.getCompanyName(), normalFont);
+            document.add(companyInfo);
+        }
+
+        document.add(new Paragraph(" ")); // Add some spacing
+    }
+
+    private void addDailyReportContent(Document document, DailyReportDTO reportData) throws DocumentException {
+        Font sectionFont = new Font(Font.FontFamily.HELVETICA, 14, Font.BOLD);
+        Font normalFont = new Font(Font.FontFamily.HELVETICA, 12);
+
+        // Add production summary
+        Paragraph summaryTitle = new Paragraph("Production Summary", sectionFont);
+        document.add(summaryTitle);
+        document.add(new Paragraph(" "));
+
+        // Add daily, MTD, YTD totals
+        document.add(new Paragraph(
+                String.format("Daily Total: %.2f", reportData.getDailyTotal()),
+                normalFont
+        ));
+        document.add(new Paragraph(
+                String.format("Month to Date Total: %.2f", reportData.getMtdTotal()),
+                normalFont
+        ));
+        document.add(new Paragraph(
+                String.format("Year to Date Total: %.2f", reportData.getYtdTotal()),
+                normalFont
+        ));
+
+        // Add farm-specific data if available
+        if (reportData.getDailyProduction() != null && !reportData.getDailyProduction().isEmpty()) {
+            document.add(new Paragraph(" "));
+            Paragraph farmTitle = new Paragraph("Daily Farm Production", sectionFont);
+            document.add(farmTitle);
+            document.add(new Paragraph(" "));
+
+            for (var farmProduction : reportData.getDailyProduction()) {
+                Paragraph farmInfo = new Paragraph(
+                        String.format("%s: %.2f (%.1f%%)",
+                                farmProduction.getFarmName(),
+                                farmProduction.getVolume(),
+                                farmProduction.getPercentOfTotal()),
+                        normalFont
+                );
+                document.add(farmInfo);
+            }
+        }
+
+        // Add farm performance data if available
+        if (reportData.getFarmPerformance() != null && !reportData.getFarmPerformance().isEmpty()) {
+            document.add(new Paragraph(" "));
+            Paragraph performanceTitle = new Paragraph("Farm Performance", sectionFont);
+            document.add(performanceTitle);
+            document.add(new Paragraph(" "));
+
+            for (var farmPerformance : reportData.getFarmPerformance()) {
+                Paragraph farmInfo = new Paragraph(
+                        String.format("%s - Daily: %.2f, MTD: %.2f, YTD: %.2f",
+                                farmPerformance.getFarmName(),
+                                farmPerformance.getDailyVolume(),
+                                farmPerformance.getMtdVolume(),
+                                farmPerformance.getYtdVolume()),
+                        normalFont
+                );
+                document.add(farmInfo);
+            }
+        }
     }
 
     /**

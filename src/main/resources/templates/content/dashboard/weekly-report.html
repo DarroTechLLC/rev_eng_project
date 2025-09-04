@@ -4,590 +4,269 @@
       layout:decorate="~{layouts/main-layout}">
 <head>
     <title>Weekly Report</title>
-
-    <!-- Enhanced Highcharts with Export Functionality -->
-    <div th:replace="fragments/highcharts-scripts :: highcharts-with-utils"></div>
-    <div th:replace="fragments/highcharts-scripts :: chart-export-menu"></div>
-
-    <!-- Custom styles for this template -->
     <style>
-        .section-card {
-            margin-bottom: 1.5rem;
+        #main-content {
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 60px);
+            background: #f8f9fc;
         }
-        .section-header {
-            background-color: #4e73df;
+        .report-header {
+            padding: 12px 24px;
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+            background: transparent;
+        }
+        .report-title {
+            font-weight: bold;
+            font-size: 1.1rem;
+            color: #333;
+        }
+        .report-timestamp {
+            font-size: 0.9rem;
+            color: #666;
+            margin-right: auto;
+            margin-left: 20px;
+        }
+        .report-date-selector {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .report-date-selector input[type="date"] {
+            margin-right: 4px;
+            border: solid 2px #e6e6e6;
+            padding: 0 6px;
+            border-radius: 6px;
+            height: 32px;
+            background: white;
+        }
+        .report-date-selector button {
+            padding: 6px 12px;
+            border-radius: 6px;
+            border: none;
+            background: #4e73df;
             color: white;
-            padding: 0.75rem 1.25rem;
-            font-weight: 500;
-            border-radius: 0.35rem 0.35rem 0 0;
+            cursor: pointer;
+            font-size: 0.875rem;
         }
-        .section-body {
-            padding: 1.25rem;
-            background-color: #fff;
-            border: 1px solid #e3e6f0;
-            border-top: none;
-            border-radius: 0 0 0.35rem 0.35rem;
+        .report-date-selector button:hover {
+            background: #2e59d9;
         }
-        .subsection-header {
-            background-color: #f8f9fc;
-            border: 1px solid #e3e6f0;
-            padding: 0.5rem 1rem;
-            margin-bottom: 0;
-            font-weight: 500;
-            border-radius: 0.25rem 0.25rem 0 0;
+        .report-date-selector button:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
         }
-        .subsection-body {
-            padding: 1rem;
-            border: 1px solid #e3e6f0;
-            border-top: none;
-            border-radius: 0 0 0.25rem 0.25rem;
-            margin-bottom: 1rem;
+        .pdf-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 0 24px 24px;
         }
-        .chart-container {
-            position: relative;
-            height: 300px;
-            margin-bottom: 1rem;
-        }
-        .table-sm th, .table-sm td {
-            padding: 0.3rem;
-        }
-        .gauge-chart {
-            position: relative;
-            height: 150px;
-            margin: 0 auto;
+        .pdf-viewer {
+            flex: 1;
+            border: none;
             width: 100%;
+            height: 100%;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
-        .positive-change {
-            color: #1cc88a;
+        .no-pdf-message {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            color: #666;
+            font-size: 1.1rem;
+            background: white;
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            gap: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
-        .negative-change {
+        .no-pdf-message .error-icon {
+            font-size: 3rem;
             color: #e74a3b;
+        }
+        .no-pdf-message .error-title {
+            font-weight: bold;
+            color: #333;
+        }
+        .no-pdf-message .error-details {
+            color: #666;
+            max-width: 400px;
+        }
+
+        .error-message {
+            display: none;
+            padding: 1rem;
+            margin: 1rem;
+            border-radius: 8px;
+            background-color: #fff3f3;
+            border: 1px solid #ffcdd2;
+            color: #d32f2f;
+            font-size: 1rem;
+            text-align: center;
         }
     </style>
 </head>
 <body>
-<div layout:fragment="content">
-    <div class="container-fluid">
+    <div layout:fragment="content">
+        <div class="report-header">
+            <div class="report-title">Weekly Report</div>
+            <div class="report-timestamp" th:if="${timestamp}" th:text="${timestamp}"></div>
+            <div class="report-date-selector">
+                <input type="date" 
+                       th:value="${selectedDate}"
+                       th:max="${maxDate}"
+                       onchange="updateReport(this.value)"/>
+                <button onclick="resetDate()" 
+                        th:disabled="${selectedDate == maxDate}">Reset</button>
+            </div>
+        </div>
 
-                <!-- Page Heading -->
-                <div class="d-sm-flex align-items-center justify-content-between mb-4">
-                    <h1 class="h3 mb-0 text-gray-800">Real-Weekly Report</h1>
-                    <div class="d-flex align-items-center">
-                        <div class="input-group mr-2">
-                            <input type="date" id="reportDate" class="form-control" th:value="${reportDate}">
-                            <div class="input-group-append">
-                                <button class="btn btn-primary" type="button" id="updateReportBtn">
-                                    <i class="fas fa-sync-alt fa-sm"></i> Update
-                                </button>
-                            </div>
-                        </div>
-                        <a href="#" class="btn btn-sm btn-primary shadow-sm" id="downloadPdfBtn">
-                            <i class="fas fa-download fa-sm text-white-50"></i> Download PDF
-                        </a>
-                    </div>
+        <div class="pdf-container">
+            <div id="errorMessage" class="error-message"></div>
+            <iframe th:if="${pdfUrl != null && !errorMessage}" 
+                    class="pdf-viewer"
+                    th:src="${pdfUrl}"
+                    onload="handleIframeLoad(this)"
+                    onerror="handleIframeError(this)">
+            </iframe>
+            <div th:if="${pdfUrl == null || errorMessage}" class="no-pdf-message">
+                <div class="error-icon">📄</div>
+                <div class="error-title" th:text="${errorMessage ?: 'No Report Available'}">No Report Available</div>
+                <div class="error-details" th:text="${errorDetails ?: 'No PDF report is available for the selected date. Please try a different date or contact support if you believe this is an error.'}">
+                    No PDF report is available for the selected date. Please try a different date or contact support if you believe this is an error.
                 </div>
-
-                <!-- Alert Messages -->
-                <div class="alert alert-info alert-dismissible fade show d-none" role="alert" id="infoAlert">
-                    <span id="infoMessage"></span>
-                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="alert alert-danger alert-dismissible fade show d-none" role="alert" id="errorAlert">
-                    <span id="errorMessage"></span>
-                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-
-                <!-- Production Summary Section -->
-                <div class="section-card">
-                    <div class="section-header">
-                        <h2 class="h5 m-0">Production Summary</h2>
-                    </div>
-                    <div class="section-body">
-                        <div class="row">
-                            <!-- Daily Production Chart -->
-                            <div class="col-md-6">
-                                <div class="chart-container">
-                                    <div id="dailyProductionChart"></div>
-                                </div>
-                            </div>
-
-                            <!-- Weekly Production Chart -->
-                            <div class="col-md-6">
-                                <div class="chart-container">
-                                    <div id="weeklyProductionChart"></div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <!-- Monthly Production Chart -->
-                            <div class="col-md-6">
-                                <div class="chart-container">
-                                    <div id="monthlyProductionChart"></div>
-                                </div>
-                            </div>
-
-                            <!-- YTD Production Pie Chart -->
-                            <div class="col-md-6">
-                                <div class="chart-container">
-                                    <div id="ytdProductionPieChart"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Farm Biogas Inventory Data Section -->
-                <div class="section-card">
-                    <div class="section-header">
-                        <h2 class="h5 m-0">Farm Biogas Inventory Data</h2>
-                    </div>
-                    <div class="section-body">
-                        <div class="row">
-                            <!-- Lagoon Inflation Level -->
-                            <div class="col-md-6">
-                                <div class="card mb-4">
-                                    <div class="subsection-header">
-                                        <h3 class="h6 m-0">Lagoon Inflation Level</h3>
-                                    </div>
-                                    <div class="subsection-body">
-                                        <div class="table-responsive">
-                                            <table class="table table-sm table-bordered table-hover" id="lagoonInflationTable">
-                                                <thead class="thead-light">
-                                                <tr>
-                                                    <th>Farm</th>
-                                                    <th>Current Level (%)</th>
-                                                    <th>Previous Week (%)</th>
-                                                    <th>Change</th>
-                                                </tr>
-                                                </thead>
-                                                <tbody>
-                                                <tr th:each="farm : ${lagoonInflationLevels}">
-                                                    <td th:text="${farm.farmName}">Farm Name</td>
-                                                    <td class="text-right" th:text="${#numbers.formatDecimal(farm.currentLevel, 1, 1) + '%'}">85.0%</td>
-                                                    <td class="text-right" th:text="${#numbers.formatDecimal(farm.previousLevel, 1, 1) + '%'}">80.0%</td>
-                                                    <td class="text-right" th:text="${(farm.change >= 0 ? '+' : '') + #numbers.formatDecimal(farm.change, 1, 1) + '%'}"
-                                                        th:classappend="${farm.change >= 0 ? 'positive-change' : 'negative-change'}">+5.0%</td>
-                                                </tr>
-                                                <tr th:if="${lagoonInflationLevels == null || lagoonInflationLevels.isEmpty()}">
-                                                    <td colspan="4" class="text-center">No data available</td>
-                                                </tr>
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                        <div class="row mt-3">
-                                            <div class="col-md-12">
-                                                <div class="chart-container" style="height: 250px;">
-                                                    <div id="lagoonInflationChart"></div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- FT Above the Berm -->
-                            <div class="col-md-6">
-                                <div class="card mb-4">
-                                    <div class="subsection-header">
-                                        <h3 class="h6 m-0">FT Above the Berm</h3>
-                                    </div>
-                                    <div class="subsection-body">
-                                        <div class="table-responsive">
-                                            <table class="table table-sm table-bordered table-hover" id="ftAboveBermTable">
-                                                <thead class="thead-light">
-                                                <tr>
-                                                    <th>Farm</th>
-                                                    <th>Current (ft)</th>
-                                                    <th>Previous Week (ft)</th>
-                                                    <th>Change</th>
-                                                </tr>
-                                                </thead>
-                                                <tbody>
-                                                <tr th:each="farm : ${ftAboveBermLevels}">
-                                                    <td th:text="${farm.farmName}">Farm Name</td>
-                                                    <td class="text-right" th:text="${#numbers.formatDecimal(farm.currentLevel, 1, 2)}">5.25</td>
-                                                    <td class="text-right" th:text="${#numbers.formatDecimal(farm.previousLevel, 1, 2)}">5.00</td>
-                                                    <td class="text-right" th:text="${(farm.change >= 0 ? '+' : '') + #numbers.formatDecimal(farm.change, 1, 2)}"
-                                                        th:classappend="${farm.change >= 0 ? 'positive-change' : 'negative-change'}">+0.25</td>
-                                                </tr>
-                                                <tr th:if="${ftAboveBermLevels == null || ftAboveBermLevels.isEmpty()}">
-                                                    <td colspan="4" class="text-center">No data available</td>
-                                                </tr>
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                        <div class="row mt-3">
-                                            <div class="col-md-12">
-                                                <div class="chart-container" style="height: 250px;">
-                                                    <div id="ftAboveBermChart"></div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            </div>
+        </div>
     </div>
-</div>
 
-<!-- Chart Initialization Script -->
-<th:block layout:fragment="scripts">
-    <script th:inline="javascript">
-        // Get chart data from Thymeleaf
-        const dailyProductionData = /*[[${dailyChartData}]]*/ {};
-        const weeklyProductionData = /*[[${weeklyChartData}]]*/ {};
-        const monthlyProductionData = /*[[${monthlyChartData}]]*/ {};
-        const ytdProductionData = /*[[${ytdChartData}]]*/ {};
-        const lagoonInflationData = /*[[${lagoonInflationChartData}]]*/ {};
-        const ftAboveBermData = /*[[${ftAboveBermChartData}]]*/ {};
+    <th:block layout:fragment="scripts">
+        <script th:inline="javascript">
+            const maxDate = /*[[${maxDate}]]*/ '';
+            const currentCompanyId = /*[[${selectedCompany.id}]]*/ '';
 
-        // Initialize all charts
-        initCharts();
+            function updateReport(date) {
+                // Ensure date is not in the future
+                if (date > maxDate) {
+                    date = maxDate;
+                }
+                window.location.href = window.location.pathname + '?date=' + date;
+            }
 
-        function initCharts() {
-            // Initialize Daily Production Chart
-            initDailyProductionChart(dailyProductionData);
+            // Make updateReport accessible globally for auto-refresh
+            window.updateReport = updateReport;
 
-            // Initialize Weekly Production Chart
-            initWeeklyProductionChart(weeklyProductionData);
+            function resetDate() {
+                updateReport(maxDate);
+            }
 
-            // Initialize Monthly Production Chart
-            initMonthlyProductionChart(monthlyProductionData);
+            function handleIframeLoad(iframe) {
+                // Hide any previous error messages
+                document.getElementById('errorMessage').style.display = 'none';
 
-            // Initialize YTD Production Pie Chart
-            initYtdProductionPieChart(ytdProductionData);
+                // Try to detect if the iframe loaded an error response
+                try {
+                    const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                    const content = iframeDoc.body.textContent;
 
-            // Initialize Lagoon Inflation Chart
-            initLagoonInflationChart(lagoonInflationData);
+                    try {
+                        const errorData = JSON.parse(content);
+                        if (errorData.error) {
+                            // Show error message
+                            const errorDiv = document.getElementById('errorMessage');
+                            errorDiv.textContent = errorData.error;
+                            errorDiv.style.display = 'block';
 
-            // Initialize FT Above Berm Chart
-            initFtAboveBermChart(ftAboveBermData);
-        }
+                            // Hide iframe
+                            iframe.style.display = 'none';
 
-        // Make initCharts accessible globally for auto-refresh
-        window.initCharts = initCharts;
-
-        function initDailyProductionChart(data) {
-            // Check if data is null or undefined and provide a default empty object
-            data = data || {};
-
-            const chart = Highcharts.chart('dailyProductionChart', {
-                chart: {
-                    type: 'line',
-                    height: 300
-                },
-                title: {
-                    text: 'Daily Production',
-                    style: {
-                        fontSize: '14px',
-                        fontWeight: 'bold'
-                    }
-                },
-                xAxis: {
-                    categories: data.labels || [],
-                    title: {
-                        text: 'Date'
-                    }
-                },
-                yAxis: {
-                    title: {
-                        text: 'Volume'
-                    },
-                    labels: {
-                        formatter: function() {
-                            return Highcharts.numberFormat(this.value, 0);
+                            // Show no-pdf message
+                            const noPdfMessage = document.querySelector('.no-pdf-message');
+                            if (noPdfMessage) {
+                                noPdfMessage.style.display = 'flex';
+                                const errorTitle = noPdfMessage.querySelector('.error-title');
+                                const errorDetails = noPdfMessage.querySelector('.error-details');
+                                if (errorTitle) errorTitle.textContent = 'Report Not Available';
+                                if (errorDetails) errorDetails.textContent = errorData.error;
+                            }
                         }
+                    } catch (e) {
+                        // Not JSON, probably actual PDF content
+                        iframe.style.display = 'block';
+                        const noPdfMessage = document.querySelector('.no-pdf-message');
+                        if (noPdfMessage) noPdfMessage.style.display = 'none';
                     }
-                },
-                tooltip: {
-                    formatter: function() {
-                        return `<b>${this.series.name}</b><br/>
-                                ${this.x}: ${Highcharts.numberFormat(this.y, 0)}`;
-                    }
-                },
-                series: [{
-                    name: 'Production',
-                    data: data.values || [],
-                    color: 'rgba(54, 162, 235, 1)'
-                }],
-                exporting: {
-                    enabled: false
+                } catch (e) {
+                    // Cross-origin error, probably actual PDF content
+                    iframe.style.display = 'block';
+                    const noPdfMessage = document.querySelector('.no-pdf-message');
+                    if (noPdfMessage) noPdfMessage.style.display = 'none';
+                }
+            }
+
+            function handleIframeError(iframe) {
+                // Show error message
+                const errorDiv = document.getElementById('errorMessage');
+                errorDiv.textContent = 'Failed to load the report. Please try again later.';
+                errorDiv.style.display = 'block';
+
+                // Hide iframe
+                iframe.style.display = 'none';
+
+                // Show no-pdf message
+                const noPdfMessage = document.querySelector('.no-pdf-message');
+                if (noPdfMessage) {
+                    noPdfMessage.style.display = 'flex';
+                    const errorTitle = noPdfMessage.querySelector('.error-title');
+                    const errorDetails = noPdfMessage.querySelector('.error-details');
+                    if (errorTitle) errorTitle.textContent = 'Error Loading Report';
+                    if (errorDetails) errorDetails.textContent = 'Failed to load the report. Please try again later.';
+                }
+            }
+
+            // Initialize date input max value
+            document.querySelector('input[type="date"]').max = maxDate;
+
+            // Company selector override
+            document.addEventListener('DOMContentLoaded', function() {
+                const companySelector = document.querySelector('#companySelector');
+                if (companySelector) {
+                    // Remove any existing event listeners
+                    const newSelector = companySelector.cloneNode(true);
+                    companySelector.parentNode.replaceChild(newSelector, companySelector);
+
+                    // Add our custom event listener
+                    newSelector.addEventListener('change', function(e) {
+                        e.preventDefault(); // Prevent default form submission
+                        e.stopPropagation(); // Stop event bubbling
+
+                        const newCompanyId = e.target.value;
+                        if (newCompanyId !== currentCompanyId) {
+                            const selectedOption = e.target.selectedOptions[0];
+                            const companyName = selectedOption.text.toLowerCase().replace(/\s+/g, '-');
+
+                            // Build new URL maintaining weekly-report view
+                            const currentParams = new URLSearchParams(window.location.search);
+                            const newUrl = '/' + companyName + '/weekly-report' + 
+                                         (currentParams.toString() ? '?' + currentParams.toString() : '');
+
+                            // Navigate to new URL
+                            window.location.href = newUrl;
+                            return false;
+                        }
+                    });
                 }
             });
-
-            // Initialize enhanced export menu
-            initChartExportMenu(chart, document.getElementById('dailyProductionChart'));
-        }
-
-        function initWeeklyProductionChart(data) {
-            // Check if data is null or undefined and provide a default empty object
-            data = data || {};
-
-            const chart = Highcharts.chart('weeklyProductionChart', {
-                chart: {
-                    type: 'line',
-                    height: 300
-                },
-                title: {
-                    text: 'Weekly Production',
-                    style: {
-                        fontSize: '14px',
-                        fontWeight: 'bold'
-                    }
-                },
-                xAxis: {
-                    categories: data.labels || [],
-                    title: {
-                        text: 'Week'
-                    }
-                },
-                yAxis: {
-                    title: {
-                        text: 'Volume'
-                    },
-                    labels: {
-                        formatter: function() {
-                            return Highcharts.numberFormat(this.value, 0);
-                        }
-                    }
-                },
-                tooltip: {
-                    formatter: function() {
-                        return `<b>${this.series.name}</b><br/>
-                                ${this.x}: ${Highcharts.numberFormat(this.y, 0)}`;
-                    }
-                },
-                series: [{
-                    name: 'Production',
-                    data: data.values || [],
-                    color: 'rgba(75, 192, 192, 1)'
-                }],
-                exporting: {
-                    enabled: false
-                }
-            });
-
-            // Initialize enhanced export menu
-            initChartExportMenu(chart, document.getElementById('weeklyProductionChart'));
-        }
-
-        function initMonthlyProductionChart(data) {
-            // Check if data is null or undefined and provide a default empty object
-            data = data || {};
-
-            const chart = Highcharts.chart('monthlyProductionChart', {
-                chart: {
-                    type: 'line',
-                    height: 300
-                },
-                title: {
-                    text: 'Monthly Production',
-                    style: {
-                        fontSize: '14px',
-                        fontWeight: 'bold'
-                    }
-                },
-                xAxis: {
-                    categories: data.labels || [],
-                    title: {
-                        text: 'Month'
-                    }
-                },
-                yAxis: {
-                    title: {
-                        text: 'Volume'
-                    },
-                    labels: {
-                        formatter: function() {
-                            return Highcharts.numberFormat(this.value, 0);
-                        }
-                    }
-                },
-                tooltip: {
-                    formatter: function() {
-                        return `<b>${this.series.name}</b><br/>
-                                ${this.x}: ${Highcharts.numberFormat(this.y, 0)}`;
-                    }
-                },
-                series: [{
-                    name: 'Production',
-                    data: data.values || [],
-                    color: 'rgba(255, 99, 132, 1)'
-                }],
-                exporting: {
-                    enabled: false
-                }
-            });
-
-            // Initialize enhanced export menu
-            initChartExportMenu(chart, document.getElementById('monthlyProductionChart'));
-        }
-
-        function initYtdProductionPieChart(data) {
-            // Check if data is null or undefined and provide a default empty object
-            data = data || {};
-
-            const chart = Highcharts.chart('ytdProductionPieChart', {
-                chart: {
-                    type: 'pie',
-                    height: 300
-                },
-                title: {
-                    text: 'YTD Production by Farm',
-                    style: {
-                        fontSize: '14px',
-                        fontWeight: 'bold'
-                    }
-                },
-                tooltip: {
-                    pointFormat: '{series.name}: <b>{point.percentage:.1f}%</b>'
-                },
-                plotOptions: {
-                    pie: {
-                        allowPointSelect: true,
-                        cursor: 'pointer',
-                        dataLabels: {
-                            enabled: true,
-                            format: '<b>{point.name}</b>: {point.percentage:.1f} %'
-                        }
-                    }
-                },
-                series: [{
-                    name: 'Production',
-                    colorByPoint: true,
-                    data: (data.farms || []).map(farm => ({
-                        name: farm.name,
-                        y: farm.value
-                    }))
-                }],
-                exporting: {
-                    enabled: false
-                }
-            });
-
-            // Initialize enhanced export menu
-            initChartExportMenu(chart, document.getElementById('ytdProductionPieChart'));
-        }
-
-        function initLagoonInflationChart(data) {
-            // Check if data is null or undefined and provide a default empty object
-            data = data || {};
-
-            const chart = Highcharts.chart('lagoonInflationChart', {
-                chart: {
-                    type: 'bar',
-                    height: 250
-                },
-                title: {
-                    text: 'Lagoon Inflation Levels',
-                    style: {
-                        fontSize: '14px',
-                        fontWeight: 'bold'
-                    }
-                },
-                xAxis: {
-                    categories: data.labels || [],
-                    title: {
-                        text: 'Farm'
-                    }
-                },
-                yAxis: {
-                    title: {
-                        text: 'Inflation Level (%)'
-                    },
-                    max: 100,
-                    labels: {
-                        formatter: function() {
-                            return this.value + '%';
-                        }
-                    }
-                },
-                tooltip: {
-                    formatter: function() {
-                        return `<b>${this.series.name}</b><br/>
-                                ${this.x}: ${Highcharts.numberFormat(this.y, 1)}%`;
-                    }
-                },
-                series: [{
-                    name: 'Current Week',
-                    data: data.currentValues || [],
-                    color: 'rgba(75, 192, 192, 1)'
-                }, {
-                    name: 'Previous Week',
-                    data: data.previousValues || [],
-                    color: 'rgba(153, 102, 255, 1)'
-                }],
-                exporting: {
-                    enabled: false
-                }
-            });
-
-            // Initialize enhanced export menu
-            initChartExportMenu(chart, document.getElementById('lagoonInflationChart'));
-        }
-
-        function initFtAboveBermChart(data) {
-            // Check if data is null or undefined and provide a default empty object
-            data = data || {};
-
-            const chart = Highcharts.chart('ftAboveBermChart', {
-                chart: {
-                    type: 'bar',
-                    height: 250
-                },
-                title: {
-                    text: 'FT Above the Berm Measurements',
-                    style: {
-                        fontSize: '14px',
-                        fontWeight: 'bold'
-                    }
-                },
-                xAxis: {
-                    categories: data.labels || [],
-                    title: {
-                        text: 'Farm'
-                    }
-                },
-                yAxis: {
-                    title: {
-                        text: 'Height (ft)'
-                    },
-                    labels: {
-                        formatter: function() {
-                            return this.value + ' ft';
-                        }
-                    }
-                },
-                tooltip: {
-                    formatter: function() {
-                        return `<b>${this.series.name}</b><br/>
-                                ${this.x}: ${Highcharts.numberFormat(this.y, 2)} ft`;
-                    }
-                },
-                series: [{
-                    name: 'Current Week',
-                    data: data.currentValues || [],
-                    color: 'rgba(255, 159, 64, 1)'
-                }, {
-                    name: 'Previous Week',
-                    data: data.previousValues || [],
-                    color: 'rgba(54, 162, 235, 1)'
-                }],
-                exporting: {
-                    enabled: false
-                }
-            });
-
-            // Initialize enhanced export menu
-            initChartExportMenu(chart, document.getElementById('ftAboveBermChart'));
-        }
-    </script>
-</th:block>
+        </script>
+    </th:block>
 </body>
 </html>
