@@ -37,9 +37,9 @@
         console.log('Loading Highcharts export modules');
         
         // Load modules in sequence
-        loadScript('https://code.highcharts.com/modules/exporting.js', function() {
-            loadScript('https://code.highcharts.com/modules/export-data.js', function() {
-                loadScript('https://code.highcharts.com/modules/accessibility.js', function() {
+        loadScript('https://cdn.jsdelivr.net/npm/highcharts@latest/modules/exporting.js', function() {
+            loadScript('https://cdn.jsdelivr.net/npm/highcharts@latest/modules/export-data.js', function() {
+                loadScript('https://cdn.jsdelivr.net/npm/highcharts@latest/modules/accessibility.js', function() {
                     console.log('All Highcharts export modules loaded');
                     
                     // Apply error handling after modules are loaded

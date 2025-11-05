@@ -15,10 +15,10 @@ function loadScript(url, callback) {
 // Load all required scripts in sequence
 function loadHighchartsScripts() {
     if (typeof Highcharts === 'undefined') {
-        loadScript('https://code.highcharts.com/highcharts.js', function() {
-            loadScript('https://code.highcharts.com/modules/exporting.js', function() {
-                loadScript('https://code.highcharts.com/modules/export-data.js', function() {
-                    loadScript('https://code.highcharts.com/modules/accessibility.js', function() {
+        loadScript('https://cdn.jsdelivr.net/npm/highcharts@latest/highcharts.js', function() {
+            loadScript('https://cdn.jsdelivr.net/npm/highcharts@latest/modules/exporting.js', function() {
+                loadScript('https://cdn.jsdelivr.net/npm/highcharts@latest/modules/export-data.js', function() {
+                    loadScript('https://cdn.jsdelivr.net/npm/highcharts@latest/modules/accessibility.js', function() {
                         loadScript('/js/chart-utils/highcharts-utils.js', function() {
                             loadScript('/js/report-layout-fix.js', function() {
                                 // All scripts loaded, now fix the layout

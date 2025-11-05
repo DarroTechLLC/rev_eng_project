@@ -15,15 +15,15 @@ function loadHighcharts() {
 
         // Load Highcharts library
         const script = document.createElement('script');
-        script.src = 'https://code.highcharts.com/highcharts.js';
+        script.src = 'https://cdn.jsdelivr.net/npm/highcharts@latest/highcharts.js';
         script.onload = () => {
             console.log('✅ Highcharts library loaded');
             
             // Load additional modules
             const modules = [
-                'https://code.highcharts.com/modules/exporting.js',
-                'https://code.highcharts.com/modules/export-data.js',
-                'https://code.highcharts.com/modules/accessibility.js'
+                'https://cdn.jsdelivr.net/npm/highcharts@latest/modules/exporting.js',
+                'https://cdn.jsdelivr.net/npm/highcharts@latest/modules/export-data.js',
+                'https://cdn.jsdelivr.net/npm/highcharts@latest/modules/accessibility.js'
             ];
             
             let loadedModules = 0;
