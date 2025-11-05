@@ -2,6 +2,7 @@ package com.darro_tech.revengproject.controllers;
 
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -30,6 +31,7 @@ import com.darro_tech.revengproject.repositories.DailyReportCompanyRepository;
 import com.darro_tech.revengproject.repositories.WeeklyReportCompanyRepository;
 import com.darro_tech.revengproject.services.CompanyService;
 import com.darro_tech.revengproject.services.DailyReportService;
+import com.darro_tech.revengproject.services.FakeDataService;
 import com.darro_tech.revengproject.services.FarmService;
 import com.darro_tech.revengproject.services.UserRoleService;
 import com.darro_tech.revengproject.services.WeeklyReportService;
@@ -72,6 +74,9 @@ public class RoutingController extends BaseController {
 
     @Autowired
     private WeeklyReportCompanyRepository weeklyReportRepository;
+
+    @Autowired
+    private FakeDataService fakeDataService;
 
     /**
      * Dashboard main entry - redirects to default dashboard view IMPORTANT:
@@ -601,6 +606,8 @@ public class RoutingController extends BaseController {
         // Update model
         model.addAttribute("selectedCompany", company);
         model.addAttribute("selectedCompanyId", company.getId());
+        model.addAttribute("selectedCompanyKey", company.getId()); // Add for template compatibility
+        model.addAttribute("selectedCompanyName", company.getName()); // Add for template compatibility
         model.addAttribute("dashboardType", dashboardType);
         model.addAttribute("currentUser", user);
         // Add current date to model for date selectors
@@ -613,188 +620,226 @@ public class RoutingController extends BaseController {
 
         // Add default objects for weekly-report to prevent null pointer exceptions
         if ("weekly-report".equals(dashboardType)) {
-            logger.debug("📊 Adding default objects for weekly report");
 
-            // Get date parameter or use today's date
+            logger.debug("? Adding default objects for weekly report");
+
+
+
             String dateParam = request.getParameter("date");
+
             LocalDate selectedDate = dateParam != null
+
                     ? LocalDate.parse(dateParam)
+
                     : LocalDate.now();
 
-            // Get max date (today)
+
+
             LocalDate maxDate = LocalDate.now();
 
-            // Ensure selected date is not in the future
             if (selectedDate.isAfter(maxDate)) {
+
                 selectedDate = maxDate;
+
             }
 
-            // Format dates for the view
-            String selectedDateStr = selectedDate.toString();
-            String maxDateStr = maxDate.toString();
 
-            // Build PDF URL
+
+            LocalDate reportDate = com.darro_tech.revengproject.utils.DateHelper.getStartOfWeek(selectedDate, 1);
+
+            String reportDateStr = com.darro_tech.revengproject.utils.DateHelper.toYyyyMmDdString(reportDate);
+
+
+
+            String companyKey = company.getName().toLowerCase().replaceAll("\\s+", "-");
+
+            String fileName = String.format("%s-weekly-report-%s.pdf", companyKey, reportDateStr);
+
+
+
+            String viewerUrl = String.format("/pdf/%s/weekly-report/content/?api_key=test-api-key&sel_date=%s",
+
+                    companyKey, reportDateStr);
+
+            String downloadUrl = String.format("/%s/weekly-report/download/%s?companyId=%s&date=%s",
+
+                    companyKey, java.net.URLEncoder.encode(fileName, java.nio.charset.StandardCharsets.UTF_8),
+
+                    company.getId(), reportDateStr);
+
+
+
             String pdfUrl = String.format("/api/weekly-reports/pdf/%s?company_id=%s&date=%s",
-                    company.getName(), company.getId(), selectedDateStr);
 
-            // Check if report exists for this date
-            try {
-                List<WeeklyReportCompany> reports = weeklyReportRepository.findByCompanyIdAndDateBetween(
-                        company.getId(),
-                        selectedDate.atStartOfDay(ZoneId.systemDefault()).toInstant(),
-                        selectedDate.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant()
-                );
+                    company.getName(), company.getId(), reportDateStr);
 
-                if (reports.isEmpty()) {
-                    model.addAttribute("errorMessage", "No Report Available");
-                    model.addAttribute("errorDetails",
-                            String.format("No weekly report was generated for %s on %s. Please try a different date.",
-                                    company.getName(),
-                                    selectedDate.format(DateTimeFormatter.ofPattern("MMMM d, yyyy"))));
-                    pdfUrl = null;
-                } else {
-                    WeeklyReportCompany report = reports.get(0);
-                    if (report.getPdf() == null || report.getPdf().length == 0) {
-                        model.addAttribute("errorMessage", "Report Data Error");
-                        model.addAttribute("errorDetails",
-                                "The report exists but contains no data. This may indicate a system error. Please contact support.");
-                        pdfUrl = null;
-                    } else {
-                        // Add timestamp to model
-                        model.addAttribute("timestamp", 
-                            selectedDate.format(DateTimeFormatter.ofPattern("MM/dd/yyyy")));
-                    }
-                }
-            } catch (Exception e) {
-                logger.error("❌ Error checking report existence", e);
-                model.addAttribute("errorMessage", "System Error");
-                model.addAttribute("errorDetails",
-                        "An error occurred while checking for report availability. Please try again later or contact support if the problem persists.");
-                pdfUrl = null;
-            }
 
-            // Add attributes to model
-            model.addAttribute("selectedDate", selectedDateStr);
-            model.addAttribute("maxDate", maxDateStr);
-            model.addAttribute("pdfUrl", pdfUrl);
 
-            // Add BudgetComparison object
+            model.addAttribute("selectedDate", selectedDate.toString());
+
+            model.addAttribute("maxDate", maxDate.toString());
+
+            model.addAttribute("reportDateFriendly", com.darro_tech.revengproject.utils.DateHelper.toFriendlyDateString(reportDate));
+
+            model.addAttribute("viewerUrl", viewerUrl);
+
+            model.addAttribute("downloadUrl", downloadUrl);
+
+            model.addAttribute("downloadFileName", fileName);
+
+            model.addAttribute("pdfUrl", pdfUrl); // Keep for backward compatibility
+
+
+
             model.addAttribute("budgetComparison", new BudgetComparison());
 
-            // Initialize dailyTotals map
+
+
             Map<String, Double> dailyTotals = new HashMap<>();
+
             List<Farm> farms = farmService.getFarmsByCompanyId(company.getId());
+
             for (Farm farm : farms) {
+
                 dailyTotals.put(farm.getId(), 0.0);
+
             }
+
             model.addAttribute("dailyTotals", dailyTotals);
 
-            // Add dailyGrandTotal
             model.addAttribute("dailyGrandTotal", 0.0);
 
-            // Initialize weeklyAverages map (similar to dailyTotals)
+
+
             Map<String, Double> weeklyAverages = new HashMap<>();
+
             for (Farm farm : farms) {
+
                 weeklyAverages.put(farm.getId(), 0.0);
+
             }
+
             model.addAttribute("weeklyAverages", weeklyAverages);
+
             model.addAttribute("weeklyGrandAverage", 0.0);
 
-            // Initialize monthlyAverages map
+
+
             Map<String, Double> monthlyAverages = new HashMap<>();
+
             for (Farm farm : farms) {
+
                 monthlyAverages.put(farm.getId(), 0.0);
+
             }
+
             model.addAttribute("monthlyAverages", monthlyAverages);
+
             model.addAttribute("monthlyGrandAverage", 0.0);
 
-            // Initialize empty dailyProduction list
+
+
             model.addAttribute("dailyProduction", new ArrayList<>());
 
-            // Initialize empty weeklyProduction list
             model.addAttribute("weeklyProduction", new ArrayList<>());
 
-            // Initialize empty monthlyProduction list
             model.addAttribute("monthlyProduction", new ArrayList<>());
 
-            // Add other period totals
             model.addAttribute("wtdProduction", new ArrayList<>());
+
             model.addAttribute("mtdProduction", new ArrayList<>());
+
             model.addAttribute("ytdProduction", new ArrayList<>());
+
             model.addAttribute("wtdTotal", 0.0);
+
             model.addAttribute("mtdTotal", 0.0);
+
             model.addAttribute("ytdTotal", 0.0);
 
-            model.addAttribute("reportDate", java.time.LocalDate.now().toString());
 
-            logger.debug("📊 Added date selection, PDF URL, and empty data structures for weekly report");
+
+            logger.debug("? Added date selection, PDF URL, and empty data structures for weekly report");
+
         }
 
-        // Add default objects for daily-report to prevent null pointer exceptions
-        if ("daily-report".equals(dashboardType)) {
-            logger.debug("📊 Adding default objects for daily report");
 
-            // Get date parameter or use today's date
+
+        if ("daily-report".equals(dashboardType)) {
+
+            logger.debug("? Adding default objects for daily report");
+
+
+
             String dateParam = request.getParameter("date");
+
             LocalDate selectedDate = dateParam != null
+
                     ? LocalDate.parse(dateParam)
+
                     : LocalDate.now();
 
-            // Get max date (today)
+
+
             LocalDate maxDate = LocalDate.now();
 
-            // Ensure selected date is not in the future
             if (selectedDate.isAfter(maxDate)) {
+
                 selectedDate = maxDate;
+
             }
 
-            // Format dates for the view
+
+
             String selectedDateStr = selectedDate.toString();
+
             String maxDateStr = maxDate.toString();
 
-            // Build PDF URL
+
+
+            String companyKey = company.getName().toLowerCase().replaceAll("\\s+", "-");
+
+            String pdfFileName = String.format("%s-daily-%s", companyKey, selectedDateStr);
+
+            String fileName = String.format("%s-daily-report-%s.pdf", companyKey, selectedDateStr);
+
+            String viewerUrl = String.format("/api/reports/daily-pdf/%s/?company_id=%s&date=%s",
+
+                    pdfFileName, company.getId(), selectedDateStr);
+
+            // Download URL - same as viewerUrl but with download=true parameter
+            String downloadUrl = String.format("/api/reports/daily-pdf/%s/?company_id=%s&date=%s&download=true",
+
+                    pdfFileName, company.getId(), selectedDateStr);
+
             String pdfUrl = String.format("/api/daily-reports/pdf/%s?company_id=%s&date=%s",
+
                     company.getName(), company.getId(), selectedDateStr);
 
-            // Check if report exists for this date
-            try {
-                List<DailyReportCompany> reports = dailyReportRepository.findByCompanyIdAndDateBetween(
-                        company.getId(),
-                        selectedDate.atStartOfDay(ZoneId.systemDefault()).toInstant(),
-                        selectedDate.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant()
-                );
-
-                if (reports.isEmpty()) {
-                    model.addAttribute("errorMessage", "No Report Available");
-                    model.addAttribute("errorDetails",
-                            String.format("No daily report was generated for %s on %s. Please try a different date.",
-                                    company.getName(),
-                                    selectedDate.format(DateTimeFormatter.ofPattern("MMMM d, yyyy"))));
-                    pdfUrl = null;
-                } else {
-                    DailyReportCompany report = reports.get(0);
-                    if (report.getPdf() == null || report.getPdf().length == 0) {
-                        model.addAttribute("errorMessage", "Report Data Error");
-                        model.addAttribute("errorDetails",
-                                "The report exists but contains no data. This may indicate a system error. Please contact support.");
-                        pdfUrl = null;
-                    }
-                }
-            } catch (Exception e) {
-                logger.error("❌ Error checking report existence", e);
-                model.addAttribute("errorMessage", "System Error");
-                model.addAttribute("errorDetails",
-                        "An error occurred while checking for report availability. Please try again later or contact support if the problem persists.");
-                pdfUrl = null;
-            }
-
-            // Add attributes to model
             model.addAttribute("selectedDate", selectedDateStr);
-            model.addAttribute("maxDate", maxDateStr);
-            model.addAttribute("pdfUrl", pdfUrl);
 
-            logger.debug("📊 Added date selection and PDF URL for daily report");
+            model.addAttribute("maxDate", maxDateStr);
+
+            model.addAttribute("viewerUrl", viewerUrl);
+
+            model.addAttribute("downloadUrl", downloadUrl);
+
+            model.addAttribute("downloadFileName", fileName);
+
+            model.addAttribute("pdfUrl", pdfUrl); // Keep for backward compatibility
+
+            model.addAttribute("companyId", company.getId());
+
+            // Add reportDate - use selectedDate formatted as friendly string
+            // If API timestamp is available, it will be fetched client-side and override this
+            String reportDateFriendly = com.darro_tech.revengproject.utils.DateHelper.toFriendlyDateString(selectedDate);
+            model.addAttribute("reportDate", reportDateFriendly);
+
+            logger.debug("? Added date selection and PDF URL for daily report");
+
         }
+
+
 
         logger.info("🔄 Returning dashboard view: dashboard/{}", dashboardType);
         return view("dashboard/" + dashboardType, model);

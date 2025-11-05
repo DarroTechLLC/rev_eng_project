@@ -232,43 +232,28 @@
             return;
         }
         
-        // Get company name from URL path
-        const pathParts = window.location.pathname.split('/');
-        let companyName = '';
-        if (pathParts.length > 1) {
-            companyName = pathParts[1];
+        // Get company key from URL path (format: /align/daily-report or /{companyKey}/daily-report)
+        const pathParts = window.location.pathname.split('/').filter(p => p);
+        let companyKey = '';
+        if (pathParts.length > 0) {
+            companyKey = pathParts[0];
         }
         
-        // Construct the API URL
-        const apiUrl = `/api/reports/daily-pdf/${companyName}?company_id=${companyId}&date=${date}`;
+        // Construct PDF filename in format: {companyKey}-daily-{date} (matching KPIs format)
+        const pdfFileName = `${companyKey}-daily-${date}`;
         
-        // Fetch the report data
-        fetch(apiUrl)
-            .then(response => {
-                if (!response.ok) {
-                    if (response.headers.get('content-type').includes('application/json')) {
-                        return response.json().then(errorData => {
-                            throw new Error(errorData.error || 'Failed to load report');
-                        });
-                    }
-                    throw new Error('Failed to load report');
-                }
-                return response.blob();
-            })
-            .then(blob => {
-                // Create object URL for the PDF
-                const pdfUrl = URL.createObjectURL(blob);
-                
-                // Update the iframe source
-                const iframe = document.querySelector('.pdf-viewer');
-                if (iframe) {
-                    iframe.src = pdfUrl;
-                    console.log('✅ PDF viewer updated with new data');
-                }
-            })
-            .catch(error => {
-                console.error('❌ Error refreshing report:', error);
-            });
+        // Construct the API URL with correct filename format
+        // Use the API URL directly in the iframe (like KPIs does) instead of fetching as blob
+        const apiUrl = `/api/reports/daily-pdf/${pdfFileName}/?company_id=${companyId}&date=${date}`;
+        
+        console.log('📄 Updating report viewer URL:', { pdfFileName, companyId, date, apiUrl });
+        
+        // Update the iframe source directly with the API URL (no blob download)
+        const iframe = document.querySelector('.pdf-viewer');
+        if (iframe) {
+            iframe.src = apiUrl;
+            console.log('✅ PDF viewer updated with new URL');
+        }
     }
     
     /**

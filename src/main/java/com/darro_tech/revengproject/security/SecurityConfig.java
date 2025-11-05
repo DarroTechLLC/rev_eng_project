@@ -42,7 +42,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    @Order(1)
+    @Order(2)
     public SecurityFilterChain adminFilterChain(HttpSecurity http, MvcRequestMatcher.Builder mvc) throws Exception {
         http
                 .securityMatcher(new AdminRequestMatcher())
@@ -72,7 +72,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    @Order(2)
+    @Order(3)
     public SecurityFilterChain superAdminFilterChain(HttpSecurity http, MvcRequestMatcher.Builder mvc) throws Exception {
         http
                 .securityMatcher(new SuperAdminRequestMatcher())
@@ -111,25 +111,45 @@ public class SecurityConfig {
     }
 
     @Bean
-    @Order(3)
+    @Order(1)
+    public SecurityFilterChain reportsFilterChain(HttpSecurity http, MvcRequestMatcher.Builder mvc) throws Exception {
+        http
+                .securityMatcher(new ReportsRequestMatcher())
+                // Disable CSRF for reports
+                .csrf(csrf -> csrf.disable())
+                .headers(headers -> headers
+                .frameOptions(frameOptions -> frameOptions.sameOrigin())
+                )
+                .authorizeHttpRequests(authorize -> authorize
+                .anyRequest().permitAll() // Allow all report requests without authentication
+                )
+                // Do NOT add custom authentication filter for reports
+                .formLogin(login -> login.disable())
+                .logout(logout -> logout.disable());
+
+        return http.build();
+    }
+
+    @Bean
+    @Order(4)
     public SecurityFilterChain defaultFilterChain(HttpSecurity http, MvcRequestMatcher.Builder mvc) throws Exception {
         http
                 // Enable CSRF protection
                 .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**", "/align/api/**", "/webauthn/**")) // Ignore CSRF for API and WebAuthn endpoints
                 .headers(headers -> headers
-                    .frameOptions(frameOptions -> frameOptions.sameOrigin())
+                .frameOptions(frameOptions -> frameOptions.sameOrigin())
                 )
                 .authorizeHttpRequests(authorize -> authorize
                 .requestMatchers(
                         mvc.pattern("/login"),
                         mvc.pattern("/register"),
                         mvc.pattern("/confirm-account"),
-                        mvc.pattern("/static/**"),  // Allow all static resources
+                        mvc.pattern("/static/**"), // Allow all static resources
                         mvc.pattern("/css/**"),
                         mvc.pattern("/js/**"),
                         mvc.pattern("/vendor/**"),
                         mvc.pattern("/img/**"),
-                        mvc.pattern("/webauthn/**")  // Explicitly permit WebAuthn endpoints
+                        mvc.pattern("/webauthn/**") // Explicitly permit WebAuthn endpoints
                 ).permitAll()
                 .anyRequest().permitAll() // Allow all requests for now, the controllers will handle auth
                 )
@@ -178,8 +198,26 @@ public class SecurityConfig {
         public boolean matches(HttpServletRequest request) {
             String path = request.getRequestURI();
             boolean isMatch = path.startsWith("/admin/alerts")
-                    || path.startsWith("/admin/companies");  // Add companies to superadmin access
+                    || path.startsWith("/admin/companies") // Add companies to superadmin access
+                    || path.startsWith("/admin/email-logs")
+                    || path.startsWith("/admin/user-subscriptions");
             System.out.println("🔍 Super admin path check: " + path + " -> " + (isMatch ? "matches" : "no match"));
+            return isMatch;
+        }
+    }
+
+    static class ReportsRequestMatcher implements RequestMatcher {
+
+        @Override
+        public boolean matches(HttpServletRequest request) {
+            String path = request.getRequestURI();
+            // Match all report-related paths
+            boolean isMatch = path.startsWith("/align/")
+                    || path.startsWith("/api/reports/")
+                    || path.startsWith("/api/")
+                    || path.startsWith("/weekly-report")
+                    || path.startsWith("/daily-report");
+            System.out.println("🔍 ReportsRequestMatcher: path=" + path + " -> matches=" + isMatch);
             return isMatch;
         }
     }

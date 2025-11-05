@@ -19,6 +19,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.lang.NonNull;
+import org.springframework.web.servlet.NoHandlerFoundException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 /**
@@ -64,14 +66,42 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     /**
+     * Handle NoHandlerFoundException (404 errors) - when Spring can't find a handler for the request
+     */
+    @Override
+    protected ResponseEntity<Object> handleNoHandlerFoundException(
+            @NonNull NoHandlerFoundException ex,
+            @NonNull HttpHeaders headers,
+            @NonNull HttpStatusCode status,
+            @NonNull WebRequest request) {
+
+        String requestPath = ex.getRequestURL();
+        String httpMethod = ex.getHttpMethod();
+
+        logger.warning("❌ No handler found for " + httpMethod + " " + requestPath);
+        logger.warning("   This indicates a missing or incorrectly mapped endpoint");
+
+        Map<String, Object> errorResponse = new HashMap<>();
+        errorResponse.put("success", false);
+        errorResponse.put("status", HttpStatus.NOT_FOUND.value());
+        errorResponse.put("error", "NoHandlerFoundException");
+        errorResponse.put("message", "No handler found for " + httpMethod + " " + requestPath);
+        errorResponse.put("path", requestPath);
+        errorResponse.put("method", httpMethod);
+        errorResponse.put("details", "The requested endpoint does not exist or is not properly registered. Check the controller mapping and ensure the application has been restarted after code changes.");
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+    }
+
+    /**
      * Handle invalid JSON in request body by properly overriding the method from ResponseEntityExceptionHandler
      */
     @Override
     protected ResponseEntity<Object> handleHttpMessageNotReadable(
-            HttpMessageNotReadableException ex, 
-            HttpHeaders headers, 
-            HttpStatusCode status, 
-            WebRequest request) {
+            @NonNull HttpMessageNotReadableException ex, 
+            @NonNull HttpHeaders headers, 
+            @NonNull HttpStatusCode status, 
+            @NonNull WebRequest request) {
 
         logger.warning("⚠️ Invalid request format: " + ex.getMessage());
 
@@ -93,6 +123,40 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 class ApiExceptionHandler {
 
     private static final Logger logger = Logger.getLogger(ApiExceptionHandler.class.getName());
+
+    /**
+     * Handle NoHandlerFoundException specifically for API endpoints
+     */
+    @ExceptionHandler(NoHandlerFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleNoHandlerFoundException(NoHandlerFoundException ex) {
+        String requestPath = ex.getRequestURL();
+        String httpMethod = ex.getHttpMethod();
+
+        logger.severe("❌ API: No handler found for " + httpMethod + " " + requestPath);
+        logger.severe("   This is a routing issue - check:");
+        logger.severe("   1. Controller is properly annotated with @RestController");
+        logger.severe("   2. @RequestMapping/@GetMapping path matches the request");
+        logger.severe("   3. Application has been restarted after code changes");
+        logger.severe("   4. Security filter chain is not blocking the request");
+        logger.severe("   5. Component scanning includes the controller package");
+
+        Map<String, Object> errorResponse = new HashMap<>();
+        errorResponse.put("success", false);
+        errorResponse.put("status", HttpStatus.NOT_FOUND.value());
+        errorResponse.put("error", "NoHandlerFoundException");
+        errorResponse.put("message", "API endpoint not found: " + httpMethod + " " + requestPath);
+        errorResponse.put("path", requestPath);
+        errorResponse.put("method", httpMethod);
+        errorResponse.put("troubleshooting", Map.of(
+            "check_1", "Verify the controller is annotated with @RestController",
+            "check_2", "Verify the @RequestMapping/@GetMapping path matches the request URL",
+            "check_3", "Ensure the application has been restarted after code changes",
+            "check_4", "Check SecurityConfig to ensure the path is not blocked",
+            "check_5", "Verify component scanning includes the controller package"
+        ));
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+    }
 
     /**
      * Handle InvalidDefinitionException specifically for ByteArrayInputStream serialization issues

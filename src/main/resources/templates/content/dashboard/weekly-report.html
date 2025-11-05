@@ -5,147 +5,111 @@
 <head>
     <title>Weekly Report</title>
     <style>
+        /* Override container-fluid padding for this page */
+        .container-fluid {
+            padding: 0 !important;
+        }
+        
         #main-content {
             padding: 0;
             display: flex;
             flex-direction: column;
-            height: calc(100vh - 60px);
-            background: #f8f9fc;
+        }
+        
+        iframe {
+            flex: 1;
         }
         .report-header {
-            padding: 12px 24px;
+            padding: 12px;
             display: flex;
             flex-direction: row;
             justify-content: space-between;
+        }
+        .report-header-section {
+            display: flex;
+            flex-direction: row;
+            gap: 12px;
             align-items: center;
-            background: transparent;
         }
         .report-title {
             font-weight: bold;
-            font-size: 1.1rem;
-            color: #333;
         }
-        .report-timestamp {
-            font-size: 0.9rem;
-            color: #666;
-            margin-right: auto;
-            margin-left: 20px;
+        .report-date {
+            color: #456;
         }
         .report-date-selector {
             display: flex;
-            align-items: center;
-            gap: 8px;
         }
         .report-date-selector input[type="date"] {
             margin-right: 4px;
             border: solid 2px #e6e6e6;
             padding: 0 6px;
             border-radius: 6px;
-            height: 32px;
-            background: white;
         }
         .report-date-selector button {
-            padding: 6px 12px;
+            margin-right: 6px;
+            background-color: #eee;
+            border: solid 2px #e6e6e6;
+            padding: 0 6px;
             border-radius: 6px;
-            border: none;
-            background: #4e73df;
+        }
+        .pdf-link {
+            border: solid 1px #4af;
+            padding: 4px 6px;
+            border-radius: 6px;
             color: white;
-            cursor: pointer;
-            font-size: 0.875rem;
+            background-color: #369;
+            font-size: 12px;
+            text-decoration: none;
+            transition: background-color 200ms ease;
         }
-        .report-date-selector button:hover {
-            background: #2e59d9;
-        }
-        .report-date-selector button:disabled {
-            background: #cccccc;
-            cursor: not-allowed;
+        .pdf-link:hover {
+            background-color: #4af;
         }
         .pdf-container {
             flex: 1;
             display: flex;
             flex-direction: column;
-            padding: 0 24px 24px;
+            padding: 0;
         }
         .pdf-viewer {
-            flex: 1;
-            border: none;
-            width: 100%;
+            width: 100vw;
             height: 100%;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        }
-        .no-pdf-message {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            height: 100%;
-            color: #666;
-            font-size: 1.1rem;
-            background: white;
-            border-radius: 8px;
-            padding: 2rem;
-            text-align: center;
-            gap: 1rem;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        }
-        .no-pdf-message .error-icon {
-            font-size: 3rem;
-            color: #e74a3b;
-        }
-        .no-pdf-message .error-title {
-            font-weight: bold;
-            color: #333;
-        }
-        .no-pdf-message .error-details {
-            color: #666;
-            max-width: 400px;
-        }
-
-        .error-message {
-            display: none;
-            padding: 1rem;
-            margin: 1rem;
-            border-radius: 8px;
-            background-color: #fff3f3;
-            border: 1px solid #ffcdd2;
-            color: #d32f2f;
-            font-size: 1rem;
-            text-align: center;
+            border-top: solid 1px #ccc;
+            margin-left: -10px;
+            padding-bottom: 5px;
         }
     </style>
 </head>
 <body>
     <div layout:fragment="content">
         <div class="report-header">
-            <div class="report-title">Weekly Report</div>
-            <div class="report-timestamp" th:if="${timestamp}" th:text="${timestamp}"></div>
+            <div class="report-header-section">
+                <div class="report-title">Weekly Report:</div>
+                <div th:if="${reportDateFriendly}" class="report-date" th:text="${reportDateFriendly}"></div>
+                <a 
+                    th:href="${downloadUrl}"
+                    th:download="${downloadFileName}"
+                    th:if="${downloadUrl}"
+                    th:attr="target=${downloadFileName}"
+                    class="pdf-link">View as PDF</a>
+            </div>
             <div class="report-date-selector">
+                <button th:if="${selectedDate != maxDate}" 
+                        onclick="resetDate()" 
+                        type="button">Reset</button>
                 <input type="date" 
                        th:value="${selectedDate}"
                        th:max="${maxDate}"
                        onchange="updateReport(this.value)"/>
-                <button onclick="resetDate()" 
-                        th:disabled="${selectedDate == maxDate}">Reset</button>
             </div>
         </div>
 
         <div class="pdf-container">
-            <div id="errorMessage" class="error-message"></div>
-            <iframe th:if="${pdfUrl != null && !errorMessage}" 
+            <iframe th:if="${viewerUrl != null}" 
                     class="pdf-viewer"
-                    th:src="${pdfUrl}"
-                    onload="handleIframeLoad(this)"
-                    onerror="handleIframeError(this)">
+                    th:src="${viewerUrl}">
             </iframe>
-            <div th:if="${pdfUrl == null || errorMessage}" class="no-pdf-message">
-                <div class="error-icon">📄</div>
-                <div class="error-title" th:text="${errorMessage ?: 'No Report Available'}">No Report Available</div>
-                <div class="error-details" th:text="${errorDetails ?: 'No PDF report is available for the selected date. Please try a different date or contact support if you believe this is an error.'}">
-                    No PDF report is available for the selected date. Please try a different date or contact support if you believe this is an error.
-                </div>
-            </div>
         </div>
     </div>
 
@@ -155,113 +119,43 @@
             const currentCompanyId = /*[[${selectedCompany.id}]]*/ '';
 
             function updateReport(date) {
-                // Ensure date is not in the future
                 if (date > maxDate) {
                     date = maxDate;
                 }
-                window.location.href = window.location.pathname + '?date=' + date;
+                const currentUrl = new URL(window.location.href);
+                currentUrl.searchParams.set('date', date);
+                window.location.href = currentUrl.toString();
             }
 
-            // Make updateReport accessible globally for auto-refresh
             window.updateReport = updateReport;
 
             function resetDate() {
                 updateReport(maxDate);
             }
 
-            function handleIframeLoad(iframe) {
-                // Hide any previous error messages
-                document.getElementById('errorMessage').style.display = 'none';
-
-                // Try to detect if the iframe loaded an error response
-                try {
-                    const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-                    const content = iframeDoc.body.textContent;
-
-                    try {
-                        const errorData = JSON.parse(content);
-                        if (errorData.error) {
-                            // Show error message
-                            const errorDiv = document.getElementById('errorMessage');
-                            errorDiv.textContent = errorData.error;
-                            errorDiv.style.display = 'block';
-
-                            // Hide iframe
-                            iframe.style.display = 'none';
-
-                            // Show no-pdf message
-                            const noPdfMessage = document.querySelector('.no-pdf-message');
-                            if (noPdfMessage) {
-                                noPdfMessage.style.display = 'flex';
-                                const errorTitle = noPdfMessage.querySelector('.error-title');
-                                const errorDetails = noPdfMessage.querySelector('.error-details');
-                                if (errorTitle) errorTitle.textContent = 'Report Not Available';
-                                if (errorDetails) errorDetails.textContent = errorData.error;
-                            }
-                        }
-                    } catch (e) {
-                        // Not JSON, probably actual PDF content
-                        iframe.style.display = 'block';
-                        const noPdfMessage = document.querySelector('.no-pdf-message');
-                        if (noPdfMessage) noPdfMessage.style.display = 'none';
-                    }
-                } catch (e) {
-                    // Cross-origin error, probably actual PDF content
-                    iframe.style.display = 'block';
-                    const noPdfMessage = document.querySelector('.no-pdf-message');
-                    if (noPdfMessage) noPdfMessage.style.display = 'none';
-                }
+            const dateInput = document.querySelector('input[type="date"]');
+            if (dateInput) {
+                dateInput.max = maxDate;
             }
 
-            function handleIframeError(iframe) {
-                // Show error message
-                const errorDiv = document.getElementById('errorMessage');
-                errorDiv.textContent = 'Failed to load the report. Please try again later.';
-                errorDiv.style.display = 'block';
-
-                // Hide iframe
-                iframe.style.display = 'none';
-
-                // Show no-pdf message
-                const noPdfMessage = document.querySelector('.no-pdf-message');
-                if (noPdfMessage) {
-                    noPdfMessage.style.display = 'flex';
-                    const errorTitle = noPdfMessage.querySelector('.error-title');
-                    const errorDetails = noPdfMessage.querySelector('.error-details');
-                    if (errorTitle) errorTitle.textContent = 'Error Loading Report';
-                    if (errorDetails) errorDetails.textContent = 'Failed to load the report. Please try again later.';
-                }
-            }
-
-            // Initialize date input max value
-            document.querySelector('input[type="date"]').max = maxDate;
-
-            // Company selector override
             document.addEventListener('DOMContentLoaded', function() {
                 const companySelector = document.querySelector('#companySelector');
                 if (companySelector) {
-                    // Remove any existing event listeners
                     const newSelector = companySelector.cloneNode(true);
                     companySelector.parentNode.replaceChild(newSelector, companySelector);
 
-                    // Add our custom event listener
                     newSelector.addEventListener('change', function(e) {
-                        e.preventDefault(); // Prevent default form submission
-                        e.stopPropagation(); // Stop event bubbling
+                        e.preventDefault();
+                        e.stopPropagation();
 
                         const newCompanyId = e.target.value;
                         if (newCompanyId !== currentCompanyId) {
                             const selectedOption = e.target.selectedOptions[0];
                             const companyName = selectedOption.text.toLowerCase().replace(/\s+/g, '-');
-
-                            // Build new URL maintaining weekly-report view
                             const currentParams = new URLSearchParams(window.location.search);
-                            const newUrl = '/' + companyName + '/weekly-report' + 
-                                         (currentParams.toString() ? '?' + currentParams.toString() : '');
-
-                            // Navigate to new URL
+                            const newUrl = '/' + companyName + '/weekly-report' +
+                                (currentParams.toString() ? '?' + currentParams.toString() : '');
                             window.location.href = newUrl;
-                            return false;
                         }
                     });
                 }

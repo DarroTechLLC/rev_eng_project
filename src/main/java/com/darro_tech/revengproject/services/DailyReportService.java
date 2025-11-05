@@ -25,6 +25,9 @@ public class DailyReportService {
     @Autowired
     private DailyReportCompanyRepository dailyReportRepository;
 
+    @Autowired
+    private DailyReportDataService dailyReportDataService;
+
     /**
      * Get the latest timestamp for a daily report
      * 
@@ -71,74 +74,8 @@ public class DailyReportService {
     public DailyReportDTO getDailyReport(String companyId, LocalDate reportDate) {
         logger.info("📊 Generating daily report for company {} on date {}", companyId, reportDate);
 
-        // TODO: Implement actual data fetching from database
-        return DailyReportDTO.builder()
-                .companyId(companyId)
-                .reportDate(reportDate)
-                .companyName("Sample Company")
-                .dailyProduction(generateSampleDailyProduction())
-                .mtdProduction(generateSampleMtdProduction())
-                .farmPerformance(generateSampleFarmPerformance())
-                .dailyTotal(1250.0)
-                .mtdTotal(28750.0)
-                .ytdTotal(345000.0)
-                .build();
-    }
-
-    private List<DailyReportDTO.FarmProduction> generateSampleDailyProduction() {
-        List<DailyReportDTO.FarmProduction> production = new ArrayList<>();
-
-        DailyReportDTO.FarmProduction farm1 = new DailyReportDTO.FarmProduction();
-        farm1.setFarmName("Farm A");
-        farm1.setVolume(500.0);
-        farm1.setPercentOfTotal(40.0);
-        production.add(farm1);
-
-        DailyReportDTO.FarmProduction farm2 = new DailyReportDTO.FarmProduction();
-        farm2.setFarmName("Farm B");
-        farm2.setVolume(750.0);
-        farm2.setPercentOfTotal(60.0);
-        production.add(farm2);
-
-        return production;
-    }
-
-    private List<DailyReportDTO.FarmProduction> generateSampleMtdProduction() {
-        List<DailyReportDTO.FarmProduction> production = new ArrayList<>();
-
-        DailyReportDTO.FarmProduction farm1 = new DailyReportDTO.FarmProduction();
-        farm1.setFarmName("Farm A");
-        farm1.setVolume(11500.0);
-        farm1.setPercentOfTotal(40.0);
-        production.add(farm1);
-
-        DailyReportDTO.FarmProduction farm2 = new DailyReportDTO.FarmProduction();
-        farm2.setFarmName("Farm B");
-        farm2.setVolume(17250.0);
-        farm2.setPercentOfTotal(60.0);
-        production.add(farm2);
-
-        return production;
-    }
-
-    private List<DailyReportDTO.FarmPerformance> generateSampleFarmPerformance() {
-        List<DailyReportDTO.FarmPerformance> performance = new ArrayList<>();
-
-        DailyReportDTO.FarmPerformance farm1 = new DailyReportDTO.FarmPerformance();
-        farm1.setFarmName("Farm A");
-        farm1.setDailyVolume(500.0);
-        farm1.setMtdVolume(11500.0);
-        farm1.setYtdVolume(138000.0);
-        performance.add(farm1);
-
-        DailyReportDTO.FarmPerformance farm2 = new DailyReportDTO.FarmPerformance();
-        farm2.setFarmName("Farm B");
-        farm2.setDailyVolume(750.0);
-        farm2.setMtdVolume(17250.0);
-        farm2.setYtdVolume(207000.0);
-        performance.add(farm2);
-
-        return performance;
+        // Fetch actual data from database
+        return dailyReportDataService.getDailyReportData(companyId, reportDate);
     }
 
     /**

@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/main-layout}">
+<head>
+    <title>User Subscriptions</title>
+    <style>
+        .subscription-badge {
+            border-radius: 14px;
+            padding: 2px 8px;
+            margin: 0 3px;
+            font-size: 0.75em;
+            font-weight: bold;
+            border: solid 1px;
+            display: inline-block;
+        }
+        .subscription-weekly-report {
+            background-color: #d4edda;
+            color: #155724;
+            border-color: #c3e6cb;
+        }
+        .subscription-daily-report {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border-color: #bee5eb;
+        }
+        .subscription-default {
+            background-color: #f8f9fa;
+            color: #495057;
+            border-color: #dee2e6;
+        }
+        .table-nav {
+            display: flex;
+            margin: 2px 0 16px 8px;
+        }
+        .table-nav > * {
+            margin-right: 8px;
+        }
+        .table-nav > *:last-child {
+            margin-right: 4px;
+        }
+        .refresh-button {
+            background-color: #6c757d;
+            color: white;
+            padding: 8px 17px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+        }
+        .refresh-button:hover {
+            background-color: #5a6268;
+        }
+        .search-input {
+            border: solid 1px #445566;
+            border-radius: 4px;
+            padding: 4px;
+            flex: 1;
+        }
+        .user-link {
+            text-decoration: underline;
+            cursor: pointer;
+            color: #008b8b;
+        }
+        .user-link:hover {
+            color: #006666;
+        }
+        .sortable {
+            cursor: pointer;
+            user-select: none;
+        }
+        .sortable:hover {
+            background-color: #f8f9fa;
+        }
+        .sort-icon {
+            margin-left: 5px;
+            font-size: 0.8em;
+        }
+        .fake-data-toggle {
+            background-color: #28a745;
+            color: white;
+            padding: 8px 17px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+        .fake-data-toggle:hover {
+            background-color: #218838;
+        }
+        .fake-data-toggle.active {
+            background-color: #dc3545;
+        }
+        .fake-data-toggle.active:hover {
+            background-color: #c82333;
+        }
+    </style>
+</head>
+<body>
+    <div layout:fragment="content">
+        <!-- Page Heading -->
+        <div class="d-sm-flex align-items-center justify-content-between mb-4">
+            <h1 class="h3 mb-0 text-gray-800">User Subscriptions</h1>
+            <button id="fakeDataToggle" 
+                    class="fake-data-toggle"
+                    th:class="${useFakeData != null && useFakeData ? 'fake-data-toggle active' : 'fake-data-toggle'}"
+                    onclick="toggleFakeData()">
+                <span th:text="${useFakeData != null && useFakeData ? 'Test Fake Data: ON' : 'Test Fake Data: OFF'}">Test Fake Data: OFF</span>
+            </button>
+        </div>
+
+        <!-- Error Message Alert -->
+        <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+            <strong>Error!</strong> <span th:text="${errorMessage}">An error occurred.</span>
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+
+        <!-- Content Row -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">User Subscriptions</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-nav">
+                            <input type="text" id="searchInput" class="search-input" placeholder="Search subscriptions...">
+                            <button class="refresh-button" onclick="location.reload()">Refresh</button>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-hover" id="subscriptionsTable" width="100%" cellspacing="0">
+                                <thead>
+                                    <tr>
+                                        <th class="sortable" data-sort="username">Username <span class="sort-icon">⇅</span></th>
+                                        <th class="sortable" data-sort="firstName">User Name <span class="sort-icon">⇅</span></th>
+                                        <th class="sortable" data-sort="company_name">Company <span class="sort-icon">⇅</span></th>
+                                        <th class="sortable" data-sort="subscription_key">Subscription <span class="sort-icon">⇅</span></th>
+                                        <th class="sortable" data-sort="created_at">Created <span class="sort-icon">⇅</span></th>
+                                        <th class="sortable" data-sort="updated_at">Updated <span class="sort-icon">⇅</span></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="subscriptionsTableBody">
+                                    <tr th:each="sub : ${subscriptions}">
+                                        <td>
+                                            <a th:href="@{/admin/users/{id}(id=${sub.userId})}" 
+                                               class="user-link" 
+                                               th:text="${sub.username ?: '[PENDING]'}"></a>
+                                        </td>
+                                        <td th:text="${sub.firstName + ' ' + sub.lastName}"></td>
+                                        <td th:text="${sub.companyName}"></td>
+                                        <td>
+                                            <span th:classappend="'subscription-' + ${#strings.toLowerCase(sub.subscriptionKey)}" 
+                                                  class="subscription-badge subscription-default" 
+                                                  th:text="${sub.subscriptionKey}"></span>
+                                        </td>
+                                        <td th:text="${#temporals.format(sub.createdAt, 'yyyy-MM-dd')}"></td>
+                                        <td th:text="${#temporals.format(sub.updatedAt, 'yyyy-MM-dd')}"></td>
+                                    </tr>
+                                    <tr th:if="${#lists.isEmpty(subscriptions)}">
+                                        <td colspan="6" class="text-center">No subscriptions found</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <th:block layout:fragment="scripts">
+        <script th:inline="javascript">
+            // Search functionality
+            document.getElementById('searchInput').addEventListener('input', function(e) {
+                const searchTerm = e.target.value.toLowerCase();
+                const tbody = document.getElementById('subscriptionsTableBody');
+                const rows = tbody.getElementsByTagName('tr');
+                
+                Array.from(rows).forEach(row => {
+                    if (row.querySelector('td[colspan]')) return; // Skip "no data" row
+                    
+                    const text = row.textContent.toLowerCase();
+                    row.style.display = text.includes(searchTerm) ? '' : 'none';
+                });
+            });
+            
+            // Sorting functionality
+            let currentSort = { column: null, direction: 'asc' };
+            
+            document.querySelectorAll('.sortable').forEach(header => {
+                header.addEventListener('click', function() {
+                    const column = this.dataset.sort;
+                    const tbody = document.getElementById('subscriptionsTableBody');
+                    const rows = Array.from(tbody.getElementsByTagName('tr')).filter(row => 
+                        !row.querySelector('td[colspan]')
+                    );
+                    
+                    // Determine sort direction
+                    if (currentSort.column === column) {
+                        currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+                    } else {
+                        currentSort.column = column;
+                        currentSort.direction = 'asc';
+                    }
+                    
+                    // Get column index
+                    const columnIndex = Array.from(this.parentElement.children).indexOf(this);
+                    
+                    // Sort rows
+                    rows.sort((a, b) => {
+                        const aText = a.children[columnIndex].textContent.trim();
+                        const bText = b.children[columnIndex].textContent.trim();
+                        
+                        // Handle date columns
+                        if (column === 'created_at' || column === 'updated_at') {
+                            const aDate = new Date(aText);
+                            const bDate = new Date(bText);
+                            return currentSort.direction === 'asc' 
+                                ? aDate - bDate 
+                                : bDate - aDate;
+                        }
+                        
+                        // Handle text columns
+                        const comparison = aText.localeCompare(bText);
+                        return currentSort.direction === 'asc' ? comparison : -comparison;
+                    });
+                    
+                    // Reorder rows in DOM
+                    rows.forEach(row => tbody.appendChild(row));
+                    
+                    // Update sort icons
+                    document.querySelectorAll('.sort-icon').forEach(icon => {
+                        icon.textContent = '⇅';
+                    });
+                    this.querySelector('.sort-icon').textContent = currentSort.direction === 'asc' ? '↑' : '↓';
+                });
+            });
+            
+            // Fake data toggle functionality
+            function toggleFakeData() {
+                const currentUrl = new URL(window.location.href);
+                const useFakeData = /*[[${useFakeData != null ? useFakeData : false}]]*/ false;
+                
+                if (useFakeData) {
+                    currentUrl.searchParams.delete('useFakeData');
+                } else {
+                    currentUrl.searchParams.set('useFakeData', 'true');
+                }
+                
+                window.location.href = currentUrl.toString();
+            }
+        </script>
+    </th:block>
+</body>
+</html>
+

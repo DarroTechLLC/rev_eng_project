@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weekly Report - <span th:text="${companyName}">Company</span></title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        @media print {
+            .page-section {
+                page-break-inside: avoid;
+                margin-bottom: 20px;
+            }
+        }
+        .page-section {
+            margin-bottom: 30px;
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+        }
+        .page-section-header {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #333;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 5px;
+        }
+        .error-message {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .no-data-message {
+            background-color: #fff3cd;
+            color: #856404;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        table {
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        table th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+        .report-header {
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid" style="max-width: 8in; margin: 0 auto;">
+        <div class="report-header">
+            <h1>Weekly Report</h1>
+            <p><strong>Company:</strong> <span th:text="${companyName}">Company Name</span></p>
+            <p><strong>Report Date:</strong> <span th:text="${reportDate}">Date</span></p>
+            <p><strong>Report Period:</strong> <span th:text="${reportEndDate}">End Date</span></p>
+        </div>
+
+        <!-- Error Display -->
+        <div th:if="${errorMessage}" class="error-message">
+            <strong>ERROR:</strong> <span th:text="${errorMessage}">Error message</span>
+            <div th:if="${errorDetails}" th:text="${errorDetails}">Error details</div>
+        </div>
+
+        <!-- Production Summary Section -->
+        <div class="page-section">
+            <div class="page-section-header">Production Summary</div>
+            <div th:if="${reportData != null && reportData.productionSummary != null}">
+                <p>Note: Farms with no data will not be shown.</p>
+                
+                <!-- WTD/MTD/YTD Summary Tables -->
+                <div th:if="${reportData.productionSummary.wtd != null && !reportData.productionSummary.wtd.isEmpty()}">
+                    <h4>Week-to-Date (WTD)</h4>
+                    <table class="table table-bordered table-sm">
+                        <thead>
+                            <tr>
+                                <th>Farm</th>
+                                <th>Volume (MMBTUs)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="farm : ${reportData.productionSummary.wtd}">
+                                <td th:text="${farm.farmName}">Farm Name</td>
+                                <td th:text="${#numbers.formatDecimal(farm.volume, 1, 2)}">0.00</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div th:if="${reportData.productionSummary.wtd == null || reportData.productionSummary.wtd.isEmpty()}" class="no-data-message">
+                    No data available for WTD production on <span th:text="${reportDate}">date</span>. Data may not exist in database for this date/company.
+                </div>
+
+                <!-- MTD Table -->
+                <div th:if="${reportData.productionSummary.mtd != null && !reportData.productionSummary.mtd.isEmpty()}">
+                    <h4>Month-to-Date (MTD)</h4>
+                    <table class="table table-bordered table-sm">
+                        <thead>
+                            <tr>
+                                <th>Farm</th>
+                                <th>Volume (MMBTUs)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="farm : ${reportData.productionSummary.mtd}">
+                                <td th:text="${farm.farmName}">Farm Name</td>
+                                <td th:text="${#numbers.formatDecimal(farm.volume, 1, 2)}">0.00</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div th:if="${reportData.productionSummary.mtd == null || reportData.productionSummary.mtd.isEmpty()}" class="no-data-message">
+                    No data available for MTD production on <span th:text="${reportDate}">date</span>. Data may not exist in database for this date/company.
+                </div>
+
+                <!-- YTD Table -->
+                <div th:if="${reportData.productionSummary.ytd != null && !reportData.productionSummary.ytd.isEmpty()}">
+                    <h4>Year-to-Date (YTD)</h4>
+                    <table class="table table-bordered table-sm">
+                        <thead>
+                            <tr>
+                                <th>Farm</th>
+                                <th>Volume (MMBTUs)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="farm : ${reportData.productionSummary.ytd}">
+                                <td th:text="${farm.farmName}">Farm Name</td>
+                                <td th:text="${#numbers.formatDecimal(farm.volume, 1, 2)}">0.00</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div th:if="${reportData.productionSummary.ytd == null || reportData.productionSummary.ytd.isEmpty()}" class="no-data-message">
+                    No data available for YTD production on <span th:text="${reportDate}">date</span>. Data may not exist in database for this date/company.
+                </div>
+
+                <!-- Monthly Breakdown -->
+                <div th:if="${reportData.productionSummary.farmMonths != null && !reportData.productionSummary.farmMonths.isEmpty()}">
+                    <h4>Monthly Production Breakdown</h4>
+                    <table class="table table-bordered table-sm">
+                        <thead>
+                            <tr>
+                                <th>Farm</th>
+                                <th th:each="mo : ${reportData.productionSummary.moNumbers}" th:text="'Mo ' + ${mo}">Month</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="farm : ${reportData.productionSummary.farmMonths}">
+                                <td th:text="${farm.farmName}">Farm Name</td>
+                                <td th:each="month : ${farm.months}" th:text="${month.volume != null ? #numbers.formatDecimal(month.volume, 1, 2) : 'N/A'}">0.00</td>
+                                <td th:text="${farm.totals != null && farm.totals.volume != null ? #numbers.formatDecimal(farm.totals.volume, 1, 2) : 'N/A'}">Total</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div th:if="${reportData.productionSummary.farmMonths == null || reportData.productionSummary.farmMonths.isEmpty()}" class="no-data-message">
+                    No data available for monthly production breakdown. Query returned empty result.
+                </div>
+            </div>
+            <div th:if="${reportData == null || reportData.productionSummary == null}" class="error-message">
+                <div th:if="${reportData != null && reportData.errorMessage != null && reportData.errorSection == 'Production Summary'}">
+                    <strong>ERROR:</strong> <span th:text="${reportData.errorMessage}">Error message</span>
+                </div>
+                <div th:if="${reportData == null || reportData.errorMessage == null || reportData.errorSection != 'Production Summary'}" class="no-data-message">
+                    No data available for production summary. Data may not exist in database for this date/company.
+                </div>
+            </div>
+        </div>
+
+        <!-- Production Budget Comparison Section -->
+        <div class="page-section">
+            <div class="page-section-header">Production Budget Comparison</div>
+            <div th:if="${reportData != null && reportData.productionBudgetComparison != null}">
+                <div th:if="${reportData.productionBudgetComparison.farmProductions != null && !reportData.productionBudgetComparison.farmProductions.isEmpty()}">
+                    <table class="table table-bordered table-sm">
+                        <thead>
+                            <tr>
+                                <th>Farm</th>
+                                <th>Production (MMBTUs)</th>
+                                <th>% of Budget</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="farm : ${reportData.productionBudgetComparison.farmProductions}">
+                                <td th:text="${farm.farmName}">Farm Name</td>
+                                <td th:text="${#numbers.formatDecimal(farm.production, 1, 2)}">0.00</td>
+                                <td th:text="${farm.pctBudget != null ? #numbers.formatDecimal(farm.pctBudget, 1, 2) + '%' : 'N/A'}">0%</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div th:if="${reportData.productionBudgetComparison.farmProductions == null || reportData.productionBudgetComparison.farmProductions.isEmpty()}" class="no-data-message">
+                    No data available for production budget comparison. Data may not exist in database for this date/company.
+                </div>
+                
+                <!-- Radial Charts -->
+                <div th:if="${reportData.productionBudgetComparison != null && (reportData.productionBudgetComparison.annualBudget != null || reportData.productionBudgetComparison.annualForecast != null)}" style="margin-top: 20px;">
+                    <div style="display: flex; flex-wrap: wrap; gap: 20px; justify-content: center;">
+                        <!-- YTD Production vs Annual Budget Radial Chart -->
+                        <div th:if="${reportData.productionBudgetComparison.annualBudget != null && reportData.productionBudgetComparison.annualBudget > 0}" style="text-align: center;">
+                            <div style="font-weight: bold; margin-bottom: 10px;">YTD Production vs Annual Budget</div>
+                            <div style="position: relative; width: 200px; height: 200px; margin: 0 auto;">
+                                <svg width="200" height="200" style="transform: rotate(-90deg);">
+                                    <circle cx="100" cy="100" r="80" fill="none" stroke="#e0e0e0" stroke-width="20"/>
+                                    <circle cx="100" cy="100" r="80" fill="none" stroke="#4CAF50" stroke-width="20"
+                                            stroke-dasharray="502.4"
+                                            th:stroke-dashoffset="${502.4 - (502.4 * (reportData.productionBudgetComparison.ytdProduction / reportData.productionBudgetComparison.annualBudget))}"
+                                            th:if="${reportData.productionBudgetComparison.ytdProduction != null && reportData.productionBudgetComparison.annualBudget > 0}"/>
+                                </svg>
+                                <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 24px; font-weight: bold;">
+                                    <span th:text="${#numbers.formatDecimal((reportData.productionBudgetComparison.ytdProduction / reportData.productionBudgetComparison.annualBudget) * 100, 1, 1)}">0</span>%
+                                </div>
+                            </div>
+                            <div style="margin-top: 10px; font-size: 12px;">
+                                <div>YTD: <span th:text="${#numbers.formatDecimal(reportData.productionBudgetComparison.ytdProduction, 1, 0)}">0</span> MMBTUs</div>
+                                <div>Budget: <span th:text="${#numbers.formatDecimal(reportData.productionBudgetComparison.annualBudget, 1, 0)}">0</span> MMBTUs</div>
+                            </div>
+                        </div>
+                        
+                        <!-- YTD Production vs Annual Forecast Radial Chart -->
+                        <div th:if="${reportData.productionBudgetComparison.annualForecast != null && reportData.productionBudgetComparison.annualForecast > 0}" style="text-align: center;">
+                            <div style="font-weight: bold; margin-bottom: 10px;">YTD Production vs Annual Forecast</div>
+                            <div style="position: relative; width: 200px; height: 200px; margin: 0 auto;">
+                                <svg width="200" height="200" style="transform: rotate(-90deg);">
+                                    <circle cx="100" cy="100" r="80" fill="none" stroke="#e0e0e0" stroke-width="20"/>
+                                    <circle cx="100" cy="100" r="80" fill="none" stroke="#2196F3" stroke-width="20"
+                                            stroke-dasharray="502.4"
+                                            th:stroke-dashoffset="${502.4 - (502.4 * (reportData.productionBudgetComparison.ytdProduction / reportData.productionBudgetComparison.annualForecast))}"
+                                            th:if="${reportData.productionBudgetComparison.ytdProduction != null && reportData.productionBudgetComparison.annualForecast > 0}"/>
+                                </svg>
+                                <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 24px; font-weight: bold;">
+                                    <span th:text="${#numbers.formatDecimal((reportData.productionBudgetComparison.ytdProduction / reportData.productionBudgetComparison.annualForecast) * 100, 1, 1)}">0</span>%
+                                </div>
+                            </div>
+                            <div style="margin-top: 10px; font-size: 12px;">
+                                <div>YTD: <span th:text="${#numbers.formatDecimal(reportData.productionBudgetComparison.ytdProduction, 1, 0)}">0</span> MMBTUs</div>
+                                <div>Forecast: <span th:text="${#numbers.formatDecimal(reportData.productionBudgetComparison.annualForecast, 1, 0)}">0</span> MMBTUs</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div th:if="${reportData == null || reportData.productionBudgetComparison == null}" class="no-data-message">
+                No data available for production budget comparison. Data may not exist in database for this date/company.
+            </div>
+        </div>
+
+        <!-- Production Plan Section -->
+        <div class="page-section">
+            <div class="page-section-header">Production Plan</div>
+            <div th:if="${reportData != null && reportData.productionPlans != null && !reportData.productionPlans.isEmpty()}">
+                <table class="table table-bordered table-sm">
+                    <thead>
+                        <tr>
+                            <th>Farm</th>
+                            <th>Est. Production (MMBTUs)</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="plan : ${reportData.productionPlans}">
+                            <td th:text="${plan.farmName}">Farm Name</td>
+                            <td th:text="${plan.estProduction != null ? #numbers.formatDecimal(plan.estProduction, 1, 2) : 'N/A'}">0.00</td>
+                            <td th:text="${plan.farmStatus}">Status</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div th:if="${reportData == null || reportData.productionPlans == null || reportData.productionPlans.isEmpty()}" class="no-data-message">
+                No data available for production plan. Data may not exist in database for this date/company.
+            </div>
+        </div>
+
+        <!-- YTD/MTD Pie Charts Section -->
+        <div class="page-section">
+            <div class="page-section-header">YTD/MTD Production by Farm</div>
+            <div th:if="${reportData != null && reportData.ytdMtdPieData != null}">
+                <div th:if="${reportData.ytdMtdPieData.ytdPieData != null && !reportData.ytdMtdPieData.ytdPieData.isEmpty()}">
+                    <h5>Year-to-Date Distribution</h5>
+                    <table class="table table-bordered table-sm">
+                        <thead>
+                            <tr>
+                                <th>Farm</th>
+                                <th>Percentage</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="farm : ${reportData.ytdMtdPieData.ytdPieData}">
+                                <td th:text="${farm.farmName}">Farm Name</td>
+                                <td th:text="${#numbers.formatDecimal(farm.percentage, 1, 2) + '%'}">0%</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div th:if="${reportData.ytdMtdPieData.mtdPieData != null && !reportData.ytdMtdPieData.mtdPieData.isEmpty()}">
+                    <h5>Month-to-Date Distribution</h5>
+                    <table class="table table-bordered table-sm">
+                        <thead>
+                            <tr>
+                                <th>Farm</th>
+                                <th>Total (MMBTUs)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="farm : ${reportData.ytdMtdPieData.mtdPieData}">
+                                <td th:text="${farm.farmName}">Farm Name</td>
+                                <td th:text="${#numbers.formatDecimal(farm.total, 1, 2)}">0.00</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div th:if="${reportData == null || reportData.ytdMtdPieData == null}" class="no-data-message">
+                No data available for YTD/MTD pie data. Data may not exist in database for this date/company.
+            </div>
+        </div>
+
+        <!-- Daily Volume Section -->
+        <div class="page-section">
+            <div class="page-section-header">Daily Volume</div>
+            <div th:if="${reportData != null && reportData.dailyVolumeData != null && reportData.dailyVolumeData.dataPoints != null && !reportData.dailyVolumeData.dataPoints.isEmpty()}">
+                <table class="table table-bordered table-sm">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Volume (MMBTUs)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="point : ${reportData.dailyVolumeData.dataPoints}">
+                            <td th:text="${point.date}">Date</td>
+                            <td th:text="${#numbers.formatDecimal(point.volume, 1, 2)}">0.00</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div th:if="${reportData == null || reportData.dailyVolumeData == null || reportData.dailyVolumeData.dataPoints == null || reportData.dailyVolumeData.dataPoints.isEmpty()}" class="no-data-message">
+                No data available for daily volume. Data may not exist in database for this date range/company.
+            </div>
+        </div>
+
+        <!-- Weekly Volume vs Budget Section -->
+        <div class="page-section">
+            <div class="page-section-header">Weekly Volume vs Budget</div>
+            <div th:if="${reportData != null && reportData.weeklyVolumeVsBudget != null && reportData.weeklyVolumeVsBudget.dataPoints != null && !reportData.weeklyVolumeVsBudget.dataPoints.isEmpty()}">
+                <table class="table table-bordered table-sm">
+                    <thead>
+                        <tr>
+                            <th>Week</th>
+                            <th>Volume (MMBTUs)</th>
+                            <th>Budget (MMBTUs)</th>
+                            <th>% of Budget</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="point : ${reportData.weeklyVolumeVsBudget.dataPoints}">
+                            <td th:text="${point.weekStartDate}">Week Start Date</td>
+                            <td th:text="${point.volume != null ? #numbers.formatDecimal(point.volume, 1, 2) : 'N/A'}">0.00</td>
+                            <td th:text="${point.budget != null ? #numbers.formatDecimal(point.budget, 1, 2) : 'N/A'}">0.00</td>
+                            <td th:text="${point.pctBudget != null ? #numbers.formatDecimal(point.pctBudget, 1, 2) + '%' : 'N/A'}">0%</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div th:if="${reportData == null || reportData.weeklyVolumeVsBudget == null || reportData.weeklyVolumeVsBudget.dataPoints == null || reportData.weeklyVolumeVsBudget.dataPoints.isEmpty()}" class="no-data-message">
+                No data available for weekly volume vs budget. Data may not exist in database for this date range/company.
+            </div>
+        </div>
+
+        <!-- Multi-Year Production vs Budget Section -->
+        <div class="page-section">
+            <div class="page-section-header">Multi-Year Production vs Budget</div>
+            <div th:if="${reportData != null && reportData.multiYearProductionVsBudget != null && reportData.multiYearProductionVsBudget.yearData != null && !reportData.multiYearProductionVsBudget.yearData.isEmpty()}">
+                <table class="table table-bordered table-sm">
+                    <thead>
+                        <tr>
+                            <th>Year</th>
+                            <th>Production (MMBTUs)</th>
+                            <th>Budget (MMBTUs)</th>
+                            <th>% of Budget</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="yearData : ${reportData.multiYearProductionVsBudget.yearData}">
+                            <td th:text="${yearData.year}">Year</td>
+                            <td th:text="${yearData.production != null ? #numbers.formatDecimal(yearData.production, 1, 2) : 'N/A'}">0.00</td>
+                            <td th:text="${yearData.budget != null ? #numbers.formatDecimal(yearData.budget, 1, 2) : 'N/A'}">0.00</td>
+                            <td th:text="${yearData.pctBudget != null ? #numbers.formatDecimal(yearData.pctBudget, 1, 2) + '%' : 'N/A'}">0%</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div th:if="${reportData == null || reportData.multiYearProductionVsBudget == null || reportData.multiYearProductionVsBudget.yearData == null || reportData.multiYearProductionVsBudget.yearData.isEmpty()}" class="no-data-message">
+                No data available for multi-year production vs budget. Data may not exist in database for this date/company.
+            </div>
+        </div>
+
+        <!-- Year Over Year Monthly Production Section -->
+        <div class="page-section">
+            <div class="page-section-header">Year Over Year Monthly Production</div>
+            <div th:if="${reportData != null && reportData.yearOverYearMonthlyProduction != null && reportData.yearOverYearMonthlyProduction.yearData != null && !reportData.yearOverYearMonthlyProduction.yearData.isEmpty()}">
+                <table class="table table-bordered table-sm">
+                    <thead>
+                        <tr>
+                            <th>Year</th>
+                            <th>Month</th>
+                            <th>Production (MMBTUs)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <th:block th:each="yearData : ${reportData.yearOverYearMonthlyProduction.yearData}">
+                            <th:block th:each="monthData, iterStat : ${yearData.monthlyData}">
+                                <tr th:if="${iterStat.index == 0}">
+                                    <td th:text="${yearData.year}" th:rowspan="${yearData.monthlyData.size()}">Year</td>
+                                    <td th:text="${monthData.month}">Month</td>
+                                    <td th:text="${monthData.production != null ? #numbers.formatDecimal(monthData.production, 1, 2) : 'N/A'}">0.00</td>
+                                </tr>
+                                <tr th:if="${iterStat.index > 0}">
+                                    <td th:text="${monthData.month}">Month</td>
+                                    <td th:text="${monthData.production != null ? #numbers.formatDecimal(monthData.production, 1, 2) : 'N/A'}">0.00</td>
+                                </tr>
+                            </th:block>
+                        </th:block>
+                    </tbody>
+                </table>
+            </div>
+            <div th:if="${reportData == null || reportData.yearOverYearMonthlyProduction == null || reportData.yearOverYearMonthlyProduction.yearData == null || reportData.yearOverYearMonthlyProduction.yearData.isEmpty()}" class="no-data-message">
+                No data available for year over year monthly production. Data may not exist in database for this date/company.
+            </div>
+        </div>
+
+        <!-- Current Year Production Forecast vs Budget Section -->
+        <div class="page-section">
+            <div class="page-section-header">Current Year Production Forecast vs Budget</div>
+            <div th:if="${reportData != null && reportData.curYearProductionForecastVsBudget != null && reportData.curYearProductionForecastVsBudget.monthlyData != null && !reportData.curYearProductionForecastVsBudget.monthlyData.isEmpty()}">
+                <table class="table table-bordered table-sm">
+                    <thead>
+                        <tr>
+                            <th>Month</th>
+                            <th>Forecast (MMBTUs)</th>
+                            <th>Budget (MMBTUs)</th>
+                            <th>Actual (MMBTUs)</th>
+                            <th>% Forecast</th>
+                            <th>% Budget</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="monthData : ${reportData.curYearProductionForecastVsBudget.monthlyData}">
+                            <td th:text="${monthData.month}">Month</td>
+                            <td th:text="${monthData.forecast != null ? #numbers.formatDecimal(monthData.forecast, 1, 2) : 'N/A'}">0.00</td>
+                            <td th:text="${monthData.budget != null ? #numbers.formatDecimal(monthData.budget, 1, 2) : 'N/A'}">0.00</td>
+                            <td th:text="${monthData.actual != null ? #numbers.formatDecimal(monthData.actual, 1, 2) : 'N/A'}">0.00</td>
+                            <td th:text="${monthData.pctForecast != null ? #numbers.formatDecimal(monthData.pctForecast, 1, 2) + '%' : 'N/A'}">0%</td>
+                            <td th:text="${monthData.pctBudget != null ? #numbers.formatDecimal(monthData.pctBudget, 1, 2) + '%' : 'N/A'}">0%</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div th:if="${reportData == null || reportData.curYearProductionForecastVsBudget == null || reportData.curYearProductionForecastVsBudget.monthlyData == null || reportData.curYearProductionForecastVsBudget.monthlyData.isEmpty()}" class="no-data-message">
+                No data available for current year production forecast vs budget. Data may not exist in database for this date/company.
+            </div>
+        </div>
+
+        <!-- Lagoon Levels Section -->
+        <div class="page-section">
+            <div class="page-section-header">Farm Biogas Inventory data</div>
+            <div th:if="${reportData != null && reportData.lagoonLevelsData != null && reportData.lagoonLevelsData.latestLevels != null && !reportData.lagoonLevelsData.latestLevels.isEmpty()}">
+                <h5>Latest Lagoon Levels</h5>
+                <table class="table table-bordered table-sm">
+                    <thead>
+                        <tr>
+                            <th>Farm</th>
+                            <th>Value</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="level : ${reportData.lagoonLevelsData.latestLevels}">
+                            <td th:text="${level.farmName}">Farm Name</td>
+                            <td th:text="${#numbers.formatDecimal(level.value, 1, 2)}">0.00</td>
+                            <td th:text="${level.timestamp}">Date</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div th:if="${reportData == null || reportData.lagoonLevelsData == null || reportData.lagoonLevelsData.latestLevels == null || reportData.lagoonLevelsData.latestLevels.isEmpty()}" class="no-data-message">
+                No data available for lagoon levels. Data may not exist in database for this date/company.
+            </div>
+            
+            <!-- Year Over Year Lagoon Levels -->
+            <div th:if="${reportData != null && reportData.lagoonLevelsData != null && reportData.lagoonLevelsData.yearOverYearData != null && !reportData.lagoonLevelsData.yearOverYearData.isEmpty()}">
+                <h5>Year Over Year Lagoon Levels</h5>
+                <table class="table table-bordered table-sm">
+                    <thead>
+                        <tr>
+                            <th>Year</th>
+                            <th>Farm</th>
+                            <th>Value</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <th:block th:each="yearData : ${reportData.lagoonLevelsData.yearOverYearData}">
+                            <th:block th:each="level, iterStat : ${yearData.levels}">
+                                <tr th:if="${iterStat.index == 0}">
+                                    <td th:text="${yearData.year}" th:rowspan="${yearData.levels.size()}">Year</td>
+                                    <td th:text="${level.farmName}">Farm Name</td>
+                                    <td th:text="${level.value != null ? #numbers.formatDecimal(level.value, 1, 2) : 'N/A'}">0.00</td>
+                                    <td th:text="${level.timestamp}">Date</td>
+                                </tr>
+                                <tr th:if="${iterStat.index > 0}">
+                                    <td th:text="${level.farmName}">Farm Name</td>
+                                    <td th:text="${level.value != null ? #numbers.formatDecimal(level.value, 1, 2) : 'N/A'}">0.00</td>
+                                    <td th:text="${level.timestamp}">Date</td>
+                                </tr>
+                            </th:block>
+                        </th:block>
+                    </tbody>
+                </table>
+            </div>
+            <div th:if="${reportData == null || reportData.lagoonLevelsData == null || reportData.lagoonLevelsData.yearOverYearData == null || reportData.lagoonLevelsData.yearOverYearData.isEmpty()}" class="no-data-message">
+                No data available for year over year lagoon levels. Data may not exist in database for this date/company.
+            </div>
+        </div>
+
+        <!-- Population Data Section -->
+        <div class="page-section">
+            <div class="page-section-header">Animal Inventory Population</div>
+            <div th:if="${reportData != null && reportData.populationData != null && reportData.populationData.multiYearData != null && !reportData.populationData.multiYearData.isEmpty()}">
+                <h5>Multi-Year Population Comparison</h5>
+                <table class="table table-bordered table-sm">
+                    <thead>
+                        <tr>
+                            <th>Year</th>
+                            <th>Total Population</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="yearData : ${reportData.populationData.multiYearData}">
+                            <td th:text="${yearData.year}">Year</td>
+                            <td th:text="${yearData.totalPopulation != null ? #numbers.formatDecimal(yearData.totalPopulation, 1, 0) : 'N/A'}">0</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div th:if="${reportData == null || reportData.populationData == null || reportData.populationData.multiYearData == null || reportData.populationData.multiYearData.isEmpty()}" class="no-data-message">
+                No data available for population data. Data may not exist in database for this date/company.
+            </div>
+            
+            <!-- Year Over Year Population -->
+            <div th:if="${reportData != null && reportData.populationData != null && reportData.populationData.yearOverYearData != null && !reportData.populationData.yearOverYearData.isEmpty()}">
+                <h5>Year Over Year Population</h5>
+                <table class="table table-bordered table-sm">
+                    <thead>
+                        <tr>
+                            <th>Farm</th>
+                            <th>Date</th>
+                            <th>Population</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <th:block th:each="farmData : ${reportData.populationData.yearOverYearData}">
+                            <th:block th:each="point, iterStat : ${farmData.populationPoints}">
+                                <tr th:if="${iterStat.index == 0}">
+                                    <td th:text="${farmData.farmName}" th:rowspan="${farmData.populationPoints.size()}">Farm Name</td>
+                                    <td th:text="${point.date}">Date</td>
+                                    <td th:text="${point.value != null ? #numbers.formatDecimal(point.value, 1, 0) : 'N/A'}">0</td>
+                                </tr>
+                                <tr th:if="${iterStat.index > 0}">
+                                    <td th:text="${point.date}">Date</td>
+                                    <td th:text="${point.value != null ? #numbers.formatDecimal(point.value, 1, 0) : 'N/A'}">0</td>
+                                </tr>
+                            </th:block>
+                        </th:block>
+                    </tbody>
+                </table>
+            </div>
+            <div th:if="${reportData == null || reportData.populationData == null || reportData.populationData.yearOverYearData == null || reportData.populationData.yearOverYearData.isEmpty()}" class="no-data-message">
+                No data available for year over year population. Data may not exist in database for this date/company.
+            </div>
+        </div>
+
+        <!-- Current Year Population Forecast vs Budget Section -->
+        <div class="page-section">
+            <div class="page-section-header">Current Year Population Forecast vs Budget</div>
+            <div th:if="${reportData != null && reportData.curYearPopulationForecastVsBudget != null && reportData.curYearPopulationForecastVsBudget.monthlyData != null && !reportData.curYearPopulationForecastVsBudget.monthlyData.isEmpty()}">
+                <table class="table table-bordered table-sm">
+                    <thead>
+                        <tr>
+                            <th>Month</th>
+                            <th>Forecast</th>
+                            <th>Budget</th>
+                            <th>Actual</th>
+                            <th>% Forecast</th>
+                            <th>% Budget</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="monthData : ${reportData.curYearPopulationForecastVsBudget.monthlyData}">
+                            <td th:text="${monthData.month}">Month</td>
+                            <td th:text="${monthData.forecast != null ? #numbers.formatDecimal(monthData.forecast, 1, 0) : 'N/A'}">0</td>
+                            <td th:text="${monthData.budget != null ? #numbers.formatDecimal(monthData.budget, 1, 0) : 'N/A'}">0</td>
+                            <td th:text="${monthData.actual != null ? #numbers.formatDecimal(monthData.actual, 1, 0) : 'N/A'}">0</td>
+                            <td th:text="${monthData.pctForecast != null ? #numbers.formatDecimal(monthData.pctForecast, 1, 2) + '%' : 'N/A'}">0%</td>
+                            <td th:text="${monthData.pctBudget != null ? #numbers.formatDecimal(monthData.pctBudget, 1, 2) + '%' : 'N/A'}">0%</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div th:if="${reportData == null || reportData.curYearPopulationForecastVsBudget == null || reportData.curYearPopulationForecastVsBudget.monthlyData == null || reportData.curYearPopulationForecastVsBudget.monthlyData.isEmpty()}" class="no-data-message">
+                No data available for current year population forecast vs budget. Data may not exist in database for this date/company.
+            </div>
+        </div>
+
+        <!-- Gas production per Inventory Section -->
+        <div class="page-section">
+            <div class="page-section-header">Gas production per Inventory</div>
+            <div th:if="${reportData != null && reportData.gasProductionPerInventory != null && reportData.gasProductionPerInventory.latest52Week != null && !reportData.gasProductionPerInventory.latest52Week.isEmpty()}">
+                <h5>Latest 52-Week Population</h5>
+                <table class="table table-bordered table-sm">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Gas Production</th>
+                            <th>Inventory Population</th>
+                            <th>Ratio</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="point : ${reportData.gasProductionPerInventory.latest52Week}">
+                            <td th:text="${point.date}">Date</td>
+                            <td th:text="${point.gasProduction != null ? #numbers.formatDecimal(point.gasProduction, 1, 2) : 'N/A'}">0.00</td>
+                            <td th:text="${point.inventoryPopulation != null ? #numbers.formatDecimal(point.inventoryPopulation, 1, 0) : 'N/A'}">0</td>
+                            <td th:text="${point.ratio != null ? #numbers.formatDecimal(point.ratio, 1, 4) : 'N/A'}">0.0000</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div th:if="${reportData == null || reportData.gasProductionPerInventory == null || reportData.gasProductionPerInventory.latest52Week == null || reportData.gasProductionPerInventory.latest52Week.isEmpty()}" class="no-data-message">
+                No data available for latest 52-week population. Data may not exist in database for this date/company.
+            </div>
+        </div>
+
+        <!-- Historic 52-Week Categorized Population Section -->
+        <div class="page-section">
+            <div class="page-section-header">Historic 52-Week Gas Production per 52-Week Inventory Population</div>
+            <div th:if="${reportData != null && reportData.historic52Week != null && reportData.historic52Week.categorizedData != null && !reportData.historic52Week.categorizedData.isEmpty()}">
+                <table class="table table-bordered table-sm">
+                    <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th>Period</th>
+                            <th>Gas Production</th>
+                            <th>Inventory Population</th>
+                            <th>Ratio</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <th:block th:each="catData : ${reportData.historic52Week.categorizedData}">
+                            <th:block th:each="point, iterStat : ${catData.dataPoints}">
+                                <tr th:if="${iterStat.index == 0}">
+                                    <td th:text="${catData.category}" th:rowspan="${catData.dataPoints.size()}">Category</td>
+                                    <td th:text="${point.period}">Period</td>
+                                    <td th:text="${point.gasProduction != null ? #numbers.formatDecimal(point.gasProduction, 1, 2) : 'N/A'}">0.00</td>
+                                    <td th:text="${point.inventoryPopulation != null ? #numbers.formatDecimal(point.inventoryPopulation, 1, 0) : 'N/A'}">0</td>
+                                    <td th:text="${point.ratio != null ? #numbers.formatDecimal(point.ratio, 1, 4) : 'N/A'}">0.0000</td>
+                                </tr>
+                                <tr th:if="${iterStat.index > 0}">
+                                    <td th:text="${point.period}">Period</td>
+                                    <td th:text="${point.gasProduction != null ? #numbers.formatDecimal(point.gasProduction, 1, 2) : 'N/A'}">0.00</td>
+                                    <td th:text="${point.inventoryPopulation != null ? #numbers.formatDecimal(point.inventoryPopulation, 1, 0) : 'N/A'}">0</td>
+                                    <td th:text="${point.ratio != null ? #numbers.formatDecimal(point.ratio, 1, 4) : 'N/A'}">0.0000</td>
+                                </tr>
+                            </th:block>
+                        </th:block>
+                    </tbody>
+                </table>
+            </div>
+            <div th:if="${reportData == null || reportData.historic52Week == null || reportData.historic52Week.categorizedData == null || reportData.historic52Week.categorizedData.isEmpty()}" class="no-data-message">
+                No data available for historic 52-week categorized population. Data may not exist in database for this date/company.
+            </div>
+        </div>
+        
+    </div>
+</body>
+</html>
+
+
+
